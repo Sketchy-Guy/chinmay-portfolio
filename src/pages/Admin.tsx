@@ -23,7 +23,26 @@ const Admin = () => {
           return;
         }
 
-        // Check if user is admin
+        // For this specific email, automatically grant admin access
+        if (session.user.email === 'chinmaykumarpanda004@gmail.com') {
+          // Ensure this user is marked as admin in the database
+          const { error: upsertError } = await supabase
+            .from('auth_users')
+            .upsert({ 
+              id: session.user.id,
+              is_admin: true
+            });
+          
+          if (upsertError) {
+            console.error('Error setting admin status:', upsertError);
+          }
+          
+          setIsAdmin(true);
+          setLoading(false);
+          return;
+        }
+
+        // Check if user is admin (for other users)
         const { data, error } = await supabase
           .from('auth_users')
           .select('is_admin')
@@ -102,25 +121,25 @@ const Admin = () => {
           <TabsContent value="profile" className="glass-card p-6">
             <h2 className="text-2xl font-bold mb-6 text-portfolio-purple">Manage Profile</h2>
             <p className="text-gray-600 mb-4">Your profile management UI will be implemented here.</p>
-            <Button>Update Profile</Button>
+            <Button className="bg-portfolio-purple hover:bg-portfolio-purple/90 transition-all duration-300 transform hover:scale-105">Update Profile</Button>
           </TabsContent>
           
           <TabsContent value="skills" className="glass-card p-6">
             <h2 className="text-2xl font-bold mb-6 text-portfolio-purple">Manage Skills</h2>
             <p className="text-gray-600 mb-4">Your skills management UI will be implemented here.</p>
-            <Button>Add New Skill</Button>
+            <Button className="bg-portfolio-purple hover:bg-portfolio-purple/90 transition-all duration-300 transform hover:scale-105">Add New Skill</Button>
           </TabsContent>
           
           <TabsContent value="projects" className="glass-card p-6">
             <h2 className="text-2xl font-bold mb-6 text-portfolio-purple">Manage Projects</h2>
             <p className="text-gray-600 mb-4">Your projects management UI will be implemented here.</p>
-            <Button>Add New Project</Button>
+            <Button className="bg-portfolio-purple hover:bg-portfolio-purple/90 transition-all duration-300 transform hover:scale-105">Add New Project</Button>
           </TabsContent>
           
           <TabsContent value="certifications" className="glass-card p-6">
             <h2 className="text-2xl font-bold mb-6 text-portfolio-purple">Manage Certifications</h2>
             <p className="text-gray-600 mb-4">Your certifications management UI will be implemented here.</p>
-            <Button>Add New Certification</Button>
+            <Button className="bg-portfolio-purple hover:bg-portfolio-purple/90 transition-all duration-300 transform hover:scale-105">Add New Certification</Button>
           </TabsContent>
         </Tabs>
       </main>
