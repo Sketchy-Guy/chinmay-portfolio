@@ -30,7 +30,7 @@ const Admin = () => {
           .eq('id', session.user.id)
           .single();
         
-        if (error || !data?.is_admin) {
+        if (error || !data || !data.is_admin) {
           throw new Error('Not authorized');
         }
         
