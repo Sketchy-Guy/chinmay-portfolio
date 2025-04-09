@@ -5,13 +5,34 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, LogOut, User, Code, Award, Briefcase } from "lucide-react";
+import { Loader2, LogOut, User, Code, Award, Briefcase, PlusCircle, Trash2, Edit } from "lucide-react";
+import { usePortfolioData, UserData, SkillData, ProjectData, CertificationData } from "@/components/DataManager";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle,
+  DialogTrigger 
+} from "@/components/ui/dialog";
+import { motion } from "framer-motion";
+import { ProfileForm } from "@/components/admin/ProfileForm";
+import { SkillsManager } from "@/components/admin/SkillsManager";
+import { ProjectsManager } from "@/components/admin/ProjectsManager";
+import { CertificationsManager } from "@/components/admin/CertificationsManager";
 
 const Admin = () => {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { data } = usePortfolioData();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -80,8 +101,14 @@ const Admin = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-portfolio-purple" />
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <Loader2 className="h-12 w-12 animate-spin text-portfolio-purple" />
+        </motion.div>
       </div>
     );
   }
@@ -91,19 +118,41 @@ const Admin = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-portfolio-purple text-white p-4 shadow-md">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800"
+    >
+      <header className="bg-portfolio-purple text-white p-4 shadow-lg">
         <div className="container mx-auto flex justify-between items-center">
-          <h1 className="text-xl font-bold">Portfolio Admin</h1>
-          <Button variant="ghost" onClick={handleLogout} className="text-white hover:text-white hover:bg-portfolio-purple/80">
-            <LogOut className="mr-2 h-4 w-4" /> Logout
-          </Button>
+          <motion.h1 
+            className="text-xl font-bold"
+            initial={{ x: -20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            Portfolio Admin
+          </motion.h1>
+          <motion.div
+            initial={{ x: 20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <Button 
+              variant="ghost" 
+              onClick={handleLogout} 
+              className="text-white hover:text-white hover:bg-portfolio-purple/80"
+            >
+              <LogOut className="mr-2 h-4 w-4" /> Logout
+            </Button>
+          </motion.div>
         </div>
       </header>
       
       <main className="container mx-auto p-6">
         <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="grid grid-cols-4 mb-8">
+          <TabsList className="grid grid-cols-4 mb-8 shadow-md">
             <TabsTrigger value="profile" className="flex items-center">
               <User className="mr-2 h-4 w-4" /> Profile
             </TabsTrigger>
@@ -118,32 +167,30 @@ const Admin = () => {
             </TabsTrigger>
           </TabsList>
           
-          <TabsContent value="profile" className="glass-card p-6">
-            <h2 className="text-2xl font-bold mb-6 text-portfolio-purple">Manage Profile</h2>
-            <p className="text-gray-600 mb-4">Your profile management UI will be implemented here.</p>
-            <Button className="bg-portfolio-purple hover:bg-portfolio-purple/90 transition-all duration-300 transform hover:scale-105">Update Profile</Button>
-          </TabsContent>
-          
-          <TabsContent value="skills" className="glass-card p-6">
-            <h2 className="text-2xl font-bold mb-6 text-portfolio-purple">Manage Skills</h2>
-            <p className="text-gray-600 mb-4">Your skills management UI will be implemented here.</p>
-            <Button className="bg-portfolio-purple hover:bg-portfolio-purple/90 transition-all duration-300 transform hover:scale-105">Add New Skill</Button>
-          </TabsContent>
-          
-          <TabsContent value="projects" className="glass-card p-6">
-            <h2 className="text-2xl font-bold mb-6 text-portfolio-purple">Manage Projects</h2>
-            <p className="text-gray-600 mb-4">Your projects management UI will be implemented here.</p>
-            <Button className="bg-portfolio-purple hover:bg-portfolio-purple/90 transition-all duration-300 transform hover:scale-105">Add New Project</Button>
-          </TabsContent>
-          
-          <TabsContent value="certifications" className="glass-card p-6">
-            <h2 className="text-2xl font-bold mb-6 text-portfolio-purple">Manage Certifications</h2>
-            <p className="text-gray-600 mb-4">Your certifications management UI will be implemented here.</p>
-            <Button className="bg-portfolio-purple hover:bg-portfolio-purple/90 transition-all duration-300 transform hover:scale-105">Add New Certification</Button>
-          </TabsContent>
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            <TabsContent value="profile" className="glass-card p-6 shadow-xl">
+              <ProfileForm />
+            </TabsContent>
+            
+            <TabsContent value="skills" className="glass-card p-6 shadow-xl">
+              <SkillsManager />
+            </TabsContent>
+            
+            <TabsContent value="projects" className="glass-card p-6 shadow-xl">
+              <ProjectsManager />
+            </TabsContent>
+            
+            <TabsContent value="certifications" className="glass-card p-6 shadow-xl">
+              <CertificationsManager />
+            </TabsContent>
+          </motion.div>
         </Tabs>
       </main>
-    </div>
+    </motion.div>
   );
 };
 
