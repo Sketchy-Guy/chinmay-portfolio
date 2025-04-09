@@ -5,22 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, LogOut, User, Code, Award, Briefcase, PlusCircle, Trash2, Edit } from "lucide-react";
-import { usePortfolioData, UserData, SkillData, ProjectData, CertificationData } from "@/components/DataManager";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle,
-  DialogTrigger 
-} from "@/components/ui/dialog";
+import { Loader2, LogOut, User, Code, Award, Briefcase } from "lucide-react";
 import { motion } from "framer-motion";
 import { ProfileForm } from "@/components/admin/ProfileForm";
 import { SkillsManager } from "@/components/admin/SkillsManager";
@@ -32,7 +17,6 @@ const Admin = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { data } = usePortfolioData();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -46,21 +30,21 @@ const Admin = () => {
 
         // For this specific email, automatically grant admin access
         if (session.user.email === 'chinmaykumarpanda004@gmail.com') {
-          // Ensure this user is marked as admin in the database
-          const { error: upsertError } = await supabase
-            .from('auth_users')
-            .upsert({ 
-              id: session.user.id,
-              is_admin: true
-            });
-          
-          if (upsertError) {
-            console.error('Error setting admin status:', upsertError);
+          try {
+            // Ensure this user is marked as admin in the database
+            await supabase
+              .from('auth_users')
+              .upsert({ 
+                id: session.user.id,
+                is_admin: true
+              });
+            
+            setIsAdmin(true);
+            setLoading(false);
+            return;
+          } catch (error) {
+            console.error('Error setting admin status:', error);
           }
-          
-          setIsAdmin(true);
-          setLoading(false);
-          return;
         }
 
         // Check if user is admin (for other users)
