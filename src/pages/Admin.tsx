@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, LogOut, User, Code, Award, Briefcase } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { ProfileForm } from "@/components/admin/ProfileForm";
 import { SkillsManager } from "@/components/admin/SkillsManager";
 import { ProjectsManager } from "@/components/admin/ProjectsManager";
@@ -15,6 +15,7 @@ import { CertificationsManager } from "@/components/admin/CertificationsManager"
 const Admin = () => {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [sessionUser, setSessionUser] = useState(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -24,20 +25,29 @@ const Admin = () => {
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!session) {
+          console.log("No session found. Redirecting to login...");
           navigate('/login');
           return;
         }
 
-        // For this specific email, automatically grant admin access
+        console.log("Session found:", session.user.email);
+        setSessionUser(session.user);
+
+        // For the specific email, automatically grant admin access
         if (session.user.email === 'chinmaykumarpanda004@gmail.com') {
           try {
             // Ensure this user is marked as admin in the database
-            await supabase
+            const { error } = await supabase
               .from('auth_users')
               .upsert({ 
                 id: session.user.id,
                 is_admin: true
               });
+            
+            if (error) {
+              console.error("Error setting admin status:", error);
+              throw error;
+            }
             
             setIsAdmin(true);
             setLoading(false);
@@ -54,12 +64,20 @@ const Admin = () => {
           .eq('id', session.user.id)
           .single();
         
-        if (error || !data || !data.is_admin) {
+        if (error) {
+          console.error("Error fetching admin status:", error);
+          throw error;
+        }
+        
+        if (!data || !data.is_admin) {
+          console.log("User is not admin:", data);
           throw new Error('Not authorized');
         }
         
+        console.log("User is admin:", data);
         setIsAdmin(true);
       } catch (error) {
+        console.error("Authentication error:", error);
         toast({
           title: "Authentication Error",
           description: "You are not authorized to access this page",
@@ -98,7 +116,28 @@ const Admin = () => {
   }
 
   if (!isAdmin) {
-    return null; // Will redirect in useEffect
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-6"
+        >
+          <h1 className="text-2xl font-bold text-portfolio-purple">Access Denied</h1>
+          <p className="text-gray-600 mt-2">You are not authorized to access the admin panel.</p>
+          {sessionUser && (
+            <p className="text-sm text-gray-500 mt-1">Logged in as: {sessionUser.email}</p>
+          )}
+        </motion.div>
+        <Button 
+          onClick={() => navigate('/')}
+          className="bg-portfolio-purple hover:bg-portfolio-purple/90"
+        >
+          Return to Home
+        </Button>
+      </div>
+    );
   }
 
   return (

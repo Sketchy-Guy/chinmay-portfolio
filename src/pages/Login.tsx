@@ -23,6 +23,7 @@ const Login = () => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
+        console.log("User already logged in, redirecting to admin");
         navigate('/admin');
       }
     };
@@ -47,6 +48,8 @@ const Login = () => {
         
         if (error) throw error;
         
+        console.log("Login successful:", data);
+        
         // Show success animation
         setSuccess(true);
         
@@ -67,6 +70,8 @@ const Login = () => {
         
         if (error) throw error;
         
+        console.log("Signup response:", data);
+        
         if (data.user?.identities?.length === 0) {
           throw new Error("Email already registered. Please login instead.");
         }
@@ -85,6 +90,7 @@ const Login = () => {
         }, 1500);
       }
     } catch (error: any) {
+      console.error("Auth error:", error);
       toast({
         title: isLogin ? "Login failed" : "Registration failed",
         description: error.message || `An error occurred during ${isLogin ? 'login' : 'registration'}`,
