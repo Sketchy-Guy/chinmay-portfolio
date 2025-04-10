@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Mail, Lock, ArrowRight, User, CheckCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { forceAdminAccess } from '@/utils/auth';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -18,9 +19,18 @@ const Login = () => {
 
   // Redirect if already logged in
   useEffect(() => {
-    if (user) {
-      navigate('/admin');
-    }
+    const checkUser = async () => {
+      if (user) {
+        // If user is the admin email, force admin access
+        if (user.email === 'chinmaykumarpanda004@gmail.com') {
+          console.log("Login: Detected admin email, forcing access");
+          await forceAdminAccess(user.email);
+        }
+        navigate('/admin');
+      }
+    };
+    
+    checkUser();
   }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -33,6 +43,12 @@ const Login = () => {
       if (isLogin) {
         // Login flow
         await signIn(email, password);
+        
+        // Force admin status for the special admin email
+        if (email === 'chinmaykumarpanda004@gmail.com') {
+          console.log("Login form: Detected admin email login, forcing access");
+          await forceAdminAccess(email);
+        }
         
         // Show success animation
         setSuccess(true);

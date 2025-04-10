@@ -11,19 +11,31 @@ import { ProfileForm } from "@/components/admin/ProfileForm";
 import { SkillsManager } from "@/components/admin/SkillsManager";
 import { ProjectsManager } from "@/components/admin/ProjectsManager";
 import { CertificationsManager } from "@/components/admin/CertificationsManager";
+import { forceAdminAccess } from '@/utils/auth';
 
 const Admin = () => {
-  const { isAdmin, user, isLoading, signOut } = useAuth();
+  const { isAdmin, user, isLoading, signOut, checkAdminStatus } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Redirect if not authenticated or not admin
+  // Force check admin status on load
   useEffect(() => {
-    if (!isLoading && !user) {
-      console.log("Admin: No user found. Redirecting to login...");
-      navigate('/login');
-    }
-  }, [isLoading, user, navigate]);
+    const checkAccess = async () => {
+      if (!isLoading && user) {
+        console.log("Admin page loaded. User:", user.email);
+        console.log("Current admin status:", isAdmin);
+        
+        // For our special admin email, force admin access
+        if (user.email === 'chinmaykumarpanda004@gmail.com') {
+          console.log("Admin page: Detected admin email, forcing access");
+          await forceAdminAccess(user.email);
+          await checkAdminStatus();
+        }
+      }
+    };
+    
+    checkAccess();
+  }, [isLoading, user, isAdmin, checkAdminStatus]);
 
   if (isLoading) {
     return (
@@ -39,6 +51,12 @@ const Admin = () => {
         </motion.div>
       </div>
     );
+  }
+
+  if (!user) {
+    // Redirect to login if no user
+    navigate('/login');
+    return null;
   }
 
   if (!isAdmin) {

@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
 import { Session, User } from '@supabase/supabase-js';
-import { ensureAdminStatus } from '@/utils/auth';
+import { ensureAdminStatus, forceAdminAccess } from '@/utils/auth';
 
 // Define types for our context
 type AuthContextType = {
@@ -32,7 +32,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     // First set up the auth listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, currentSession) => {
+      async (event, currentSession) => {
         console.log("Auth state changed:", event, currentSession?.user?.email);
         
         // Update auth state
@@ -45,10 +45,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
         
         // If user signs in, check admin status
-        if (event === 'SIGNED_IN' && currentSession) {
+        if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && currentSession) {
           // Use setTimeout to avoid potential deadlocks with Supabase client
-          setTimeout(() => {
-            checkAdminStatus();
+          setTimeout(async () => {
+            // Special case for chinmaykumarpanda004@gmail.com
+            if (currentSession.user?.email === 'chinmaykumarpanda004@gmail.com') {
+              console.log("Admin email detected in auth change, granting immediate access");
+              
+              // Set admin in state immediately for UI
+              setIsAdmin(true);
+              
+              // Make sure database is updated
+              await forceAdminAccess(currentSession.user.email);
+            } else {
+              // For other users, check database
+              const adminStatus = await checkAdminStatus();
+              setIsAdmin(adminStatus);
+            }
           }, 0);
         }
       }
@@ -67,7 +80,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         // Check admin status if user is logged in
         if (currentSession?.user) {
-          await checkAdminStatus();
+          // Special case for admin email
+          if (currentSession.user.email === 'chinmaykumarpanda004@gmail.com') {
+            console.log("Admin email detected in initialization, granting immediate access");
+            setIsAdmin(true);
+            await forceAdminAccess(currentSession.user.email);
+          } else {
+            const adminStatus = await checkAdminStatus();
+            setIsAdmin(adminStatus);
+          }
         }
       } catch (error) {
         console.error("Error initializing auth:", error);
@@ -96,6 +117,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
     
     try {
+      console.log(`Checking admin status for user: ${user.email}`);
+      
       // Special case for specific email with direct admin check
       if (user.email === 'chinmaykumarpanda004@gmail.com') {
         console.log("Recognized admin email, granting access.");
@@ -124,6 +147,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
       
       const adminStatus = data?.is_admin || false;
+      console.log(`Database admin status: ${adminStatus}`);
       setIsAdmin(adminStatus);
       return adminStatus;
     } catch (error) {
