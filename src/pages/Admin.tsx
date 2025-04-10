@@ -1,173 +1,40 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, LogOut, User, Code, Award, Briefcase } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
 import { ProfileForm } from "@/components/admin/ProfileForm";
 import { SkillsManager } from "@/components/admin/SkillsManager";
 import { ProjectsManager } from "@/components/admin/ProjectsManager";
 import { CertificationsManager } from "@/components/admin/CertificationsManager";
 
 const Admin = () => {
-  const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [sessionUser, setSessionUser] = useState<any>(null);
-  const [authChecked, setAuthChecked] = useState(false);
-  const { toast } = useToast();
+  const { isAdmin, user, isLoading, signOut } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
+  // Redirect if not authenticated or not admin
   useEffect(() => {
-    // This function checks if the user is authenticated and has admin privileges
-    const checkAuth = async () => {
-      try {
-        console.log("Admin: Checking authentication");
-        
-        // Get the current session
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!session) {
-          console.log("Admin: No session found. Redirecting to login...");
-          navigate('/login');
-          setAuthChecked(true);
-          setLoading(false);
-          return;
-        }
-
-        console.log("Admin: Session found for user:", session.user.email);
-        setSessionUser(session.user);
-
-        // Special case for specific email, automatically grant admin access
-        if (session.user.email === 'chinmaykumarpanda004@gmail.com') {
-          console.log("Admin: Recognized admin email, granting access.");
-          
-          try {
-            // Call the database function to ensure this user is marked as admin
-            const { data, error } = await supabase.rpc('create_initial_admin', { 
-              admin_email: session.user.email 
-            });
-            
-            if (error) {
-              console.error("Admin: Error setting admin status via RPC:", error);
-              
-              // Fallback: Try direct upsert if RPC fails
-              const { error: upsertError } = await supabase
-                .from('auth_users')
-                .upsert({ 
-                  id: session.user.id,
-                  is_admin: true
-                });
-              
-              if (upsertError) {
-                console.error("Admin: Error in fallback admin status setting:", upsertError);
-                throw upsertError;
-              }
-            } else {
-              console.log("Admin: RPC result:", data);
-            }
-            
-            setIsAdmin(true);
-            setLoading(false);
-            setAuthChecked(true);
-            return;
-          } catch (error) {
-            console.error('Admin: Error setting admin status:', error);
-          }
-        }
-
-        // Check if user is admin (for other users)
-        console.log("Admin: Checking admin status in database");
-        const { data, error } = await supabase
-          .from('auth_users')
-          .select('is_admin')
-          .eq('id', session.user.id)
-          .single();
-        
-        if (error) {
-          console.error("Admin: Error fetching admin status:", error);
-          throw error;
-        }
-        
-        if (!data || !data.is_admin) {
-          console.log("Admin: User is not an admin:", data);
-          toast({
-            title: "Access Denied",
-            description: "You do not have admin privileges",
-            variant: "destructive"
-          });
-          setIsAdmin(false);
-        } else {
-          console.log("Admin: User is an admin:", data);
-          setIsAdmin(true);
-        }
-      } catch (error) {
-        console.error("Admin: Authentication error:", error);
-        toast({
-          title: "Authentication Error",
-          description: "You are not authorized to access this page",
-          variant: "destructive"
-        });
-        
-        setIsAdmin(false);
-      } finally {
-        setLoading(false);
-        setAuthChecked(true);
-      }
-    };
-
-    if (!authChecked) {
-      checkAuth();
+    if (!isLoading && !user) {
+      console.log("Admin: No user found. Redirecting to login...");
+      navigate('/login');
     }
-  }, [navigate, toast, authChecked]);
+  }, [isLoading, user, navigate]);
 
-  // Set up auth listener
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("Admin: Auth state changed:", event);
-      
-      if (event === 'SIGNED_OUT') {
-        setIsAdmin(false);
-        setSessionUser(null);
-        navigate('/login');
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [navigate]);
-
-  const handleLogout = async () => {
-    console.log("Admin: Logging out");
-    try {
-      await supabase.auth.signOut();
-      toast({
-        title: "Logged out",
-        description: "You have been successfully logged out",
-      });
-      navigate('/');
-    } catch (error) {
-      console.error("Admin: Error during logout:", error);
-      toast({
-        title: "Logout Failed",
-        description: "There was a problem logging you out. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
+          className="text-center"
         >
-          <Loader2 className="h-12 w-12 animate-spin text-portfolio-purple" />
+          <Loader2 className="h-12 w-12 animate-spin text-portfolio-purple mx-auto" />
           <p className="mt-4 text-center text-gray-600">Loading admin panel...</p>
         </motion.div>
       </div>
@@ -185,8 +52,8 @@ const Admin = () => {
         >
           <h1 className="text-2xl font-bold text-portfolio-purple">Access Denied</h1>
           <p className="text-gray-600 mt-2 max-w-md mx-auto">You are not authorized to access the admin panel. You need admin privileges to view this page.</p>
-          {sessionUser && (
-            <p className="text-sm text-gray-500 mt-1">Logged in as: {sessionUser.email}</p>
+          {user && (
+            <p className="text-sm text-gray-500 mt-1">Logged in as: {user.email}</p>
           )}
         </motion.div>
         <div className="flex gap-4">
@@ -196,9 +63,9 @@ const Admin = () => {
           >
             Return to Home
           </Button>
-          {sessionUser ? (
+          {user ? (
             <Button 
-              onClick={handleLogout}
+              onClick={signOut}
               variant="outline"
             >
               Log Out
@@ -239,14 +106,14 @@ const Admin = () => {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="flex items-center gap-4"
           >
-            {sessionUser && (
+            {user && (
               <span className="text-sm hidden md:inline-block">
-                Logged in as: {sessionUser.email}
+                Logged in as: {user.email}
               </span>
             )}
             <Button 
               variant="ghost" 
-              onClick={handleLogout} 
+              onClick={signOut} 
               className="text-white hover:text-white hover:bg-portfolio-purple/80"
             >
               <LogOut className="mr-2 h-4 w-4" /> Logout

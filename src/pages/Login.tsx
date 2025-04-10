@@ -1,62 +1,30 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock, ArrowRight, User, CheckCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
   const [isAnimating, setIsAnimating] = useState(false);
   const [success, setSuccess] = useState(false);
-  const { toast } = useToast();
+  const { signIn, signUp, isLoading, user } = useAuth();
   const navigate = useNavigate();
 
-  // Check if already logged in
+  // Redirect if already logged in
   useEffect(() => {
-    const checkSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        console.log("Login: Session check on load:", session);
-        if (session) {
-          console.log("Login: User already logged in, redirecting to admin");
-          navigate('/admin');
-        }
-      } catch (error) {
-        console.error("Login: Error checking session:", error);
-      }
-    };
-    
-    checkSession();
-  }, [navigate]);
-
-  // Listen for auth changes
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log("Login: Auth state changed:", event, session?.user?.email);
-        
-        if (event === 'SIGNED_IN' && session) {
-          console.log("Login: User signed in via auth state change");
-          // We'll navigate after successful login in the handleSubmit function
-        }
-      }
-    );
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [navigate]);
+    if (user) {
+      navigate('/admin');
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     
     try {
       // Trigger animation
@@ -64,68 +32,25 @@ const Login = () => {
       
       if (isLogin) {
         // Login flow
-        console.log("Login: Attempting login with:", email);
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password
-        });
-        
-        if (error) throw error;
-        
-        console.log("Login: Login successful:", data);
+        await signIn(email, password);
         
         // Show success animation
         setSuccess(true);
-        
-        // Wait a bit before redirecting to give animation time to show
-        setTimeout(() => {
-          toast({
-            title: "Login successful",
-            description: "Welcome back!",
-          });
-          
-          // Make sure to navigate to the admin page
-          navigate('/admin');
-        }, 1500);
       } else {
         // Signup flow
-        console.log("Login: Attempting signup with:", email);
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-        });
-        
-        if (error) throw error;
-        
-        console.log("Login: Signup response:", data);
-        
-        if (data.user?.identities?.length === 0) {
-          throw new Error("Email already registered. Please login instead.");
-        }
+        await signUp(email, password);
         
         // Show success animation
         setSuccess(true);
         
         setTimeout(() => {
-          toast({
-            title: "Registration successful",
-            description: "Please check your email for verification link.",
-          });
-          
           setIsLogin(true); // Switch back to login form
           setSuccess(false);
         }, 1500);
       }
-    } catch (error: any) {
-      console.error("Login: Auth error:", error);
-      toast({
-        title: isLogin ? "Login failed" : "Registration failed",
-        description: error.message || `An error occurred during ${isLogin ? 'login' : 'registration'}`,
-        variant: "destructive"
-      });
+    } catch (error) {
       setSuccess(false);
     } finally {
-      setLoading(false);
       setIsAnimating(false);
     }
   };
@@ -195,6 +120,7 @@ const Login = () => {
             </div>
             
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Email Input */}
               <motion.div 
                 className="space-y-2"
                 initial={{ opacity: 0, x: -20 }}
@@ -214,6 +140,7 @@ const Login = () => {
                 </div>
               </motion.div>
               
+              {/* Password Input */}
               <motion.div 
                 className="space-y-2"
                 initial={{ opacity: 0, x: -20 }}
@@ -233,12 +160,12 @@ const Login = () => {
                 </div>
               </motion.div>
               
+              {/* Submit Button */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 }}
               >
-                {/* Wrap the Button in motion.div instead of applying motion props directly to Button */}
                 <motion.div
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.98 }}
@@ -246,9 +173,9 @@ const Login = () => {
                   <Button 
                     type="submit" 
                     className="w-full bg-portfolio-purple hover:bg-portfolio-purple/90 transition-all duration-300"
-                    disabled={loading}
+                    disabled={isLoading}
                   >
-                    {loading ? (
+                    {isLoading ? (
                       <span className="flex items-center">
                         <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -265,6 +192,7 @@ const Login = () => {
                 </motion.div>
               </motion.div>
               
+              {/* Toggle Login/Register */}
               <motion.div 
                 className="text-center mt-4"
                 initial={{ opacity: 0 }}
