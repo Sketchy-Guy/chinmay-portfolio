@@ -46,9 +46,8 @@ const Admin = () => {
           
           try {
             // Call the database function to ensure this user is marked as admin
-            const { data, error } = await supabase.rpc('set_admin_status', { 
-              user_email: session.user.email, 
-              is_admin_status: true 
+            const { data, error } = await supabase.rpc('create_initial_admin', { 
+              admin_email: session.user.email 
             });
             
             if (error) {
