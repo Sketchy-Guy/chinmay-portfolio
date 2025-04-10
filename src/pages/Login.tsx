@@ -21,14 +21,40 @@ const Login = () => {
   // Check if already logged in
   useEffect(() => {
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        console.log("User already logged in, redirecting to admin");
-        navigate('/admin');
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log("Session check on load:", session);
+        if (session) {
+          console.log("User already logged in, redirecting to admin");
+          navigate('/admin');
+        }
+      } catch (error) {
+        console.error("Error checking session:", error);
       }
     };
     
     checkSession();
+  }, [navigate]);
+
+  // Listen for auth changes
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        console.log("Auth state changed:", event, session?.user?.email);
+        
+        if (event === 'SIGNED_IN' && session) {
+          // Don't navigate here - we'll do that in the sign-in function after success
+          console.log("User signed in via auth state change");
+        } else if (event === 'SIGNED_OUT') {
+          console.log("User signed out");
+          navigate('/login');
+        }
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -41,6 +67,7 @@ const Login = () => {
       
       if (isLogin) {
         // Login flow
+        console.log("Attempting login with:", email);
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password
@@ -53,6 +80,7 @@ const Login = () => {
         // Show success animation
         setSuccess(true);
         
+        // Wait a bit before redirecting to give animation time to show
         setTimeout(() => {
           toast({
             title: "Login successful",
@@ -60,9 +88,10 @@ const Login = () => {
           });
           
           navigate('/admin');
-        }, 1000);
+        }, 1500);
       } else {
         // Signup flow
+        console.log("Attempting signup with:", email);
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -96,6 +125,7 @@ const Login = () => {
         description: error.message || `An error occurred during ${isLogin ? 'login' : 'registration'}`,
         variant: "destructive"
       });
+      setSuccess(false);
     } finally {
       setLoading(false);
       setIsAnimating(false);

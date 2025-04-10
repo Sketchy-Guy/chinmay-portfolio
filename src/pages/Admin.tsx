@@ -15,26 +15,33 @@ import { CertificationsManager } from "@/components/admin/CertificationsManager"
 const Admin = () => {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [sessionUser, setSessionUser] = useState(null);
+  const [sessionUser, setSessionUser] = useState<any>(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
+    // This function should only run once per component mount
     const checkAuth = async () => {
       try {
+        console.log("Admin: Checking authentication");
+        
+        // Get the current session
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!session) {
-          console.log("No session found. Redirecting to login...");
+          console.log("Admin: No session found. Redirecting to login...");
           navigate('/login');
+          setAuthChecked(true);
           return;
         }
 
-        console.log("Session found:", session.user.email);
+        console.log("Admin: Session found for user:", session.user.email);
         setSessionUser(session.user);
 
-        // For the specific email, automatically grant admin access
+        // Special case for specific email, automatically grant admin access
         if (session.user.email === 'chinmaykumarpanda004@gmail.com') {
+          console.log("Admin: Recognized admin email, granting access.");
           try {
             // Ensure this user is marked as admin in the database
             const { error } = await supabase
@@ -51,6 +58,7 @@ const Admin = () => {
             
             setIsAdmin(true);
             setLoading(false);
+            setAuthChecked(true);
             return;
           } catch (error) {
             console.error('Error setting admin status:', error);
@@ -58,6 +66,7 @@ const Admin = () => {
         }
 
         // Check if user is admin (for other users)
+        console.log("Admin: Checking admin status in database");
         const { data, error } = await supabase
           .from('auth_users')
           .select('is_admin')
@@ -70,29 +79,57 @@ const Admin = () => {
         }
         
         if (!data || !data.is_admin) {
-          console.log("User is not admin:", data);
+          console.log("Admin: User is not an admin:", data);
           throw new Error('Not authorized');
         }
         
-        console.log("User is admin:", data);
+        console.log("Admin: User is an admin:", data);
         setIsAdmin(true);
       } catch (error) {
-        console.error("Authentication error:", error);
+        console.error("Admin: Authentication error:", error);
         toast({
           title: "Authentication Error",
           description: "You are not authorized to access this page",
           variant: "destructive"
         });
-        navigate('/login');
+        
+        // Only navigate if authentication check is complete
+        if (sessionUser) {
+          // Don't redirect if already on login page
+          if (window.location.pathname !== '/login') {
+            navigate('/login');
+          }
+        }
       } finally {
         setLoading(false);
+        setAuthChecked(true);
       }
     };
 
-    checkAuth();
-  }, [navigate, toast]);
+    if (!authChecked) {
+      checkAuth();
+    }
+  }, [navigate, toast, authChecked, sessionUser]);
+
+  // Set up auth listener
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Admin: Auth state changed:", event);
+      
+      if (event === 'SIGNED_OUT') {
+        setIsAdmin(false);
+        setSessionUser(null);
+        navigate('/login');
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [navigate]);
 
   const handleLogout = async () => {
+    console.log("Admin: Logging out");
     await supabase.auth.signOut();
     toast({
       title: "Logged out",
@@ -130,12 +167,20 @@ const Admin = () => {
             <p className="text-sm text-gray-500 mt-1">Logged in as: {sessionUser.email}</p>
           )}
         </motion.div>
-        <Button 
-          onClick={() => navigate('/')}
-          className="bg-portfolio-purple hover:bg-portfolio-purple/90"
-        >
-          Return to Home
-        </Button>
+        <div className="flex gap-4">
+          <Button 
+            onClick={() => navigate('/')}
+            className="bg-portfolio-purple hover:bg-portfolio-purple/90"
+          >
+            Return to Home
+          </Button>
+          <Button 
+            onClick={() => navigate('/login')}
+            variant="outline"
+          >
+            Go to Login
+          </Button>
+        </div>
       </div>
     );
   }
