@@ -23,13 +23,13 @@ const Login = () => {
     const checkSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        console.log("Session check on load:", session);
+        console.log("Login: Session check on load:", session);
         if (session) {
-          console.log("User already logged in, redirecting to admin");
+          console.log("Login: User already logged in, redirecting to admin");
           navigate('/admin');
         }
       } catch (error) {
-        console.error("Error checking session:", error);
+        console.error("Login: Error checking session:", error);
       }
     };
     
@@ -40,14 +40,11 @@ const Login = () => {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log("Auth state changed:", event, session?.user?.email);
+        console.log("Login: Auth state changed:", event, session?.user?.email);
         
         if (event === 'SIGNED_IN' && session) {
-          // Don't navigate here - we'll do that in the sign-in function after success
-          console.log("User signed in via auth state change");
-        } else if (event === 'SIGNED_OUT') {
-          console.log("User signed out");
-          navigate('/login');
+          console.log("Login: User signed in via auth state change");
+          // We'll navigate after successful login in the handleSubmit function
         }
       }
     );
@@ -67,7 +64,7 @@ const Login = () => {
       
       if (isLogin) {
         // Login flow
-        console.log("Attempting login with:", email);
+        console.log("Login: Attempting login with:", email);
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password
@@ -75,7 +72,7 @@ const Login = () => {
         
         if (error) throw error;
         
-        console.log("Login successful:", data);
+        console.log("Login: Login successful:", data);
         
         // Show success animation
         setSuccess(true);
@@ -87,11 +84,12 @@ const Login = () => {
             description: "Welcome back!",
           });
           
+          // Make sure to navigate to the admin page
           navigate('/admin');
         }, 1500);
       } else {
         // Signup flow
-        console.log("Attempting signup with:", email);
+        console.log("Login: Attempting signup with:", email);
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -99,7 +97,7 @@ const Login = () => {
         
         if (error) throw error;
         
-        console.log("Signup response:", data);
+        console.log("Login: Signup response:", data);
         
         if (data.user?.identities?.length === 0) {
           throw new Error("Email already registered. Please login instead.");
@@ -119,7 +117,7 @@ const Login = () => {
         }, 1500);
       }
     } catch (error: any) {
-      console.error("Auth error:", error);
+      console.error("Login: Auth error:", error);
       toast({
         title: isLogin ? "Login failed" : "Registration failed",
         description: error.message || `An error occurred during ${isLogin ? 'login' : 'registration'}`,

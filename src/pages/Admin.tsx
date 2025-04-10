@@ -21,7 +21,7 @@ const Admin = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // This function should only run once per component mount
+    // This function checks if the user is authenticated and has admin privileges
     const checkAuth = async () => {
       try {
         console.log("Admin: Checking authentication");
@@ -33,6 +33,7 @@ const Admin = () => {
           console.log("Admin: No session found. Redirecting to login...");
           navigate('/login');
           setAuthChecked(true);
+          setLoading(false);
           return;
         }
 
@@ -42,18 +43,31 @@ const Admin = () => {
         // Special case for specific email, automatically grant admin access
         if (session.user.email === 'chinmaykumarpanda004@gmail.com') {
           console.log("Admin: Recognized admin email, granting access.");
+          
           try {
-            // Ensure this user is marked as admin in the database
-            const { error } = await supabase
-              .from('auth_users')
-              .upsert({ 
-                id: session.user.id,
-                is_admin: true
-              });
+            // Call the database function to ensure this user is marked as admin
+            const { data, error } = await supabase.rpc('set_admin_status', { 
+              user_email: session.user.email, 
+              is_admin_status: true 
+            });
             
             if (error) {
-              console.error("Error setting admin status:", error);
-              throw error;
+              console.error("Admin: Error setting admin status via RPC:", error);
+              
+              // Fallback: Try direct upsert if RPC fails
+              const { error: upsertError } = await supabase
+                .from('auth_users')
+                .upsert({ 
+                  id: session.user.id,
+                  is_admin: true
+                });
+              
+              if (upsertError) {
+                console.error("Admin: Error in fallback admin status setting:", upsertError);
+                throw upsertError;
+              }
+            } else {
+              console.log("Admin: RPC result:", data);
             }
             
             setIsAdmin(true);
@@ -61,7 +75,7 @@ const Admin = () => {
             setAuthChecked(true);
             return;
           } catch (error) {
-            console.error('Error setting admin status:', error);
+            console.error('Admin: Error setting admin status:', error);
           }
         }
 
@@ -74,17 +88,22 @@ const Admin = () => {
           .single();
         
         if (error) {
-          console.error("Error fetching admin status:", error);
+          console.error("Admin: Error fetching admin status:", error);
           throw error;
         }
         
         if (!data || !data.is_admin) {
           console.log("Admin: User is not an admin:", data);
-          throw new Error('Not authorized');
+          toast({
+            title: "Access Denied",
+            description: "You do not have admin privileges",
+            variant: "destructive"
+          });
+          setIsAdmin(false);
+        } else {
+          console.log("Admin: User is an admin:", data);
+          setIsAdmin(true);
         }
-        
-        console.log("Admin: User is an admin:", data);
-        setIsAdmin(true);
       } catch (error) {
         console.error("Admin: Authentication error:", error);
         toast({
@@ -93,13 +112,7 @@ const Admin = () => {
           variant: "destructive"
         });
         
-        // Only navigate if authentication check is complete
-        if (sessionUser) {
-          // Don't redirect if already on login page
-          if (window.location.pathname !== '/login') {
-            navigate('/login');
-          }
-        }
+        setIsAdmin(false);
       } finally {
         setLoading(false);
         setAuthChecked(true);
@@ -109,7 +122,7 @@ const Admin = () => {
     if (!authChecked) {
       checkAuth();
     }
-  }, [navigate, toast, authChecked, sessionUser]);
+  }, [navigate, toast, authChecked]);
 
   // Set up auth listener
   useEffect(() => {
@@ -130,12 +143,21 @@ const Admin = () => {
 
   const handleLogout = async () => {
     console.log("Admin: Logging out");
-    await supabase.auth.signOut();
-    toast({
-      title: "Logged out",
-      description: "You have been successfully logged out",
-    });
-    navigate('/');
+    try {
+      await supabase.auth.signOut();
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out",
+      });
+      navigate('/');
+    } catch (error) {
+      console.error("Admin: Error during logout:", error);
+      toast({
+        title: "Logout Failed",
+        description: "There was a problem logging you out. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   if (loading) {
@@ -147,6 +169,7 @@ const Admin = () => {
           transition={{ duration: 0.5 }}
         >
           <Loader2 className="h-12 w-12 animate-spin text-portfolio-purple" />
+          <p className="mt-4 text-center text-gray-600">Loading admin panel...</p>
         </motion.div>
       </div>
     );
@@ -162,7 +185,7 @@ const Admin = () => {
           className="text-center mb-6"
         >
           <h1 className="text-2xl font-bold text-portfolio-purple">Access Denied</h1>
-          <p className="text-gray-600 mt-2">You are not authorized to access the admin panel.</p>
+          <p className="text-gray-600 mt-2 max-w-md mx-auto">You are not authorized to access the admin panel. You need admin privileges to view this page.</p>
           {sessionUser && (
             <p className="text-sm text-gray-500 mt-1">Logged in as: {sessionUser.email}</p>
           )}
@@ -174,12 +197,21 @@ const Admin = () => {
           >
             Return to Home
           </Button>
-          <Button 
-            onClick={() => navigate('/login')}
-            variant="outline"
-          >
-            Go to Login
-          </Button>
+          {sessionUser ? (
+            <Button 
+              onClick={handleLogout}
+              variant="outline"
+            >
+              Log Out
+            </Button>
+          ) : (
+            <Button 
+              onClick={() => navigate('/login')}
+              variant="outline"
+            >
+              Go to Login
+            </Button>
+          )}
         </div>
       </div>
     );
@@ -206,7 +238,13 @@ const Admin = () => {
             initial={{ x: 20, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
+            className="flex items-center gap-4"
           >
+            {sessionUser && (
+              <span className="text-sm hidden md:inline-block">
+                Logged in as: {sessionUser.email}
+              </span>
+            )}
             <Button 
               variant="ghost" 
               onClick={handleLogout} 
