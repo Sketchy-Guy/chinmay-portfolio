@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -27,7 +28,7 @@ export interface SkillData {
 }
 
 export interface ProjectData {
-  id: number;
+  id: string;  // Changed from number to string to match Supabase's UUID
   title: string;
   description: string;
   technologies: string[];
@@ -37,6 +38,7 @@ export interface ProjectData {
 }
 
 export interface CertificationData {
+  id: string;  // Added id field
   title: string;
   issuer: string;
   date: string;

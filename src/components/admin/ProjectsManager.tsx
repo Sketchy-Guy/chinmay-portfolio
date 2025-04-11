@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { usePortfolioData, ProjectData } from "@/components/DataManager";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,8 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage
+  FormMessage,
+  FormDescription
 } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -100,8 +102,8 @@ export function ProjectsManager() {
     }
   };
 
-  const handleSave = async (project: ProjectData) => {
-    const technologiesArray = form.getValues("technologies")?.split(',').map(tech => tech.trim()) || [];
+  const handleSave = async (values: z.infer<typeof projectSchema>) => {
+    const technologiesArray = values.technologies?.split(',').map(tech => tech.trim()) || [];
     
     try {
       if (user) {
@@ -109,12 +111,12 @@ export function ProjectsManager() {
           .from('projects')
           .upsert({
             profile_id: user.id,
-            title: form.getValues("title"),
-            description: form.getValues("description"),
+            title: values.title,
+            description: values.description,
             technologies: technologiesArray,
-            github_url: form.getValues("github_url") || null,
-            demo_url: form.getValues("demo_url") || null,
-            image_url: newProjectImage || form.getValues("image_url") || null,
+            github_url: values.github_url || null,
+            demo_url: values.demo_url || null,
+            image_url: newProjectImage || values.image_url || null,
           });
         
         if (error) throw error;
@@ -138,7 +140,8 @@ export function ProjectsManager() {
   };
   
   const handleAddProject = async () => {
-    const technologiesArray = form.getValues("technologies")?.split(',').map(tech => tech.trim()) || [];
+    const values = form.getValues();
+    const technologiesArray = values.technologies?.split(',').map(tech => tech.trim()) || [];
     
     try {
       if (user) {
@@ -146,12 +149,12 @@ export function ProjectsManager() {
           .from('projects')
           .insert({
             profile_id: user.id,
-            title: form.getValues("title"),
-            description: form.getValues("description"),
+            title: values.title,
+            description: values.description,
             technologies: technologiesArray,
-            github_url: form.getValues("github_url") || null,
-            demo_url: form.getValues("demo_url") || null,
-            image_url: newProjectImage || form.getValues("image_url") || null,
+            github_url: values.github_url || null,
+            demo_url: values.demo_url || null,
+            image_url: newProjectImage || values.image_url || null,
           })
           .select()
           .single();
@@ -176,7 +179,7 @@ export function ProjectsManager() {
     }
   };
   
-  const handleDeleteProject = async (id: number) => {
+  const handleDeleteProject = async (id: string) => {
     try {
       if (user) {
         const { error } = await supabase

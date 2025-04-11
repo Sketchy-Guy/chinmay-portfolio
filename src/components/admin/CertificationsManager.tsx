@@ -10,7 +10,8 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage
+  FormMessage,
+  FormDescription
 } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -39,13 +40,10 @@ export function CertificationsManager() {
   const handleSave = async (certification: CertificationData, index: number) => {
     try {
       if (user) {
-        // Optimistically update the local state
         updateCertification(index, certification);
         
-        // Prepare the data for Supabase
         const { title, issuer, date, credential, link, logo } = certification;
         
-        // Update the certification in Supabase
         const { error } = await supabase
           .from('certifications')
           .upsert({
@@ -61,7 +59,6 @@ export function CertificationsManager() {
         
         if (error) throw error;
         
-        // After successfully saving to Supabase, fetch the latest data
         await fetchPortfolioData();
         
         toast({
@@ -82,13 +79,10 @@ export function CertificationsManager() {
   const handleAdd = async (certification: CertificationData) => {
     try {
       if (user) {
-        // Optimistically update the local state
         addCertification(certification);
         
-        // Prepare the data for Supabase
         const { title, issuer, date, credential, link, logo } = certification;
         
-        // Insert the certification into Supabase
         const { error } = await supabase
           .from('certifications')
           .insert({
@@ -103,7 +97,6 @@ export function CertificationsManager() {
         
         if (error) throw error;
         
-        // After successfully saving to Supabase, fetch the latest data
         await fetchPortfolioData();
         
         toast({
@@ -124,10 +117,8 @@ export function CertificationsManager() {
   const handleRemove = async (index: number) => {
     try {
       if (user) {
-        // Optimistically update the local state
         removeCertification(index);
         
-        // Delete the certification from Supabase
         const { error } = await supabase
           .from('certifications')
           .delete()
@@ -135,7 +126,6 @@ export function CertificationsManager() {
         
         if (error) throw error;
         
-        // After successfully deleting from Supabase, fetch the latest data
         await fetchPortfolioData();
         
         toast({
@@ -161,7 +151,6 @@ export function CertificationsManager() {
     setUploading(true);
     
     try {
-      // Upload to Supabase storage
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
       const filePath = `certification_logos/${user?.id}/${fileName}`;
@@ -172,7 +161,6 @@ export function CertificationsManager() {
       
       if (uploadError) throw uploadError;
       
-      // Get public URL
       const { data: publicUrlData } = supabase.storage
         .from('portfolio')
         .getPublicUrl(filePath);

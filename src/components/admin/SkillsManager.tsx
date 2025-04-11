@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { usePortfolioData, SkillData } from "@/components/DataManager";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,8 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage
+  FormMessage,
+  FormDescription
 } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -108,18 +110,25 @@ export function SkillsManager() {
       return;
     }
     
+    // Create a SkillData object with required fields
+    const newSkill: SkillData = {
+      name: values.name,
+      category: values.category,
+      level: values.level
+    };
+    
     try {
       if (user) {
         // Optimistically update the local state
-        addSkill(values);
+        addSkill(newSkill);
         
         // Prepare the data for Supabase insert
         const { error } = await supabase
           .from('skills')
           .insert({
-            name: values.name,
-            category: values.category,
-            level: values.level,
+            name: newSkill.name,
+            category: newSkill.category,
+            level: newSkill.level,
             profile_id: user.id,
           });
         
