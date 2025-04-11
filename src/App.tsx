@@ -30,10 +30,8 @@ const initializeDatabase = async () => {
       console.log('profile_image column does not exist, adding it...');
       
       // If error code 42703 (undefined_column), add the column
-      const { error: alterError } = await supabase.query(`
-        ALTER TABLE public.user_profile 
-        ADD COLUMN IF NOT EXISTS profile_image TEXT
-      `);
+      // Use rpc instead of direct query as it's supported in the Supabase client
+      const { error: alterError } = await supabase.rpc('add_profile_image_column');
       
       if (alterError) {
         console.error('Error adding profile_image column:', alterError);
