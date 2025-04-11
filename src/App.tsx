@@ -21,7 +21,7 @@ const queryClient = new QueryClient();
 const initializeDatabase = async () => {
   try {
     // Check if profile_image column exists in user_profile table
-    const { data: columnExists, error: columnError } = await supabase
+    const { data, error: columnError } = await supabase
       .rpc('check_column_exists', { 
         table_name: 'user_profile',
         column_name: 'profile_image'
@@ -33,7 +33,7 @@ const initializeDatabase = async () => {
     }
     
     // If column doesn't exist, create it
-    if (columnExists === false) {
+    if (data === false) {
       const { error: alterError } = await supabase
         .rpc('add_profile_image_column');
       

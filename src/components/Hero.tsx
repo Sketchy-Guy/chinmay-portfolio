@@ -92,16 +92,18 @@ const Hero = () => {
           </div>
           
           <div className="lg:w-1/2 relative z-10">
-            {/* Update the z-index to bring the image in front */}
-            <div className="w-64 h-64 md:w-80 md:h-80 mx-auto relative z-30 animate-float">
+            {/* Update the background gradient to go behind the image */}
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-md max-h-md z-10">
+              <div className="w-full h-full rounded-full bg-portfolio-purple opacity-5 animate-spin-slow blur-3xl"></div>
+            </div>
+            
+            {/* Move the image to the front with a higher z-index */}
+            <div className="w-64 h-64 md:w-80 md:h-80 mx-auto relative z-20 animate-float">
               <img 
                 src={data.user.profileImage || "/lovable-uploads/78295e37-4b4d-4900-b613-21ed6626ab3f.png"} 
                 alt={data.user.name}
                 className="rounded-full object-cover border-4 border-white shadow-xl w-full h-full"
               />
-            </div>
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-md max-h-md z-10">
-              <div className="w-full h-full rounded-full bg-portfolio-purple opacity-5 animate-spin-slow blur-3xl"></div>
             </div>
           </div>
         </div>

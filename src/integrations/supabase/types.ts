@@ -203,6 +203,7 @@ export type Database = {
           location: string | null
           name: string
           phone: string | null
+          profile_image: string | null
           title: string
           updated_at: string | null
         }
@@ -214,6 +215,7 @@ export type Database = {
           location?: string | null
           name: string
           phone?: string | null
+          profile_image?: string | null
           title: string
           updated_at?: string | null
         }
@@ -225,6 +227,7 @@ export type Database = {
           location?: string | null
           name?: string
           phone?: string | null
+          profile_image?: string | null
           title?: string
           updated_at?: string | null
         }
@@ -235,6 +238,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_profile_image_column: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      check_column_exists: {
+        Args: { table_name: string; column_name: string }
+        Returns: boolean
+      }
       create_initial_admin: {
         Args: { admin_email: string }
         Returns: string
