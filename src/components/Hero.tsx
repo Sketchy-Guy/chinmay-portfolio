@@ -92,7 +92,8 @@ const Hero = () => {
           </div>
           
           <div className="lg:w-1/2 relative z-10">
-            <div className="w-64 h-64 md:w-80 md:h-80 mx-auto relative z-20 animate-float">
+            {/* Update the z-index to bring the image in front */}
+            <div className="w-64 h-64 md:w-80 md:h-80 mx-auto relative z-30 animate-float">
               <img 
                 src={data.user.profileImage || "/lovable-uploads/78295e37-4b4d-4900-b613-21ed6626ab3f.png"} 
                 alt={data.user.name}
