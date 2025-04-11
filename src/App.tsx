@@ -21,21 +21,19 @@ const queryClient = new QueryClient();
 const initializeDatabase = async () => {
   try {
     // Check if profile_image column exists in user_profile table
-    const { data, error: columnError } = await supabase
-      .rpc('check_column_exists', { 
-        table_name: 'user_profile',
-        column_name: 'profile_image'
-      });
+    const { error } = await supabase
+      .from('user_profile')
+      .select('profile_image')
+      .limit(1);
     
-    if (columnError) {
-      console.error('Error checking column:', columnError);
-      return;
-    }
-    
-    // If column doesn't exist, create it
-    if (data === false) {
-      const { error: alterError } = await supabase
-        .rpc('add_profile_image_column');
+    if (error && error.code === '42703') {
+      console.log('profile_image column does not exist, adding it...');
+      
+      // If error code 42703 (undefined_column), add the column
+      const { error: alterError } = await supabase.query(`
+        ALTER TABLE public.user_profile 
+        ADD COLUMN IF NOT EXISTS profile_image TEXT
+      `);
       
       if (alterError) {
         console.error('Error adding profile_image column:', alterError);
