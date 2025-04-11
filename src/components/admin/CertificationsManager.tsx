@@ -1,83 +1,202 @@
-
-import { useState } from "react";
+import React, { useState, useEffect } from 'react';
 import { usePortfolioData, CertificationData } from "@/components/DataManager";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { PlusCircle, Trash2, Edit, ExternalLink, Award, Calendar, Image } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { 
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
+} from "@/components/ui/form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { motion } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
+import { Upload } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+
+const certificationSchema = z.object({
+  title: z.string().min(2, "Title must be at least 2 characters"),
+  issuer: z.string().min(2, "Issuer must be at least 2 characters"),
+  date: z.string().min(4, "Date must be at least 4 characters"),
+  credential: z.string().optional(),
+  link: z.string().url("Must be a valid URL").optional(),
+  logo: z.string().optional(),
+});
 
 export function CertificationsManager() {
-  const { data, addCertification, removeCertification, updateCertification } = usePortfolioData();
+  const { data, updateCertification, addCertification, removeCertification, fetchPortfolioData } = usePortfolioData();
   const { toast } = useToast();
-  const [newCertification, setNewCertification] = useState<CertificationData>({ 
-    title: "", 
-    issuer: "", 
-    date: "", 
-    credential: "",
-    link: "",
-    logo: ""
-  });
-  const [editingCertification, setEditingCertification] = useState<{ index: number; certification: CertificationData } | null>(null);
-  const [open, setOpen] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
-
-  const handleAddCertification = () => {
-    if (!newCertification.title || !newCertification.issuer || !newCertification.date) {
+  const { user } = useAuth();
+  const [uploading, setUploading] = useState(false);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  
+  const handleSave = async (certification: CertificationData, index: number) => {
+    try {
+      if (user) {
+        // Optimistically update the local state
+        updateCertification(index, certification);
+        
+        // Prepare the data for Supabase
+        const { title, issuer, date, credential, link, logo } = certification;
+        
+        // Update the certification in Supabase
+        const { error } = await supabase
+          .from('certifications')
+          .upsert({
+            id: data.certifications[index].id,
+            profile_id: user.id,
+            title,
+            issuer,
+            date,
+            credential: credential || null,
+            link: link || null,
+            logo_url: logo || null
+          }, { onConflict: 'id' });
+        
+        if (error) throw error;
+        
+        // After successfully saving to Supabase, fetch the latest data
+        await fetchPortfolioData();
+        
+        toast({
+          title: "Certification Updated",
+          description: "The certification has been successfully updated.",
+        });
+      }
+    } catch (error: any) {
+      console.error("Error saving certification:", error);
       toast({
-        title: "Error",
-        description: "Title, issuer, and date are required.",
-        variant: "destructive",
+        title: "Update Failed",
+        description: error.message || "There was an error updating the certification.",
+        variant: "destructive"
       });
-      return;
     }
-    
-    addCertification(newCertification);
-    setNewCertification({ 
-      title: "", 
-      issuer: "", 
-      date: "", 
-      credential: "",
-      link: "",
-      logo: ""
-    });
-    setOpen(false);
-    
-    toast({
-      title: "Certification Added",
-      description: `${newCertification.title} has been added to your certifications.`,
-    });
   };
-
-  const handleUpdateCertification = () => {
-    if (!editingCertification) return;
-    
-    updateCertification(editingCertification.index, editingCertification.certification);
-    setEditingCertification(null);
-    setEditOpen(false);
-    
-    toast({
-      title: "Certification Updated",
-      description: `${editingCertification.certification.title} has been updated.`,
-    });
+  
+  const handleAdd = async (certification: CertificationData) => {
+    try {
+      if (user) {
+        // Optimistically update the local state
+        addCertification(certification);
+        
+        // Prepare the data for Supabase
+        const { title, issuer, date, credential, link, logo } = certification;
+        
+        // Insert the certification into Supabase
+        const { error } = await supabase
+          .from('certifications')
+          .insert({
+            profile_id: user.id,
+            title,
+            issuer,
+            date,
+            credential: credential || null,
+            link: link || null,
+            logo_url: logo || null
+          });
+        
+        if (error) throw error;
+        
+        // After successfully saving to Supabase, fetch the latest data
+        await fetchPortfolioData();
+        
+        toast({
+          title: "Certification Added",
+          description: "The certification has been successfully added.",
+        });
+      }
+    } catch (error: any) {
+      console.error("Error adding certification:", error);
+      toast({
+        title: "Add Failed",
+        description: error.message || "There was an error adding the certification.",
+        variant: "destructive"
+      });
+    }
   };
-
-  const handleEditCertification = (index: number) => {
-    setEditingCertification({ index, certification: { ...data.certifications[index] } });
-    setEditOpen(true);
+  
+  const handleRemove = async (index: number) => {
+    try {
+      if (user) {
+        // Optimistically update the local state
+        removeCertification(index);
+        
+        // Delete the certification from Supabase
+        const { error } = await supabase
+          .from('certifications')
+          .delete()
+          .eq('id', data.certifications[index].id);
+        
+        if (error) throw error;
+        
+        // After successfully deleting from Supabase, fetch the latest data
+        await fetchPortfolioData();
+        
+        toast({
+          title: "Certification Removed",
+          description: "The certification has been successfully removed.",
+        });
+      }
+    } catch (error: any) {
+      console.error("Error removing certification:", error);
+      toast({
+        title: "Remove Failed",
+        description: error.message || "There was an error removing the certification.",
+        variant: "destructive"
+      });
+    }
   };
-
-  const handleDeleteCertification = (index: number) => {
-    const certTitle = data.certifications[index].title;
-    removeCertification(index);
+  
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>, setFieldValue: (value: string) => void) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
     
-    toast({
-      title: "Certification Removed",
-      description: `${certTitle} has been removed from your certifications.`,
-    });
+    const file = files[0];
+    setUploading(true);
+    
+    try {
+      // Upload to Supabase storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+      const filePath = `certification_logos/${user?.id}/${fileName}`;
+      
+      const { error: uploadError, data: uploadData } = await supabase.storage
+        .from('portfolio')
+        .upload(filePath, file);
+      
+      if (uploadError) throw uploadError;
+      
+      // Get public URL
+      const { data: publicUrlData } = supabase.storage
+        .from('portfolio')
+        .getPublicUrl(filePath);
+      
+      if (publicUrlData) {
+        const imageUrl = publicUrlData.publicUrl;
+        setLogoPreview(imageUrl);
+        setFieldValue(imageUrl);
+        
+        toast({
+          title: "Logo Uploaded",
+          description: "The certification logo has been successfully updated."
+        });
+      }
+    } catch (error: any) {
+      console.error("Error uploading logo:", error);
+      toast({
+        title: "Upload Failed",
+        description: error.message || "There was an error uploading the logo.",
+        variant: "destructive"
+      });
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -87,279 +206,350 @@ export function CertificationsManager() {
       transition={{ duration: 0.5 }}
     >
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader>
           <CardTitle className="text-2xl font-bold text-portfolio-purple">Manage Certifications</CardTitle>
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button 
-                className="bg-portfolio-purple hover:bg-portfolio-purple/90 transition-all duration-300 transform hover:scale-105 flex items-center gap-2"
-              >
-                <PlusCircle size={16} /> Add New Certification
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add New Certification</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="certTitle" className="text-right">Title</Label>
-                  <Input
-                    id="certTitle"
-                    value={newCertification.title}
-                    onChange={(e) => setNewCertification({ ...newCertification, title: e.target.value })}
-                    className="col-span-3"
-                  />
-                </div>
-                
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="certIssuer" className="text-right">Issuer</Label>
-                  <Input
-                    id="certIssuer"
-                    value={newCertification.issuer}
-                    onChange={(e) => setNewCertification({ ...newCertification, issuer: e.target.value })}
-                    className="col-span-3"
-                  />
-                </div>
-                
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="certDate" className="text-right">Date</Label>
-                  <Input
-                    id="certDate"
-                    value={newCertification.date}
-                    onChange={(e) => setNewCertification({ ...newCertification, date: e.target.value })}
-                    placeholder="e.g., Jun 2023 or In Progress"
-                    className="col-span-3"
-                  />
-                </div>
-                
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="certCredential" className="text-right">Credential ID</Label>
-                  <Input
-                    id="certCredential"
-                    value={newCertification.credential}
-                    onChange={(e) => setNewCertification({ ...newCertification, credential: e.target.value })}
-                    placeholder="e.g., ABC123XYZ or In Progress"
-                    className="col-span-3"
-                  />
-                </div>
-                
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="certLink" className="text-right">Verification Link</Label>
-                  <div className="col-span-3 flex gap-2">
-                    <Input
-                      id="certLink"
-                      value={newCertification.link || ""}
-                      onChange={(e) => setNewCertification({ ...newCertification, link: e.target.value })}
-                      placeholder="Optional verification URL"
-                      className="flex-1"
-                    />
-                    <ExternalLink className="h-5 w-5 text-gray-400" />
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="certLogo" className="text-right">Logo URL</Label>
-                  <div className="col-span-3 flex gap-2">
-                    <Input
-                      id="certLogo"
-                      value={newCertification.logo}
-                      onChange={(e) => setNewCertification({ ...newCertification, logo: e.target.value })}
-                      placeholder="URL to issuer logo"
-                      className="flex-1"
-                    />
-                    <Image className="h-5 w-5 text-gray-400" />
-                  </div>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-                <Button onClick={handleAddCertification}>Add Certification</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
         </CardHeader>
-        
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <AnimatePresence>
-              {data.certifications.map((certification, index) => (
-                <motion.div
-                  key={`${certification.title}-${index}`}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.3 }}
-                  className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow group"
-                >
-                  <div className="p-5 flex items-start gap-4">
-                    <div className="w-16 h-16 flex-shrink-0 bg-gray-100 rounded-md overflow-hidden flex items-center justify-center">
-                      {certification.logo ? (
-                        <img 
-                          src={certification.logo} 
-                          alt={certification.issuer}
-                          className="w-full h-full object-contain p-2"
-                        />
-                      ) : (
-                        <Award className="h-8 w-8 text-portfolio-purple" />
-                      )}
-                    </div>
-                    
-                    <div className="flex-1">
-                      <h3 className="text-lg font-bold">{certification.title}</h3>
-                      <p className="text-gray-700 font-medium">{certification.issuer}</p>
-                      
-                      <div className="flex items-center gap-1 text-sm text-gray-500 mt-1">
-                        <Calendar className="h-3.5 w-3.5" />
-                        <span>{certification.date}</span>
-                      </div>
-                      
-                      {certification.credential && (
-                        <p className="text-sm text-gray-500 mt-1">
-                          ID: {certification.credential}
-                        </p>
-                      )}
-                      
-                      {certification.link && (
-                        <a 
-                          href={certification.link} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-sm text-portfolio-purple hover:text-portfolio-purple/80 mt-2"
-                        >
-                          <ExternalLink className="h-3.5 w-3.5" /> Verify
-                        </a>
-                      )}
-                    </div>
-                    
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 rounded-full bg-gray-100 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
-                        onClick={() => handleEditCertification(index)}
-                      >
-                        <Edit size={16} />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 rounded-full bg-gray-100 text-red-600 hover:bg-red-50 hover:text-red-700"
-                        onClick={() => handleDeleteCertification(index)}
-                      >
-                        <Trash2 size={16} />
-                      </Button>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
+          {data.certifications.map((certification, index) => (
+            <CertificationForm
+              key={index}
+              certification={certification}
+              onSave={(values) => handleSave(values, index)}
+              onRemove={() => handleRemove(index)}
+              onLogoUpload={(e, setFieldValue) => handleLogoUpload(e, setFieldValue)}
+              uploading={uploading}
+              logoPreview={logoPreview}
+            />
+          ))}
+          <AddCertificationForm onAdd={handleAdd} onLogoUpload={(e, setFieldValue) => handleLogoUpload(e, setFieldValue)} uploading={uploading} logoPreview={logoPreview} />
         </CardContent>
       </Card>
-      
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Certification</DialogTitle>
-          </DialogHeader>
-          {editingCertification && (
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="editCertTitle" className="text-right">Title</Label>
-                <Input
-                  id="editCertTitle"
-                  value={editingCertification.certification.title}
-                  onChange={(e) => setEditingCertification({
-                    ...editingCertification,
-                    certification: { ...editingCertification.certification, title: e.target.value }
-                  })}
-                  className="col-span-3"
-                />
-              </div>
-              
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="editCertIssuer" className="text-right">Issuer</Label>
-                <Input
-                  id="editCertIssuer"
-                  value={editingCertification.certification.issuer}
-                  onChange={(e) => setEditingCertification({
-                    ...editingCertification,
-                    certification: { ...editingCertification.certification, issuer: e.target.value }
-                  })}
-                  className="col-span-3"
-                />
-              </div>
-              
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="editCertDate" className="text-right">Date</Label>
-                <Input
-                  id="editCertDate"
-                  value={editingCertification.certification.date}
-                  onChange={(e) => setEditingCertification({
-                    ...editingCertification,
-                    certification: { ...editingCertification.certification, date: e.target.value }
-                  })}
-                  placeholder="e.g., Jun 2023 or In Progress"
-                  className="col-span-3"
-                />
-              </div>
-              
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="editCertCredential" className="text-right">Credential ID</Label>
-                <Input
-                  id="editCertCredential"
-                  value={editingCertification.certification.credential}
-                  onChange={(e) => setEditingCertification({
-                    ...editingCertification,
-                    certification: { ...editingCertification.certification, credential: e.target.value }
-                  })}
-                  placeholder="e.g., ABC123XYZ or In Progress"
-                  className="col-span-3"
-                />
-              </div>
-              
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="editCertLink" className="text-right">Verification Link</Label>
-                <div className="col-span-3 flex gap-2">
-                  <Input
-                    id="editCertLink"
-                    value={editingCertification.certification.link || ""}
-                    onChange={(e) => setEditingCertification({
-                      ...editingCertification,
-                      certification: { ...editingCertification.certification, link: e.target.value }
-                    })}
-                    placeholder="Optional verification URL"
-                    className="flex-1"
-                  />
-                  <ExternalLink className="h-5 w-5 text-gray-400" />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="editCertLogo" className="text-right">Logo URL</Label>
-                <div className="col-span-3 flex gap-2">
-                  <Input
-                    id="editCertLogo"
-                    value={editingCertification.certification.logo}
-                    onChange={(e) => setEditingCertification({
-                      ...editingCertification,
-                      certification: { ...editingCertification.certification, logo: e.target.value }
-                    })}
-                    placeholder="URL to issuer logo"
-                    className="flex-1"
-                  />
-                  <Image className="h-5 w-5 text-gray-400" />
-                </div>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
-            <Button onClick={handleUpdateCertification}>Update Certification</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </motion.div>
   );
 }
+
+interface CertificationFormProps {
+  certification: CertificationData;
+  onSave: (values: CertificationData) => void;
+  onRemove: () => void;
+  onLogoUpload: (e: React.ChangeEvent<HTMLInputElement>, setFieldValue: (value: string) => void) => void;
+  uploading: boolean;
+  logoPreview: string | null;
+}
+
+const CertificationForm: React.FC<CertificationFormProps> = ({ certification, onSave, onRemove, onLogoUpload, uploading, logoPreview }) => {
+  const form = useForm<z.infer<typeof certificationSchema>>({
+    resolver: zodResolver(certificationSchema),
+    defaultValues: {
+      title: certification.title,
+      issuer: certification.issuer,
+      date: certification.date,
+      credential: certification.credential || "",
+      link: certification.link || "",
+      logo: certification.logo || "",
+    },
+  });
+
+  const onSubmit = (values: z.infer<typeof certificationSchema>) => {
+    onSave({
+      ...certification,
+      title: values.title,
+      issuer: values.issuer,
+      date: values.date,
+      credential: values.credential,
+      link: values.link,
+      logo: values.logo,
+    });
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="mb-6 p-4 border rounded-md shadow-sm"
+    >
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-2">Logo</label>
+            <div className="flex items-center space-x-6">
+              <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-gray-200 shadow-md">
+                <img 
+                  src={logoPreview || certification.logo || "/placeholder-image.png"} 
+                  alt="Certification Logo" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => document.getElementById(`logo-upload-${certification.title}`)?.click()}
+                  disabled={uploading}
+                  className="flex items-center"
+                >
+                  <Upload className="mr-2 h-4 w-4" />
+                  {uploading ? 'Uploading...' : 'Upload Logo'}
+                </Button>
+                <input
+                  id={`logo-upload-${certification.title}`}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    onLogoUpload(e, (value) => form.setValue('logo', value));
+                  }}
+                  disabled={uploading}
+                />
+                <p className="text-xs text-gray-500 mt-2">
+                  Recommended: Square image, at least 100x100 pixels
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <FormField
+            control={form.control}
+            name="title"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Title</FormLabel>
+                <FormControl>
+                  <Input placeholder="Certification Title" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="issuer"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Issuer</FormLabel>
+                <FormControl>
+                  <Input placeholder="Issuing Organization" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="date"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Date</FormLabel>
+                <FormControl>
+                  <Input placeholder="YYYY-MM" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="credential"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Credential ID (Optional)</FormLabel>
+                <FormControl>
+                  <Input placeholder="Credential ID" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="link"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Link (Optional)</FormLabel>
+                <FormControl>
+                  <Input type="url" placeholder="https://example.com" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <div className="flex justify-end gap-2">
+            <Button type="submit" className="bg-portfolio-purple hover:bg-portfolio-purple/90">
+              Save
+            </Button>
+            <Button type="button" variant="destructive" onClick={onRemove}>
+              Remove
+            </Button>
+          </div>
+        </form>
+      </Form>
+    </motion.div>
+  );
+};
+
+interface AddCertificationFormProps {
+  onAdd: (values: CertificationData) => void;
+  onLogoUpload: (e: React.ChangeEvent<HTMLInputElement>, setFieldValue: (value: string) => void) => void;
+  uploading: boolean;
+  logoPreview: string | null;
+}
+
+const AddCertificationForm: React.FC<AddCertificationFormProps> = ({ onAdd, onLogoUpload, uploading, logoPreview }) => {
+  const form = useForm<z.infer<typeof certificationSchema>>({
+    resolver: zodResolver(certificationSchema),
+    defaultValues: {
+      title: "",
+      issuer: "",
+      date: "",
+      credential: "",
+      link: "",
+      logo: "",
+    },
+  });
+
+  const onSubmit = (values: z.infer<typeof certificationSchema>) => {
+    onAdd({
+      title: values.title,
+      issuer: values.issuer,
+      date: values.date,
+      credential: values.credential,
+      link: values.link,
+      logo: values.logo,
+    });
+    form.reset();
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="mb-6 p-4 border rounded-md shadow-sm"
+    >
+      <h3 className="text-lg font-semibold mb-4">Add New Certification</h3>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-2">Logo</label>
+            <div className="flex items-center space-x-6">
+              <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-gray-200 shadow-md">
+                <img 
+                  src={logoPreview || "/placeholder-image.png"} 
+                  alt="Certification Logo" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => document.getElementById('new-logo-upload')?.click()}
+                  disabled={uploading}
+                  className="flex items-center"
+                >
+                  <Upload className="mr-2 h-4 w-4" />
+                  {uploading ? 'Uploading...' : 'Upload Logo'}
+                </Button>
+                <input
+                  id="new-logo-upload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    onLogoUpload(e, (value) => form.setValue('logo', value));
+                  }}
+                  disabled={uploading}
+                />
+                <p className="text-xs text-gray-500 mt-2">
+                  Recommended: Square image, at least 100x100 pixels
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <FormField
+            control={form.control}
+            name="title"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Title</FormLabel>
+                <FormControl>
+                  <Input placeholder="Certification Title" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="issuer"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Issuer</FormLabel>
+                <FormControl>
+                  <Input placeholder="Issuing Organization" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="date"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Date</FormLabel>
+                <FormControl>
+                  <Input placeholder="YYYY-MM" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="credential"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Credential ID (Optional)</FormLabel>
+                <FormControl>
+                  <Input placeholder="Credential ID" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="link"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Link (Optional)</FormLabel>
+                <FormControl>
+                  <Input type="url" placeholder="https://example.com" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <div className="flex justify-end">
+            <Button type="submit" className="bg-portfolio-purple hover:bg-portfolio-purple/90">
+              Add Certification
+            </Button>
+          </div>
+        </form>
+      </Form>
+    </motion.div>
+  );
+};

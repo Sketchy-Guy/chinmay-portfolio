@@ -42,6 +42,11 @@ const Hero = () => {
     { icon: Mail, href: `mailto:${data.user.email}`, label: "Email" },
   ];
 
+  // Force the image to refresh by adding a timestamp as a query parameter
+  const profileImage = data.user.profileImage 
+    ? `${data.user.profileImage}?t=${new Date().getTime()}` 
+    : "/lovable-uploads/78295e37-4b4d-4900-b613-21ed6626ab3f.png";
+
   return (
     <section className="min-h-screen flex flex-col justify-center pt-20">
       <div className="container mx-auto px-4">
@@ -97,10 +102,10 @@ const Hero = () => {
               <div className="w-full h-full rounded-full bg-portfolio-purple opacity-5 animate-spin-slow blur-3xl"></div>
             </div>
             
-            {/* Move the image to the front with a higher z-index */}
+            {/* Move the image to the front with a higher z-index and add cache-busting query parameter */}
             <div className="w-64 h-64 md:w-80 md:h-80 mx-auto relative z-20 animate-float">
               <img 
-                src={data.user.profileImage || "/lovable-uploads/78295e37-4b4d-4900-b613-21ed6626ab3f.png"} 
+                src={profileImage} 
                 alt={data.user.name}
                 className="rounded-full object-cover border-4 border-white shadow-xl w-full h-full"
               />

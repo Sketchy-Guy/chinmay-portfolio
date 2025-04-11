@@ -1,130 +1,207 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePortfolioData, ProjectData } from "@/components/DataManager";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { PlusCircle, Trash2, Edit, Link, Github, ExternalLink, X, Image } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Badge } from "@/components/ui/badge";
+import { 
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
+} from "@/components/ui/form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { motion } from "framer-motion";
+import { Trash2, Plus, Upload } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+
+const projectSchema = z.object({
+  title: z.string().min(2, "Title must be at least 2 characters"),
+  description: z.string().min(10, "Description must be at least 10 characters"),
+  technologies: z.string().optional(),
+  github_url: z.string().url("Must be a valid URL").optional(),
+  demo_url: z.string().url("Must be a valid URL").optional(),
+  image_url: z.string().optional(),
+});
 
 export function ProjectsManager() {
-  const { data, addProject, removeProject, updateProject } = usePortfolioData();
+  const { data, updateProject, addProject, removeProject, fetchPortfolioData } = usePortfolioData();
   const { toast } = useToast();
-  const [newProject, setNewProject] = useState<Omit<ProjectData, 'id'>>({ 
-    title: "", 
-    description: "", 
-    technologies: [], 
-    image: "",
-    github: "",
-    demo: ""
+  const { user } = useAuth();
+  const [projects, setProjects] = useState<ProjectData[]>(data.projects);
+  const [newProjectImage, setNewProjectImage] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  
+  useEffect(() => {
+    setProjects(data.projects);
+  }, [data.projects]);
+  
+  const form = useForm<z.infer<typeof projectSchema>>({
+    resolver: zodResolver(projectSchema),
+    defaultValues: {
+      title: "",
+      description: "",
+      technologies: "",
+      github_url: "",
+      demo_url: "",
+      image_url: "",
+    },
   });
-  const [editingProject, setEditingProject] = useState<{ index: number; project: ProjectData } | null>(null);
-  const [currentTech, setCurrentTech] = useState("");
-  const [editCurrentTech, setEditCurrentTech] = useState("");
-  const [open, setOpen] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
 
-  const handleAddProject = () => {
-    if (!newProject.title || !newProject.description) {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    
+    const file = files[0];
+    setUploading(true);
+    
+    try {
+      // Upload to Supabase storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+      const filePath = `projects/${user?.id}/${fileName}`;
+      
+      const { error: uploadError, data: uploadData } = await supabase.storage
+        .from('portfolio')
+        .upload(filePath, file);
+      
+      if (uploadError) throw uploadError;
+      
+      // Get public URL
+      const { data: publicUrlData } = supabase.storage
+        .from('portfolio')
+        .getPublicUrl(filePath);
+      
+      if (publicUrlData) {
+        const imageUrl = publicUrlData.publicUrl;
+        setNewProjectImage(imageUrl);
+        form.setValue('image_url', imageUrl);
+        
+        toast({
+          title: "Image Uploaded",
+          description: "Your project image has been successfully updated."
+        });
+      }
+    } catch (error: any) {
+      console.error("Error uploading image:", error);
       toast({
-        title: "Error",
-        description: "Project title and description are required.",
-        variant: "destructive",
+        title: "Upload Failed",
+        description: error.message || "There was an error uploading your image.",
+        variant: "destructive"
       });
-      return;
+    } finally {
+      setUploading(false);
     }
+  };
+
+  const handleSave = async (project: ProjectData) => {
+    const technologiesArray = form.getValues("technologies")?.split(',').map(tech => tech.trim()) || [];
     
-    addProject(newProject as ProjectData);
-    setNewProject({ 
-      title: "", 
-      description: "", 
-      technologies: [], 
-      image: "",
-      github: "",
-      demo: ""
-    });
-    setOpen(false);
-    
-    toast({
-      title: "Project Added",
-      description: `${newProject.title} has been added to your projects.`,
-    });
-  };
-
-  const handleUpdateProject = () => {
-    if (!editingProject) return;
-    
-    updateProject(
-      data.projects.findIndex(p => p.id === editingProject.project.id), 
-      editingProject.project
-    );
-    setEditingProject(null);
-    setEditOpen(false);
-    
-    toast({
-      title: "Project Updated",
-      description: `${editingProject.project.title} has been updated.`,
-    });
-  };
-
-  const handleEditProject = (project: ProjectData) => {
-    const index = data.projects.findIndex(p => p.id === project.id);
-    setEditingProject({ index, project: { ...project } });
-    setEditOpen(true);
-  };
-
-  const handleDeleteProject = (id: number) => {
-    const projectTitle = data.projects.find(p => p.id === id)?.title || "Project";
-    removeProject(id);
-    
-    toast({
-      title: "Project Removed",
-      description: `${projectTitle} has been removed from your projects.`,
-    });
-  };
-
-  const addTechToNewProject = () => {
-    if (!currentTech.trim()) return;
-    setNewProject({
-      ...newProject,
-      technologies: [...(newProject.technologies || []), currentTech.trim()]
-    });
-    setCurrentTech("");
-  };
-
-  const removeTechFromNewProject = (index: number) => {
-    setNewProject({
-      ...newProject,
-      technologies: newProject.technologies?.filter((_, i) => i !== index) || []
-    });
-  };
-
-  const addTechToEditProject = () => {
-    if (!editCurrentTech.trim() || !editingProject) return;
-    setEditingProject({
-      ...editingProject,
-      project: {
-        ...editingProject.project,
-        technologies: [...(editingProject.project.technologies || []), editCurrentTech.trim()]
+    try {
+      if (user) {
+        const { error } = await supabase
+          .from('projects')
+          .upsert({
+            profile_id: user.id,
+            title: form.getValues("title"),
+            description: form.getValues("description"),
+            technologies: technologiesArray,
+            github_url: form.getValues("github_url") || null,
+            demo_url: form.getValues("demo_url") || null,
+            image_url: newProjectImage || form.getValues("image_url") || null,
+          });
+        
+        if (error) throw error;
+        
+        // After successfully saving to Supabase, fetch the latest data
+        await fetchPortfolioData();
+        
+        toast({
+          title: "Project Saved",
+          description: "The project has been successfully saved.",
+        });
       }
-    });
-    setEditCurrentTech("");
+    } catch (error: any) {
+      console.error("Error saving project:", error);
+      toast({
+        title: "Save Failed",
+        description: error.message || "There was an error saving the project.",
+        variant: "destructive"
+      });
+    }
   };
-
-  const removeTechFromEditProject = (index: number) => {
-    if (!editingProject) return;
-    setEditingProject({
-      ...editingProject,
-      project: {
-        ...editingProject.project,
-        technologies: editingProject.project.technologies?.filter((_, i) => i !== index) || []
+  
+  const handleAddProject = async () => {
+    const technologiesArray = form.getValues("technologies")?.split(',').map(tech => tech.trim()) || [];
+    
+    try {
+      if (user) {
+        const { data: newProject, error } = await supabase
+          .from('projects')
+          .insert({
+            profile_id: user.id,
+            title: form.getValues("title"),
+            description: form.getValues("description"),
+            technologies: technologiesArray,
+            github_url: form.getValues("github_url") || null,
+            demo_url: form.getValues("demo_url") || null,
+            image_url: newProjectImage || form.getValues("image_url") || null,
+          })
+          .select()
+          .single();
+        
+        if (error) throw error;
+        
+        // After successfully saving to Supabase, fetch the latest data
+        await fetchPortfolioData();
+        
+        toast({
+          title: "Project Added",
+          description: "The project has been successfully added.",
+        });
       }
-    });
+    } catch (error: any) {
+      console.error("Error adding project:", error);
+      toast({
+        title: "Add Failed",
+        description: error.message || "There was an error adding the project.",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const handleDeleteProject = async (id: number) => {
+    try {
+      if (user) {
+        const { error } = await supabase
+          .from('projects')
+          .delete()
+          .eq('id', id);
+        
+        if (error) throw error;
+        
+        // After successfully deleting from Supabase, fetch the latest data
+        await fetchPortfolioData();
+        
+        toast({
+          title: "Project Deleted",
+          description: "The project has been successfully deleted.",
+        });
+      }
+    } catch (error: any) {
+      console.error("Error deleting project:", error);
+      toast({
+        title: "Delete Failed",
+        description: error.message || "There was an error deleting the project.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -134,348 +211,166 @@ export function ProjectsManager() {
       transition={{ duration: 0.5 }}
     >
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader>
           <CardTitle className="text-2xl font-bold text-portfolio-purple">Manage Projects</CardTitle>
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button 
-                className="bg-portfolio-purple hover:bg-portfolio-purple/90 transition-all duration-300 transform hover:scale-105 flex items-center gap-2"
-              >
-                <PlusCircle size={16} /> Add New Project
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-3xl">
-              <DialogHeader>
-                <DialogTitle>Add New Project</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="projectTitle" className="text-right">Title</Label>
-                  <Input
-                    id="projectTitle"
-                    value={newProject.title}
-                    onChange={(e) => setNewProject({ ...newProject, title: e.target.value })}
-                    className="col-span-3"
-                  />
-                </div>
-                
-                <div className="grid grid-cols-4 items-start gap-4">
-                  <Label htmlFor="projectDescription" className="text-right pt-2">Description</Label>
-                  <Textarea
-                    id="projectDescription"
-                    value={newProject.description}
-                    onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
-                    className="col-span-3"
-                    rows={4}
-                  />
-                </div>
-                
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="projectImage" className="text-right">Image URL</Label>
-                  <div className="col-span-3 flex gap-2">
-                    <Input
-                      id="projectImage"
-                      value={newProject.image}
-                      onChange={(e) => setNewProject({ ...newProject, image: e.target.value })}
-                      placeholder="URL to project screenshot or image"
-                      className="flex-1"
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSave)} className="space-y-6">
+              <div className="mb-6">
+                <label className="block text-sm font-medium mb-2">Project Image</label>
+                <div className="flex items-center space-x-6">
+                  <div className="relative w-32 h-32 rounded-md overflow-hidden border-2 border-gray-200 shadow-md">
+                    <img 
+                      src={newProjectImage || form.getValues("image_url") || "/placeholder-image.png"} 
+                      alt="Project" 
+                      className="w-full h-full object-cover"
                     />
-                    <Image className="h-5 w-5 text-gray-400" />
                   </div>
-                </div>
-                
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="projectGithub" className="text-right">GitHub URL</Label>
-                  <div className="col-span-3 flex gap-2">
-                    <Input
-                      id="projectGithub"
-                      value={newProject.github || ""}
-                      onChange={(e) => setNewProject({ ...newProject, github: e.target.value })}
-                      placeholder="Optional GitHub repository URL"
-                      className="flex-1"
+                  <div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => document.getElementById('project-image-upload')?.click()}
+                      disabled={uploading}
+                      className="flex items-center"
+                    >
+                      <Upload className="mr-2 h-4 w-4" />
+                      {uploading ? 'Uploading...' : 'Upload Image'}
+                    </Button>
+                    <input
+                      id="project-image-upload"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleImageUpload}
+                      disabled={uploading}
                     />
-                    <Github className="h-5 w-5 text-gray-400" />
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="projectDemo" className="text-right">Demo URL</Label>
-                  <div className="col-span-3 flex gap-2">
-                    <Input
-                      id="projectDemo"
-                      value={newProject.demo || ""}
-                      onChange={(e) => setNewProject({ ...newProject, demo: e.target.value })}
-                      placeholder="Optional live demo URL"
-                      className="flex-1"
-                    />
-                    <ExternalLink className="h-5 w-5 text-gray-400" />
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-4 items-start gap-4">
-                  <Label className="text-right pt-2">Technologies</Label>
-                  <div className="col-span-3">
-                    <div className="flex gap-2 mb-2">
-                      <Input
-                        value={currentTech}
-                        onChange={(e) => setCurrentTech(e.target.value)}
-                        placeholder="Add technology"
-                        className="flex-1"
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            addTechToNewProject();
-                          }
-                        }}
-                      />
-                      <Button type="button" onClick={addTechToNewProject} size="sm">Add</Button>
-                    </div>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {newProject.technologies?.map((tech, index) => (
-                        <Badge 
-                          key={index} 
-                          className="flex items-center gap-1 pl-3"
-                          variant="secondary"
-                        >
-                          {tech}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-4 w-4 ml-1 text-gray-500 hover:text-gray-700 hover:bg-transparent p-0"
-                            onClick={() => removeTechFromNewProject(index)}
-                          >
-                            <X size={12} />
-                          </Button>
-                        </Badge>
-                      ))}
-                    </div>
+                    <p className="text-xs text-gray-500 mt-2">
+                      Recommended: Square image, at least 300x300 pixels
+                    </p>
                   </div>
                 </div>
               </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-                <Button onClick={handleAddProject}>Add Project</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </CardHeader>
-        
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <AnimatePresence>
-              {data.projects.map((project) => (
-                <motion.div
-                  key={project.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.3 }}
-                  className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow group"
-                >
-                  <div className="h-48 bg-gray-200 relative overflow-hidden">
-                    {project.image && (
-                      <img 
-                        src={project.image} 
-                        alt={project.title}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Title</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Project Title" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Write a brief description about the project..." 
+                        className="min-h-[100px]" 
+                        {...field} 
                       />
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-end p-4">
-                      <div className="flex gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 rounded-full bg-white/90 text-blue-600 hover:bg-white hover:text-blue-700"
-                          onClick={() => handleEditProject(project)}
-                        >
-                          <Edit size={16} />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 rounded-full bg-white/90 text-red-600 hover:bg-white hover:text-red-700"
-                          onClick={() => handleDeleteProject(project.id)}
-                        >
-                          <Trash2 size={16} />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="p-4">
-                    <h3 className="text-xl font-bold mb-2">{project.title}</h3>
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-3">{project.description}</p>
-                    
-                    <div className="flex flex-wrap gap-1 mb-4">
-                      {project.technologies?.map((tech, index) => (
-                        <Badge key={index} variant="outline" className="text-xs">{tech}</Badge>
-                      ))}
-                    </div>
-                    
-                    <div className="flex justify-between items-center">
-                      <div className="flex gap-2">
-                        {project.github && (
-                          <a 
-                            href={project.github} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-gray-600 hover:text-portfolio-purple transition-colors"
-                          >
-                            <Github size={18} />
-                          </a>
-                        )}
-                        {project.demo && (
-                          <a 
-                            href={project.demo} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-gray-600 hover:text-portfolio-purple transition-colors"
-                          >
-                            <ExternalLink size={18} />
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="technologies"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Technologies Used</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., React, Node.js, Tailwind CSS" {...field} />
+                    </FormControl>
+                    <FormDescription>Separate each technology with a comma.</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="github_url"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>GitHub URL</FormLabel>
+                    <FormControl>
+                      <Input placeholder="https://github.com/username/repo" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="demo_url"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Demo URL</FormLabel>
+                    <FormControl>
+                      <Input placeholder="https://projectdemo.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <Button 
+                type="button" 
+                className="bg-portfolio-purple hover:bg-portfolio-purple/90 transition-all duration-300 transform hover:scale-105"
+                onClick={handleAddProject}
+              >
+                Add Project
+              </Button>
+            </form>
+          </Form>
         </CardContent>
       </Card>
       
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Edit Project</DialogTitle>
-          </DialogHeader>
-          {editingProject && (
-            <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="editProjectTitle" className="text-right">Title</Label>
-                <Input
-                  id="editProjectTitle"
-                  value={editingProject.project.title}
-                  onChange={(e) => setEditingProject({
-                    ...editingProject,
-                    project: { ...editingProject.project, title: e.target.value }
-                  })}
-                  className="col-span-3"
-                />
-              </div>
-              
-              <div className="grid grid-cols-4 items-start gap-4">
-                <Label htmlFor="editProjectDescription" className="text-right pt-2">Description</Label>
-                <Textarea
-                  id="editProjectDescription"
-                  value={editingProject.project.description}
-                  onChange={(e) => setEditingProject({
-                    ...editingProject,
-                    project: { ...editingProject.project, description: e.target.value }
-                  })}
-                  className="col-span-3"
-                  rows={4}
-                />
-              </div>
-              
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="editProjectImage" className="text-right">Image URL</Label>
-                <div className="col-span-3 flex gap-2">
-                  <Input
-                    id="editProjectImage"
-                    value={editingProject.project.image}
-                    onChange={(e) => setEditingProject({
-                      ...editingProject,
-                      project: { ...editingProject.project, image: e.target.value }
-                    })}
-                    placeholder="URL to project screenshot or image"
-                    className="flex-1"
-                  />
-                  <Image className="h-5 w-5 text-gray-400" />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="editProjectGithub" className="text-right">GitHub URL</Label>
-                <div className="col-span-3 flex gap-2">
-                  <Input
-                    id="editProjectGithub"
-                    value={editingProject.project.github || ""}
-                    onChange={(e) => setEditingProject({
-                      ...editingProject,
-                      project: { ...editingProject.project, github: e.target.value }
-                    })}
-                    placeholder="Optional GitHub repository URL"
-                    className="flex-1"
-                  />
-                  <Github className="h-5 w-5 text-gray-400" />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="editProjectDemo" className="text-right">Demo URL</Label>
-                <div className="col-span-3 flex gap-2">
-                  <Input
-                    id="editProjectDemo"
-                    value={editingProject.project.demo || ""}
-                    onChange={(e) => setEditingProject({
-                      ...editingProject,
-                      project: { ...editingProject.project, demo: e.target.value }
-                    })}
-                    placeholder="Optional live demo URL"
-                    className="flex-1"
-                  />
-                  <ExternalLink className="h-5 w-5 text-gray-400" />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-4 items-start gap-4">
-                <Label className="text-right pt-2">Technologies</Label>
-                <div className="col-span-3">
-                  <div className="flex gap-2 mb-2">
-                    <Input
-                      value={editCurrentTech}
-                      onChange={(e) => setEditCurrentTech(e.target.value)}
-                      placeholder="Add technology"
-                      className="flex-1"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          addTechToEditProject();
-                        }
-                      }}
-                    />
-                    <Button type="button" onClick={addTechToEditProject} size="sm">Add</Button>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="mt-6"
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-xl font-semibold">Existing Projects</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4">
+              {projects.map((project) => (
+                <div key={project.id} className="flex items-center justify-between p-4 rounded-md shadow-sm border border-gray-200">
+                  <div>
+                    <h3 className="text-lg font-medium">{project.title}</h3>
+                    <p className="text-sm text-gray-500">{project.description.substring(0, 50)}...</p>
                   </div>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {editingProject.project.technologies?.map((tech, index) => (
-                      <Badge 
-                        key={index} 
-                        className="flex items-center gap-1 pl-3"
-                        variant="secondary"
-                      >
-                        {tech}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-4 w-4 ml-1 text-gray-500 hover:text-gray-700 hover:bg-transparent p-0"
-                          onClick={() => removeTechFromEditProject(index)}
-                        >
-                          <X size={12} />
-                        </Button>
-                      </Badge>
-                    ))}
-                  </div>
+                  <Button 
+                    variant="destructive"
+                    size="icon"
+                    onClick={() => handleDeleteProject(project.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
-              </div>
+              ))}
             </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
-            <Button onClick={handleUpdateProject}>Update Project</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </CardContent>
+        </Card>
+      </motion.div>
     </motion.div>
   );
 }

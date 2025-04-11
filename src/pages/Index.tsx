@@ -9,10 +9,16 @@ import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import ScrollToTop from "@/components/ScrollToTop";
-import { DataProvider } from "@/components/DataManager";
+import { DataProvider, usePortfolioData } from "@/components/DataManager";
 
-const Index = () => {
+// Wrapper component to ensure data is refreshed
+const IndexContent = () => {
+  const { fetchPortfolioData } = usePortfolioData();
+  
   useEffect(() => {
+    // Refresh data when the index page loads
+    fetchPortfolioData();
+    
     // Animation on scroll effect
     const revealElements = document.querySelectorAll('.reveal');
     
@@ -35,25 +41,31 @@ const Index = () => {
     return () => {
       window.removeEventListener('scroll', revealOnScroll);
     };
-  }, []);
+  }, [fetchPortfolioData]);
 
   return (
+    <div className="flex flex-col min-h-screen">
+      <Header />
+      
+      <main className="flex-grow">
+        <Hero />
+        <About />
+        <Skills />
+        <Projects />
+        <Certifications />
+        <Contact />
+      </main>
+      
+      <Footer />
+      <ScrollToTop />
+    </div>
+  );
+};
+
+const Index = () => {
+  return (
     <DataProvider>
-      <div className="flex flex-col min-h-screen">
-        <Header />
-        
-        <main className="flex-grow">
-          <Hero />
-          <About />
-          <Skills />
-          <Projects />
-          <Certifications />
-          <Contact />
-        </main>
-        
-        <Footer />
-        <ScrollToTop />
-      </div>
+      <IndexContent />
     </DataProvider>
   );
 };

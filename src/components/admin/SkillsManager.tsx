@@ -1,284 +1,389 @@
-
-import { useState } from "react";
+import React, { useState } from "react";
 import { usePortfolioData, SkillData } from "@/components/DataManager";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { PlusCircle, Trash2, Edit, X } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Badge } from "@/components/ui/badge";
+import { 
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
+} from "@/components/ui/form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { Trash2 } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+
+const skillSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  category: z.string().min(2, "Category must be at least 2 characters"),
+  level: z.number().min(0).max(100),
+});
 
 export function SkillsManager() {
-  const { data, addSkill, removeSkill, updateSkill } = usePortfolioData();
+  const { data, updateSkill, addSkill, removeSkill, fetchPortfolioData } = usePortfolioData();
   const { toast } = useToast();
-  const [newSkill, setNewSkill] = useState<SkillData>({ name: "", category: "", level: 80 });
-  const [editingSkill, setEditingSkill] = useState<{ index: number; skill: SkillData } | null>(null);
-  const [open, setOpen] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-
-  // Get unique categories
-  const categories = Array.from(new Set(data.skills.map(skill => skill.category)));
-
-  // Filter skills based on search term and selected category
-  const filteredSkills = data.skills.filter(skill => {
-    const matchesSearch = skill.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         skill.category.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory ? skill.category === selectedCategory : true;
-    return matchesSearch && matchesCategory;
+  const { user } = useAuth();
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  
+  const form = useForm<z.infer<typeof skillSchema>>({
+    resolver: zodResolver(skillSchema),
+    defaultValues: {
+      name: "",
+      category: "",
+      level: 50,
+    },
   });
-
-  const handleAddSkill = () => {
-    if (!newSkill.name || !newSkill.category) {
+  
+  const handleSave = async (skill: SkillData, index: number) => {
+    const isValid = await form.trigger();
+    if (!isValid) {
       toast({
         title: "Error",
-        description: "Skill name and category are required.",
-        variant: "destructive",
+        description: "Please fill in all fields correctly.",
+        variant: "destructive"
       });
       return;
     }
     
-    addSkill(newSkill);
-    setNewSkill({ name: "", category: "", level: 80 });
-    setOpen(false);
-    
-    toast({
-      title: "Skill Added",
-      description: `${newSkill.name} has been added to your skills.`,
-    });
+    try {
+      if (user) {
+        // Optimistically update the local state
+        updateSkill(index, skill);
+        
+        // Prepare the data for Supabase update
+        const skillToUpdate = data.skills[index];
+        
+        const { error } = await supabase
+          .from('skills')
+          .update({
+            name: skill.name,
+            category: skill.category,
+            level: skill.level,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('profile_id', user.id)
+          .eq('name', skillToUpdate.name);
+        
+        if (error) {
+          throw error;
+        }
+        
+        // After successfully saving to Supabase, fetch the latest data
+        await fetchPortfolioData();
+        
+        toast({
+          title: "Skill Updated",
+          description: "Skill has been successfully updated.",
+        });
+      }
+    } catch (error: any) {
+      console.error("Error saving skill:", error);
+      toast({
+        title: "Update Failed",
+        description: error.message || "There was an error updating the skill.",
+        variant: "destructive"
+      });
+    } finally {
+      setEditingIndex(null);
+    }
   };
-
-  const handleUpdateSkill = () => {
-    if (!editingSkill) return;
+  
+  const handleAdd = async (values: z.infer<typeof skillSchema>) => {
+    const isValid = await form.trigger();
+    if (!isValid) {
+      toast({
+        title: "Error",
+        description: "Please fill in all fields correctly.",
+        variant: "destructive"
+      });
+      return;
+    }
     
-    updateSkill(editingSkill.index, editingSkill.skill);
-    setEditingSkill(null);
-    setEditOpen(false);
-    
-    toast({
-      title: "Skill Updated",
-      description: `${editingSkill.skill.name} has been updated.`,
-    });
+    try {
+      if (user) {
+        // Optimistically update the local state
+        addSkill(values);
+        
+        // Prepare the data for Supabase insert
+        const { error } = await supabase
+          .from('skills')
+          .insert({
+            name: values.name,
+            category: values.category,
+            level: values.level,
+            profile_id: user.id,
+          });
+        
+        if (error) {
+          throw error;
+        }
+        
+        // After successfully saving to Supabase, fetch the latest data
+        await fetchPortfolioData();
+        
+        toast({
+          title: "Skill Added",
+          description: "Skill has been successfully added.",
+        });
+      }
+    } catch (error: any) {
+      console.error("Error adding skill:", error);
+      toast({
+        title: "Add Failed",
+        description: error.message || "There was an error adding the skill.",
+        variant: "destructive"
+      });
+    } finally {
+      form.reset();
+    }
   };
-
-  const handleEditSkill = (index: number) => {
-    setEditingSkill({ index, skill: { ...data.skills[index] } });
-    setEditOpen(true);
-  };
-
-  const handleDeleteSkill = (index: number) => {
-    const skillName = data.skills[index].name;
-    removeSkill(index);
-    
-    toast({
-      title: "Skill Removed",
-      description: `${skillName} has been removed from your skills.`,
-    });
+  
+  const handleDelete = async (index: number) => {
+    try {
+      if (user) {
+        // Optimistically update the local state
+        const skillToDelete = data.skills[index];
+        removeSkill(index);
+        
+        // Delete from Supabase
+        const { error } = await supabase
+          .from('skills')
+          .delete()
+          .eq('profile_id', user.id)
+          .eq('name', skillToDelete.name);
+        
+        if (error) {
+          throw error;
+        }
+        
+        // After successfully deleting from Supabase, fetch the latest data
+        await fetchPortfolioData();
+        
+        toast({
+          title: "Skill Deleted",
+          description: "Skill has been successfully deleted.",
+        });
+      }
+    } catch (error: any) {
+      console.error("Error deleting skill:", error);
+      toast({
+        title: "Delete Failed",
+        description: error.message || "There was an error deleting the skill.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-2xl font-bold text-portfolio-purple">Manage Skills</CardTitle>
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button 
-                className="bg-portfolio-purple hover:bg-portfolio-purple/90 transition-all duration-300 transform hover:scale-105 flex items-center gap-2"
-              >
-                <PlusCircle size={16} /> Add New Skill
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add New Skill</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="skillName" className="text-right">Name</Label>
-                  <Input
-                    id="skillName"
-                    value={newSkill.name}
-                    onChange={(e) => setNewSkill({ ...newSkill, name: e.target.value })}
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="skillCategory" className="text-right">Category</Label>
-                  <Input
-                    id="skillCategory"
-                    value={newSkill.category}
-                    onChange={(e) => setNewSkill({ ...newSkill, category: e.target.value })}
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="skillLevel" className="text-right">Level (0-100)</Label>
-                  <div className="col-span-3 flex items-center gap-2">
-                    <Input
-                      id="skillLevel"
-                      type="range"
-                      min="0"
-                      max="100"
-                      value={newSkill.level}
-                      onChange={(e) => setNewSkill({ ...newSkill, level: parseInt(e.target.value) })}
-                    />
-                    <span>{newSkill.level}%</span>
-                  </div>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-                <Button onClick={handleAddSkill}>Add Skill</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </CardHeader>
-        
-        <CardContent>
-          <div className="mb-6 flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
-              <Input
-                placeholder="Search skills..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full"
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-2xl font-bold text-portfolio-purple">Manage Skills</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleAdd)} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Skill Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., React.js" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Web Development" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Badge 
-                variant={selectedCategory === null ? "default" : "outline"}
-                className="cursor-pointer"
-                onClick={() => setSelectedCategory(null)}
+            
+            <FormField
+              control={form.control}
+              name="level"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Proficiency Level</FormLabel>
+                  <FormControl>
+                    <Slider
+                      defaultValue={[field.value]}
+                      max={100}
+                      step={1}
+                      onValueChange={(value) => field.onChange(value[0])}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Set your proficiency level for this skill.
+                  </FormDescription>
+                  <FormMessage />
+                  <div className="text-sm text-gray-500 mt-2">
+                    Level: {field.value}
+                  </div>
+                </FormItem>
+              )}
+            />
+            
+            <Button 
+              type="submit" 
+              className="bg-portfolio-purple hover:bg-portfolio-purple/90 transition-all duration-300 transform hover:scale-105"
+            >
+              Add Skill
+            </Button>
+          </form>
+        </Form>
+        
+        <div className="mt-8">
+          <h3 className="text-lg font-semibold mb-4">Existing Skills</h3>
+          <AnimatePresence>
+            {data.skills.map((skill, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+                className="mb-4 p-4 border rounded-md shadow-sm"
               >
-                All
-              </Badge>
-              {categories.map((category) => (
-                <Badge
-                  key={category}
-                  variant={selectedCategory === category ? "default" : "outline"}
-                  className="cursor-pointer"
-                  onClick={() => setSelectedCategory(category)}
-                >
-                  {category}
-                </Badge>
-              ))}
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <AnimatePresence>
-              {filteredSkills.map((skill, index) => (
-                <motion.div
-                  key={`${skill.name}-${index}`}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ duration: 0.3 }}
-                  className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow relative group"
-                >
-                  <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 text-blue-500 hover:text-blue-700 hover:bg-blue-100"
-                      onClick={() => handleEditSkill(index)}
-                    >
-                      <Edit size={16} />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 text-red-500 hover:text-red-700 hover:bg-red-100"
-                      onClick={() => handleDeleteSkill(index)}
-                    >
-                      <Trash2 size={16} />
-                    </Button>
-                  </div>
-                  
-                  <h3 className="font-semibold text-lg">{skill.name}</h3>
-                  <Badge className="mt-1 mb-2">{skill.category}</Badge>
-                  
-                  <div className="mt-2">
-                    <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-portfolio-purple"
-                        style={{ width: `${skill.level}%` }}
-                      ></div>
+                {editingIndex === index ? (
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit((values) => handleSave({ ...values, level: values.level }, index))} className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Skill Name</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="e.g., React.js" 
+                                defaultValue={skill.name} 
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="category"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Category</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="e.g., Web Development" 
+                                defaultValue={skill.category} 
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="level"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Proficiency Level</FormLabel>
+                            <FormControl>
+                              <Slider
+                                defaultValue={[skill.level]}
+                                max={100}
+                                step={1}
+                                onValueChange={(value) => field.onChange(value[0])}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              Set your proficiency level for this skill.
+                            </FormDescription>
+                            <FormMessage />
+                            <div className="text-sm text-gray-500 mt-2">
+                              Level: {field.value}
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <div className="flex justify-end gap-2">
+                        <Button 
+                          type="submit" 
+                          className="bg-portfolio-purple hover:bg-portfolio-purple/90"
+                        >
+                          Save
+                        </Button>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          onClick={() => setEditingIndex(null)}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </form>
+                  </Form>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-semibold">{skill.name}</div>
+                      <div className="text-sm text-gray-500">{skill.category}</div>
+                      <div className="text-sm text-gray-500">Level: {skill.level}</div>
                     </div>
-                    <span className="text-sm text-gray-500 mt-1">{skill.level}%</span>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => {
+                          setEditingIndex(index);
+                          form.reset({
+                            name: skill.name,
+                            category: skill.category,
+                            level: skill.level,
+                          });
+                        }}
+                      >
+                        Edit
+                      </Button>
+                      <Button 
+                        variant="destructive" 
+                        onClick={() => handleDelete(index)}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </Button>
+                    </div>
                   </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
-        </CardContent>
-      </Card>
-      
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Skill</DialogTitle>
-          </DialogHeader>
-          {editingSkill && (
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="editSkillName" className="text-right">Name</Label>
-                <Input
-                  id="editSkillName"
-                  value={editingSkill.skill.name}
-                  onChange={(e) => setEditingSkill({
-                    ...editingSkill,
-                    skill: { ...editingSkill.skill, name: e.target.value }
-                  })}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="editSkillCategory" className="text-right">Category</Label>
-                <Input
-                  id="editSkillCategory"
-                  value={editingSkill.skill.category}
-                  onChange={(e) => setEditingSkill({
-                    ...editingSkill,
-                    skill: { ...editingSkill.skill, category: e.target.value }
-                  })}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="editSkillLevel" className="text-right">Level (0-100)</Label>
-                <div className="col-span-3 flex items-center gap-2">
-                  <Input
-                    id="editSkillLevel"
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={editingSkill.skill.level}
-                    onChange={(e) => setEditingSkill({
-                      ...editingSkill,
-                      skill: { ...editingSkill.skill, level: parseInt(e.target.value) }
-                    })}
-                  />
-                  <span>{editingSkill.skill.level}%</span>
-                </div>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
-            <Button onClick={handleUpdateSkill}>Update Skill</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </motion.div>
+                )}
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

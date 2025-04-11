@@ -39,7 +39,7 @@ const profileSchema = z.object({
 });
 
 export function ProfileForm() {
-  const { data, updateUserData } = usePortfolioData();
+  const { data, updateUserData, fetchPortfolioData } = usePortfolioData();
   const { toast } = useToast();
   const { user } = useAuth();
   const [imagePreview, setImagePreview] = useState(data.user.profileImage || "/lovable-uploads/78295e37-4b4d-4900-b613-21ed6626ab3f.png");
@@ -108,6 +108,15 @@ export function ProfileForm() {
             }, { onConflict: 'id' });
           
           if (upsertError) throw upsertError;
+          
+          // Update local data to reflect the change
+          updateUserData({
+            ...data.user,
+            profileImage: imageUrl
+          });
+          
+          // Refresh portfolio data to ensure changes are reflected immediately
+          await fetchPortfolioData();
         }
         
         toast({
@@ -188,6 +197,9 @@ export function ProfileForm() {
           
           if (socialError) throw socialError;
         }
+        
+        // Refresh portfolio data after saving
+        await fetchPortfolioData();
       }
       
       toast({
