@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { usePortfolioData, CertificationData } from "@/components/DataManager";
 import { Button } from "@/components/ui/button";
@@ -42,12 +43,12 @@ export function CertificationsManager() {
       if (user) {
         updateCertification(index, certification);
         
-        const { title, issuer, date, credential, link, logo } = certification;
+        const { id, title, issuer, date, credential, link, logo } = certification;
         
         const { error } = await supabase
           .from('certifications')
           .upsert({
-            id: data.certifications[index].id,
+            id: id,
             profile_id: user.id,
             title,
             issuer,
@@ -402,13 +403,17 @@ const AddCertificationForm: React.FC<AddCertificationFormProps> = ({ onAdd, onLo
   });
 
   const onSubmit = (values: z.infer<typeof certificationSchema>) => {
+    // Generate a unique ID for the new certification
+    const newId = crypto.randomUUID();
+    
     onAdd({
+      id: newId,  // Add id field
       title: values.title,
       issuer: values.issuer,
       date: values.date,
-      credential: values.credential,
-      link: values.link,
-      logo: values.logo,
+      credential: values.credential || "",
+      link: values.link || "",
+      logo: values.logo || "",
     });
     form.reset();
   };

@@ -62,7 +62,7 @@ interface DataContextType {
   removeSkill: (index: number) => void;
   updateProject: (index: number, project: ProjectData) => void;
   addProject: (project: ProjectData) => void;
-  removeProject: (id: number) => void;
+  removeProject: (id: string) => void;  // Changed from number to string
   updateCertification: (index: number, certification: CertificationData) => void;
   addCertification: (certification: CertificationData) => void;
   removeCertification: (index: number) => void;
@@ -111,7 +111,7 @@ const defaultData: PortfolioData = {
   ],
   projects: [
     {
-      id: 1,
+      id: "1",  // Changed from number to string
       title: "AI-Powered Symptom Checker",
       description: "Developed an AI-powered symptom checker that analyzes user health data and predicts potential diseases using Python, AI, ML, and Gemini AI.",
       technologies: ["Python", "AI", "ML", "Gemini AI"],
@@ -119,7 +119,7 @@ const defaultData: PortfolioData = {
       github: "https://github.com/chinmaykumarpanda/ai-symptom-checker",
     },
     {
-      id: 2,
+      id: "2",  // Changed from number to string
       title: "Coding Ninjas Platform",
       description: "Contributed to the Coding Ninjas developer club platform, organizing workshops and hackathons for students.",
       technologies: ["React", "Node.js", "MongoDB", "JavaScript"],
@@ -128,7 +128,7 @@ const defaultData: PortfolioData = {
       demo: "https://coding-ninjas.com",
     },
     {
-      id: 3,
+      id: "3",  // Changed from number to string
       title: "Portfolio Website",
       description: "My personal portfolio website showcasing my projects, skills, and experience. Built with modern web technologies.",
       technologies: ["React", "Tailwind CSS", "TypeScript"],
@@ -139,6 +139,7 @@ const defaultData: PortfolioData = {
   ],
   certifications: [
     {
+      id: "1",  // Added id field
       title: "Crash Course on Python",
       issuer: "Google",
       date: "Jun 2024",
@@ -147,6 +148,7 @@ const defaultData: PortfolioData = {
       logo: "/lovable-uploads/f9f301cf-7ee5-4609-845e-2f2afc316a9a.png",
     },
     {
+      id: "2",  // Added id field
       title: "Python for Data Science",
       issuer: "IBM",
       date: "In Progress",
@@ -154,6 +156,7 @@ const defaultData: PortfolioData = {
       logo: "/lovable-uploads/bb075ae5-f91f-43e6-b800-4ad15066260c.png",
     },
     {
+      id: "3",  // Added id field
       title: "Microsoft Cybersecurity Analyst",
       issuer: "Microsoft",
       date: "In Progress",
@@ -251,8 +254,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             category: skill.category,
             level: skill.level
           })) : prev.skills,
-          projects: projectsData?.length ? projectsData.map((project, index) => ({
-            id: index + 1,
+          projects: projectsData?.length ? projectsData.map(project => ({
+            id: project.id,
             title: project.title,
             description: project.description,
             technologies: project.technologies || [],
@@ -261,6 +264,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             demo: project.demo_url
           })) : prev.projects,
           certifications: certificationsData?.length ? certificationsData.map(cert => ({
+            id: cert.id, // Add the id from the database
             title: cert.title,
             issuer: cert.issuer,
             date: cert.date,
@@ -316,14 +320,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
   
   const addProject = (project: ProjectData) => {
-    const newId = Math.max(...data.projects.map(p => p.id), 0) + 1;
     setData(prev => ({ 
       ...prev, 
-      projects: [...prev.projects, { ...project, id: newId }] 
+      projects: [...prev.projects, project] 
     }));
   };
   
-  const removeProject = (id: number) => {
+  const removeProject = (id: string) => {  // Changed from number to string
     const projects = data.projects.filter(project => project.id !== id);
     setData(prev => ({ ...prev, projects }));
   };

@@ -45,7 +45,7 @@ export function SkillsManager() {
     },
   });
   
-  const handleSave = async (skill: SkillData, index: number) => {
+  const handleSave = async (values: z.infer<typeof skillSchema>, index: number) => {
     const isValid = await form.trigger();
     if (!isValid) {
       toast({
@@ -56,10 +56,17 @@ export function SkillsManager() {
       return;
     }
     
+    // Create a complete SkillData object to ensure all required properties are present
+    const updatedSkill: SkillData = {
+      name: values.name,
+      category: values.category,
+      level: values.level
+    };
+    
     try {
       if (user) {
         // Optimistically update the local state
-        updateSkill(index, skill);
+        updateSkill(index, updatedSkill);
         
         // Prepare the data for Supabase update
         const skillToUpdate = data.skills[index];
@@ -67,9 +74,9 @@ export function SkillsManager() {
         const { error } = await supabase
           .from('skills')
           .update({
-            name: skill.name,
-            category: skill.category,
-            level: skill.level,
+            name: updatedSkill.name,
+            category: updatedSkill.category,
+            level: updatedSkill.level,
             updated_at: new Date().toISOString(),
           })
           .eq('profile_id', user.id)
@@ -278,7 +285,7 @@ export function SkillsManager() {
               >
                 {editingIndex === index ? (
                   <Form {...form}>
-                    <form onSubmit={form.handleSubmit((values) => handleSave({ ...values, level: values.level }, index))} className="space-y-4">
+                    <form onSubmit={form.handleSubmit((values) => handleSave(values, index))} className="space-y-4">
                       <FormField
                         control={form.control}
                         name="name"
