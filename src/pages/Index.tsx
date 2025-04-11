@@ -9,15 +9,19 @@ import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import ScrollToTop from "@/components/ScrollToTop";
-import { DataProvider, usePortfolioData } from "@/components/DataManager";
+import { usePortfolioData } from "@/components/DataManager";
+import { Loader2 } from "lucide-react";
 
-// Wrapper component to ensure data is refreshed
+// Wrapper component to ensure data is loaded
 const IndexContent = () => {
-  const { fetchPortfolioData } = usePortfolioData();
+  const { fetchPortfolioData, isLoading } = usePortfolioData();
   
   useEffect(() => {
     // Refresh data when the index page loads
-    fetchPortfolioData();
+    console.log("IndexContent mounted - fetching portfolio data");
+    fetchPortfolioData().catch(err => {
+      console.error("Error fetching portfolio data in IndexContent:", err);
+    });
     
     // Animation on scroll effect
     const revealElements = document.querySelectorAll('.reveal');
@@ -43,6 +47,17 @@ const IndexContent = () => {
     };
   }, [fetchPortfolioData]);
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-portfolio-purple mx-auto" />
+          <p className="mt-4 text-portfolio-purple">Loading portfolio data...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
@@ -63,11 +78,7 @@ const IndexContent = () => {
 };
 
 const Index = () => {
-  return (
-    <DataProvider>
-      <IndexContent />
-    </DataProvider>
-  );
+  return <IndexContent />;
 };
 
 export default Index;

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Mail, Lock, ArrowRight, User, CheckCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { forceAdminAccess } from '@/utils/auth';
+import { useToast } from "@/hooks/use-toast";
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -16,6 +17,7 @@ const Login = () => {
   const [success, setSuccess] = useState(false);
   const { signIn, signUp, isLoading, user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   // Redirect if already logged in
   useEffect(() => {
@@ -24,7 +26,11 @@ const Login = () => {
         // If user is the admin email, force admin access
         if (user.email === 'chinmaykumarpanda004@gmail.com') {
           console.log("Login: Detected admin email, forcing access");
-          await forceAdminAccess(user.email);
+          try {
+            await forceAdminAccess(user.email);
+          } catch (error) {
+            console.error("Error forcing admin access:", error);
+          }
         }
         navigate('/admin');
       }
@@ -42,6 +48,7 @@ const Login = () => {
       
       if (isLogin) {
         // Login flow
+        console.log("Attempting to sign in with email:", email);
         await signIn(email, password);
         
         // Force admin status for the special admin email
@@ -52,20 +59,38 @@ const Login = () => {
         
         // Show success animation
         setSuccess(true);
+        
+        toast({
+          title: "Login successful",
+          description: "Welcome back!",
+        });
       } else {
         // Signup flow
+        console.log("Attempting to sign up with email:", email);
         await signUp(email, password);
         
         // Show success animation
         setSuccess(true);
+        
+        toast({
+          title: "Registration successful",
+          description: "Please check your email for verification.",
+        });
         
         setTimeout(() => {
           setIsLogin(true); // Switch back to login form
           setSuccess(false);
         }, 1500);
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Authentication error:", error);
       setSuccess(false);
+      
+      toast({
+        title: isLogin ? "Login failed" : "Registration failed",
+        description: error.message || "An error occurred during authentication",
+        variant: "destructive"
+      });
     } finally {
       setIsAnimating(false);
     }
@@ -182,30 +207,25 @@ const Login = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 }}
               >
-                <motion.div
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.98 }}
+                <Button 
+                  type="submit" 
+                  className="w-full bg-portfolio-purple hover:bg-portfolio-purple/90 transition-all duration-300"
+                  disabled={isLoading}
                 >
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-portfolio-purple hover:bg-portfolio-purple/90 transition-all duration-300"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <span className="flex items-center">
-                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        {isLogin ? "Signing in..." : "Signing up..."}
-                      </span>
-                    ) : (
-                      <span className="flex items-center justify-center">
-                        {isLogin ? "Sign in" : "Sign up"} <ArrowRight className="ml-2 h-4 w-4" />
-                      </span>
-                    )}
-                  </Button>
-                </motion.div>
+                  {isLoading ? (
+                    <span className="flex items-center">
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      {isLogin ? "Signing in..." : "Signing up..."}
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center">
+                      {isLogin ? "Sign in" : "Sign up"} <ArrowRight className="ml-2 h-4 w-4" />
+                    </span>
+                  )}
+                </Button>
               </motion.div>
               
               {/* Toggle Login/Register */}

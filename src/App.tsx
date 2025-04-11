@@ -14,12 +14,15 @@ import HireMe from "./pages/HireMe";
 import Login from "./pages/Login";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { initializeStorage } from "@/utils/storage";
 
 const queryClient = new QueryClient();
 
 // Function to initialize the database schema if needed
 const initializeDatabase = async () => {
   try {
+    console.log("Checking database schema...");
+    
     // Check if profile_image column exists in user_profile table
     const { error } = await supabase
       .from('user_profile')
@@ -39,6 +42,9 @@ const initializeDatabase = async () => {
         console.log('profile_image column added to user_profile table');
       }
     }
+    
+    // Initialize the storage bucket
+    await initializeStorage();
   } catch (error) {
     console.error('Database initialization error:', error);
   }
@@ -46,6 +52,7 @@ const initializeDatabase = async () => {
 
 const App = () => {
   useEffect(() => {
+    console.log("Initializing application...");
     initializeDatabase();
   }, []);
 

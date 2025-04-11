@@ -1,10 +1,10 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, LogOut, User, Code, Award, Briefcase } from "lucide-react";
+import { Loader2, LogOut, User, Code, Award, Briefcase, AlertTriangle } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { ProfileForm } from "@/components/admin/ProfileForm";
@@ -15,6 +15,8 @@ import { forceAdminAccess } from '@/utils/auth';
 
 const Admin = () => {
   const { isAdmin, user, isLoading, signOut, checkAdminStatus } = useAuth();
+  const [isInitializing, setIsInitializing] = useState(true);
+  const [adminCheckComplete, setAdminCheckComplete] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -28,16 +30,26 @@ const Admin = () => {
         // For our special admin email, force admin access
         if (user.email === 'chinmaykumarpanda004@gmail.com') {
           console.log("Admin page: Detected admin email, forcing access");
-          await forceAdminAccess(user.email);
-          await checkAdminStatus();
+          try {
+            await forceAdminAccess(user.email);
+            await checkAdminStatus();
+          } catch (error) {
+            console.error("Error forcing admin access:", error);
+          }
         }
+        
+        setAdminCheckComplete(true);
+      }
+      
+      if (!isLoading) {
+        setIsInitializing(false);
       }
     };
     
     checkAccess();
   }, [isLoading, user, isAdmin, checkAdminStatus]);
 
-  if (isLoading) {
+  if (isLoading || isInitializing) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
         <motion.div
@@ -55,11 +67,13 @@ const Admin = () => {
 
   if (!user) {
     // Redirect to login if no user
+    console.log("No user found, redirecting to login");
     navigate('/login');
     return null;
   }
 
-  if (!isAdmin) {
+  if (adminCheckComplete && !isAdmin) {
+    console.log("User is not admin, showing access denied page");
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
         <motion.div
@@ -68,6 +82,7 @@ const Admin = () => {
           transition={{ duration: 0.5 }}
           className="text-center mb-6"
         >
+          <AlertTriangle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-portfolio-purple">Access Denied</h1>
           <p className="text-gray-600 mt-2 max-w-md mx-auto">You are not authorized to access the admin panel. You need admin privileges to view this page.</p>
           {user && (
@@ -101,6 +116,7 @@ const Admin = () => {
     );
   }
 
+  // Render the admin panel for admin users
   return (
     <motion.div 
       initial={{ opacity: 0 }}

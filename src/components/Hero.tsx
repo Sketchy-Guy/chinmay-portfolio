@@ -8,8 +8,14 @@ import { usePortfolioData } from "@/components/DataManager";
 const Hero = () => {
   const [typedText, setTypedText] = useState("");
   const { data, isLoading } = usePortfolioData();
+  const [imageTimestamp, setImageTimestamp] = useState(Date.now());
   const fullText = data.user.title;
   const { toast } = useToast();
+  
+  // Refresh image when component mounts and whenever profile image changes
+  useEffect(() => {
+    setImageTimestamp(Date.now());
+  }, [data.user.profileImage]);
   
   useEffect(() => {
     let currentIndex = 0;
@@ -44,7 +50,7 @@ const Hero = () => {
 
   // Force the image to refresh by adding a timestamp as a query parameter
   const profileImage = data.user.profileImage 
-    ? `${data.user.profileImage}?t=${new Date().getTime()}` 
+    ? `${data.user.profileImage}?t=${imageTimestamp}` 
     : "/lovable-uploads/78295e37-4b4d-4900-b613-21ed6626ab3f.png";
 
   return (

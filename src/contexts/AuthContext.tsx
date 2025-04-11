@@ -29,6 +29,53 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  const checkAdminStatus = async (): Promise<boolean> => {
+    if (!user) {
+      setIsAdmin(false);
+      return false;
+    }
+    
+    try {
+      console.log(`Checking admin status for user: ${user.email}`);
+      
+      // Special case for specific email with direct admin check
+      if (user.email === 'chinmaykumarpanda004@gmail.com') {
+        console.log("Recognized admin email, granting access.");
+        
+        // Ensure user is set as admin in database (attempt to fix database issues)
+        const result = await ensureAdminStatus(user.email);
+        console.log("Admin status result:", result);
+        
+        // Grant access regardless of database result for this specific email
+        setIsAdmin(true);
+        return true;
+      }
+      
+      // For other users, check if they are admin in database
+      const { data, error } = await supabase
+        .from('auth_users')
+        .select('is_admin')
+        .eq('id', user.id)
+        .single();
+      
+      if (error) {
+        console.error("Error fetching admin status:", error);
+        // Don't throw the error, just log it and return false
+        setIsAdmin(false);
+        return false;
+      }
+      
+      const adminStatus = data?.is_admin || false;
+      console.log(`Database admin status: ${adminStatus}`);
+      setIsAdmin(adminStatus);
+      return adminStatus;
+    } catch (error) {
+      console.error("Error checking admin status:", error);
+      setIsAdmin(false);
+      return false;
+    }
+  };
+
   useEffect(() => {
     // First set up the auth listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -110,65 +157,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, []);
 
-  const checkAdminStatus = async (): Promise<boolean> => {
-    if (!user) {
-      setIsAdmin(false);
-      return false;
-    }
-    
-    try {
-      console.log(`Checking admin status for user: ${user.email}`);
-      
-      // Special case for specific email with direct admin check
-      if (user.email === 'chinmaykumarpanda004@gmail.com') {
-        console.log("Recognized admin email, granting access.");
-        
-        // Ensure user is set as admin in database (attempt to fix database issues)
-        const result = await ensureAdminStatus(user.email);
-        console.log("Admin status result:", result);
-        
-        // Grant access regardless of database result for this specific email
-        setIsAdmin(true);
-        return true;
-      }
-      
-      // For other users, check if they are admin in database
-      const { data, error } = await supabase
-        .from('auth_users')
-        .select('is_admin')
-        .eq('id', user.id)
-        .single();
-      
-      if (error) {
-        console.error("Error fetching admin status:", error);
-        // Don't throw the error, just log it and return false
-        setIsAdmin(false);
-        return false;
-      }
-      
-      const adminStatus = data?.is_admin || false;
-      console.log(`Database admin status: ${adminStatus}`);
-      setIsAdmin(adminStatus);
-      return adminStatus;
-    } catch (error) {
-      console.error("Error checking admin status:", error);
-      setIsAdmin(false);
-      return false;
-    }
-  };
-
   const signIn = async (email: string, password: string) => {
     try {
       setIsLoading(true);
+      console.log("Attempting to sign in:", email);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Sign in error:", error);
+        throw error;
+      }
+      
+      console.log("Sign in successful for:", email);
       
       // Special case for admin email
       if (email === 'chinmaykumarpanda004@gmail.com') {
+        console.log("Admin email sign in detected, setting admin status");
         setIsAdmin(true);
         
         // Try to ensure admin status in database
@@ -197,16 +205,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signUp = async (email: string, password: string) => {
     try {
       setIsLoading(true);
+      console.log("Attempting to sign up:", email);
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Sign up error:", error);
+        throw error;
+      }
+      
+      console.log("Sign up response:", data);
       
       if (data.user?.identities?.length === 0) {
+        console.error("Email already registered");
         throw new Error("Email already registered. Please login instead.");
       }
+      
+      console.log("Sign up successful for:", email);
       
       toast({
         title: "Registration successful",
@@ -228,7 +246,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signOut = async () => {
     try {
       setIsLoading(true);
+      console.log("Signing out...");
+      
       await supabase.auth.signOut();
+      
+      // Reset admin status
+      setIsAdmin(false);
+      
+      console.log("Sign out successful");
       
       toast({
         title: "Logged out",
