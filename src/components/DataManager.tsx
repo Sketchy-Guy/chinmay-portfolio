@@ -1,5 +1,8 @@
 
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 export interface UserData {
   name: string;
@@ -8,6 +11,7 @@ export interface UserData {
   phone: string;
   location: string;
   bio: string;
+  profileImage?: string;
   social: {
     github: string;
     linkedin: string;
@@ -61,6 +65,8 @@ interface DataContextType {
   updateCertification: (index: number, certification: CertificationData) => void;
   addCertification: (certification: CertificationData) => void;
   removeCertification: (index: number) => void;
+  fetchPortfolioData: () => Promise<void>;
+  isLoading: boolean;
 }
 
 const defaultData: PortfolioData = {
@@ -71,6 +77,7 @@ const defaultData: PortfolioData = {
     phone: "+91 7815014638",
     location: "Bhubaneswar, Odisha, India",
     bio: "Aspiring software developer with expertise in Python, JavaScript, and AI. Passionate about building scalable applications and leveraging AI tools to improve productivity.",
+    profileImage: "/lovable-uploads/78295e37-4b4d-4900-b613-21ed6626ab3f.png",
     social: {
       github: "https://github.com/chinmaykumarpanda",
       linkedin: "https://linkedin.com/in/chinmay-kumar-panda",
@@ -159,6 +166,124 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [data, setData] = useState<PortfolioData>(defaultData);
+  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
+  const { toast } = useToast();
+  
+  const fetchPortfolioData = async () => {
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      // Fetch profile data
+      const { data: profileData, error: profileError } = await supabase
+        .from('user_profile')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      
+      if (profileError && profileError.code !== 'PGRST116') {
+        throw profileError;
+      }
+      
+      // Fetch social links
+      const { data: socialData, error: socialError } = await supabase
+        .from('social_links')
+        .select('*')
+        .eq('profile_id', user.id);
+      
+      if (socialError) throw socialError;
+      
+      // Fetch skills
+      const { data: skillsData, error: skillsError } = await supabase
+        .from('skills')
+        .select('*')
+        .eq('profile_id', user.id);
+      
+      if (skillsError) throw skillsError;
+      
+      // Fetch projects
+      const { data: projectsData, error: projectsError } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('profile_id', user.id);
+      
+      if (projectsError) throw projectsError;
+      
+      // Fetch certifications
+      const { data: certificationsData, error: certificationsError } = await supabase
+        .from('certifications')
+        .select('*')
+        .eq('profile_id', user.id);
+      
+      if (certificationsError) throw certificationsError;
+      
+      // Process social links
+      const socialLinks = {
+        github: socialData?.find(link => link.platform === 'github')?.url || '',
+        linkedin: socialData?.find(link => link.platform === 'linkedin')?.url || '',
+        twitter: socialData?.find(link => link.platform === 'twitter')?.url || '',
+        instagram: socialData?.find(link => link.platform === 'instagram')?.url || '',
+        facebook: socialData?.find(link => link.platform === 'facebook')?.url || '',
+      };
+      
+      // Update state with fetched data
+      if (profileData) {
+        setData(prev => ({
+          ...prev,
+          user: {
+            name: profileData.name || prev.user.name,
+            title: profileData.title || prev.user.title,
+            email: profileData.email || prev.user.email,
+            phone: profileData.phone || prev.user.phone,
+            location: profileData.location || prev.user.location,
+            bio: profileData.bio || prev.user.bio,
+            profileImage: profileData.profile_image || prev.user.profileImage,
+            social: socialLinks
+          },
+          skills: skillsData?.length ? skillsData.map(skill => ({
+            name: skill.name,
+            category: skill.category,
+            level: skill.level
+          })) : prev.skills,
+          projects: projectsData?.length ? projectsData.map((project, index) => ({
+            id: index + 1,
+            title: project.title,
+            description: project.description,
+            technologies: project.technologies || [],
+            image: project.image_url || '',
+            github: project.github_url,
+            demo: project.demo_url
+          })) : prev.projects,
+          certifications: certificationsData?.length ? certificationsData.map(cert => ({
+            title: cert.title,
+            issuer: cert.issuer,
+            date: cert.date,
+            credential: cert.credential || '',
+            link: cert.link,
+            logo: cert.logo_url || ''
+          })) : prev.certifications
+        }));
+      }
+    } catch (error) {
+      console.error("Error fetching portfolio data:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load portfolio data.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  useEffect(() => {
+    fetchPortfolioData();
+  }, [user?.id]);
   
   const updateUserData = (userData: Partial<UserData>) => {
     setData(prev => ({
@@ -233,7 +358,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       removeProject,
       updateCertification,
       addCertification,
-      removeCertification
+      removeCertification,
+      fetchPortfolioData,
+      isLoading
     }}>
       {children}
     </DataContext.Provider>

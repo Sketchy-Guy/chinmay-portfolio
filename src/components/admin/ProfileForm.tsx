@@ -19,6 +19,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { motion } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
+import { Upload } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -32,11 +35,15 @@ const profileSchema = z.object({
   twitter: z.string().url("Must be a valid URL").optional(),
   instagram: z.string().url("Must be a valid URL").optional(),
   facebook: z.string().url("Must be a valid URL").optional(),
+  profileImage: z.string().optional(),
 });
 
 export function ProfileForm() {
   const { data, updateUserData } = usePortfolioData();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const [imagePreview, setImagePreview] = useState(data.user.profileImage || "/lovable-uploads/78295e37-4b4d-4900-b613-21ed6626ab3f.png");
+  const [uploading, setUploading] = useState(false);
   
   const form = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
@@ -52,31 +59,149 @@ export function ProfileForm() {
       twitter: data.user.social.twitter,
       instagram: data.user.social.instagram,
       facebook: data.user.social.facebook,
+      profileImage: data.user.profileImage,
     },
   });
 
-  const onSubmit = (values: z.infer<typeof profileSchema>) => {
-    // Update user data with form values
-    updateUserData({
-      name: values.name,
-      title: values.title,
-      email: values.email,
-      phone: values.phone || "",
-      location: values.location || "",
-      bio: values.bio,
-      social: {
-        github: values.github || "",
-        linkedin: values.linkedin || "",
-        twitter: values.twitter || "",
-        instagram: values.instagram || "",
-        facebook: values.facebook || "",
-      },
-    });
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
     
-    toast({
-      title: "Profile Updated",
-      description: "Your profile has been successfully updated.",
-    });
+    const file = files[0];
+    setUploading(true);
+    
+    try {
+      // Upload to Supabase storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+      const filePath = `profile/${user?.id}/${fileName}`;
+      
+      const { error: uploadError, data: uploadData } = await supabase.storage
+        .from('portfolio')
+        .upload(filePath, file);
+      
+      if (uploadError) throw uploadError;
+      
+      // Get public URL
+      const { data: publicUrlData } = supabase.storage
+        .from('portfolio')
+        .getPublicUrl(filePath);
+      
+      if (publicUrlData) {
+        const imageUrl = publicUrlData.publicUrl;
+        setImagePreview(imageUrl);
+        form.setValue('profileImage', imageUrl);
+        
+        // Also save to Supabase user_profile table
+        if (user) {
+          const { error: upsertError } = await supabase
+            .from('user_profile')
+            .upsert({
+              id: user.id,
+              name: form.getValues('name'),
+              title: form.getValues('title'),
+              email: form.getValues('email'),
+              phone: form.getValues('phone') || null,
+              location: form.getValues('location') || null,
+              bio: form.getValues('bio'),
+              profile_image: imageUrl
+            }, { onConflict: 'id' });
+          
+          if (upsertError) throw upsertError;
+        }
+        
+        toast({
+          title: "Image Uploaded",
+          description: "Your profile image has been successfully updated."
+        });
+      }
+    } catch (error: any) {
+      console.error("Error uploading image:", error);
+      toast({
+        title: "Upload Failed",
+        description: error.message || "There was an error uploading your image.",
+        variant: "destructive"
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const onSubmit = async (values: z.infer<typeof profileSchema>) => {
+    try {
+      // Update local state
+      updateUserData({
+        name: values.name,
+        title: values.title,
+        email: values.email,
+        phone: values.phone || "",
+        location: values.location || "",
+        bio: values.bio,
+        profileImage: values.profileImage,
+        social: {
+          github: values.github || "",
+          linkedin: values.linkedin || "",
+          twitter: values.twitter || "",
+          instagram: values.instagram || "",
+          facebook: values.facebook || "",
+        },
+      });
+      
+      // Save to Supabase database
+      if (user) {
+        // Update user_profile
+        const { error: profileError } = await supabase
+          .from('user_profile')
+          .upsert({
+            id: user.id,
+            name: values.name,
+            title: values.title,
+            email: values.email,
+            phone: values.phone || null,
+            location: values.location || null,
+            bio: values.bio,
+            profile_image: values.profileImage
+          }, { onConflict: 'id' });
+        
+        if (profileError) throw profileError;
+        
+        // Update social links
+        // First delete existing links
+        await supabase
+          .from('social_links')
+          .delete()
+          .eq('profile_id', user.id);
+        
+        // Insert new social links
+        const socialLinks = [
+          { platform: 'github', url: values.github || '', profile_id: user.id },
+          { platform: 'linkedin', url: values.linkedin || '', profile_id: user.id },
+          { platform: 'twitter', url: values.twitter || '', profile_id: user.id },
+          { platform: 'instagram', url: values.instagram || '', profile_id: user.id },
+          { platform: 'facebook', url: values.facebook || '', profile_id: user.id },
+        ].filter(link => link.url);
+        
+        if (socialLinks.length > 0) {
+          const { error: socialError } = await supabase
+            .from('social_links')
+            .insert(socialLinks);
+          
+          if (socialError) throw socialError;
+        }
+      }
+      
+      toast({
+        title: "Profile Updated",
+        description: "Your profile has been successfully updated.",
+      });
+    } catch (error: any) {
+      console.error("Error saving profile:", error);
+      toast({
+        title: "Update Failed",
+        description: error.message || "There was an error updating your profile.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -90,6 +215,42 @@ export function ProfileForm() {
           <CardTitle className="text-2xl font-bold text-portfolio-purple">Manage Profile</CardTitle>
         </CardHeader>
         <CardContent>
+          <div className="mb-6">
+            <label className="block text-sm font-medium mb-2">Profile Image</label>
+            <div className="flex items-center space-x-6">
+              <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg">
+                <img 
+                  src={imagePreview} 
+                  alt="Profile" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => document.getElementById('profile-image-upload')?.click()}
+                  disabled={uploading}
+                  className="flex items-center"
+                >
+                  <Upload className="mr-2 h-4 w-4" />
+                  {uploading ? 'Uploading...' : 'Upload Image'}
+                </Button>
+                <input
+                  id="profile-image-upload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageUpload}
+                  disabled={uploading}
+                />
+                <p className="text-xs text-gray-500 mt-2">
+                  Recommended: Square image, at least 300x300 pixels
+                </p>
+              </div>
+            </div>
+          </div>
+
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
