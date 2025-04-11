@@ -12,49 +12,54 @@ import NotFound from "./pages/NotFound";
 import Admin from "./pages/Admin";
 import HireMe from "./pages/HireMe";
 import Login from "./pages/Login";
-import { useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
 import { initializeStorage } from "@/utils/storage";
+import { Loader2 } from "lucide-react";
 
-const queryClient = new QueryClient();
-
-// Function to initialize the database schema if needed
-const initializeDatabase = async () => {
-  try {
-    console.log("Checking database schema...");
-    
-    // Check if profile_image column exists in user_profile table
-    const { error } = await supabase
-      .from('user_profile')
-      .select('profile_image')
-      .limit(1);
-    
-    if (error && error.code === '42703') {
-      console.log('profile_image column does not exist, adding it...');
-      
-      // If error code 42703 (undefined_column), add the column
-      // Use rpc instead of direct query as it's supported in the Supabase client
-      const { error: alterError } = await supabase.rpc('add_profile_image_column');
-      
-      if (alterError) {
-        console.error('Error adding profile_image column:', alterError);
-      } else {
-        console.log('profile_image column added to user_profile table');
-      }
-    }
-    
-    // Initialize the storage bucket
-    await initializeStorage();
-  } catch (error) {
-    console.error('Database initialization error:', error);
-  }
-};
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => {
+  const [initializing, setInitializing] = useState(true);
+
   useEffect(() => {
     console.log("Initializing application...");
-    initializeDatabase();
+    
+    const init = async () => {
+      try {
+        // Initialize the storage bucket
+        const result = await initializeStorage();
+        if (!result.success) {
+          console.error('Failed to initialize storage:', result.message);
+        } else {
+          console.log('Storage initialized:', result.message);
+        }
+      } catch (error) {
+        console.error('Error during initialization:', error);
+      } finally {
+        setInitializing(false);
+      }
+    };
+    
+    init();
   }, []);
+
+  if (initializing) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-portfolio-purple mx-auto" />
+          <p className="mt-4 text-portfolio-purple">Initializing application...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <QueryClientProvider client={queryClient}>

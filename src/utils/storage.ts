@@ -1,9 +1,12 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 // Function to initialize the portfolio storage bucket
 export const initializeStorage = async () => {
   try {
+    console.log("Initializing storage bucket...");
+    
     // Check if the bucket already exists
     const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
     
@@ -30,6 +33,7 @@ export const initializeStorage = async () => {
       return { success: true, message: 'Portfolio storage bucket created' };
     }
     
+    console.log('Portfolio bucket already exists');
     return { success: true, message: 'Portfolio bucket already exists' };
   } catch (error: any) {
     console.error('Error initializing storage:', error);
@@ -41,7 +45,13 @@ export const initializeStorage = async () => {
 export const uploadFile = async (file: File, path: string) => {
   try {
     // Make sure the bucket exists
-    await initializeStorage();
+    const initResult = await initializeStorage();
+    if (!initResult.success) {
+      toast('Error initializing storage: ' + initResult.message);
+      return { success: false, message: initResult.message, path: null };
+    }
+    
+    console.log(`Uploading file to ${path}...`);
     
     // Upload the file
     const { data, error } = await supabase.storage
@@ -53,6 +63,7 @@ export const uploadFile = async (file: File, path: string) => {
     
     if (error) {
       console.error('Error uploading file:', error);
+      toast('Upload failed: ' + error.message);
       return { success: false, message: error.message, path: null };
     }
     
@@ -61,9 +72,11 @@ export const uploadFile = async (file: File, path: string) => {
       .from('portfolio')
       .getPublicUrl(data.path);
     
+    console.log('File uploaded successfully:', publicUrl);
     return { success: true, message: 'File uploaded successfully', path: publicUrl };
   } catch (error: any) {
     console.error('Error in uploadFile:', error);
+    toast('Upload failed: ' + error.message);
     return { success: false, message: error.message, path: null };
   }
 };

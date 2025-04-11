@@ -20,8 +20,10 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload } from "lucide-react";
+import { Upload, AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { uploadFile } from "@/utils/storage";
+import { toast } from "sonner";
 
 const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -30,20 +32,21 @@ const profileSchema = z.object({
   phone: z.string().optional(),
   location: z.string().optional(),
   bio: z.string().min(10, "Bio must be at least 10 characters"),
-  github: z.string().url("Must be a valid URL").optional(),
-  linkedin: z.string().url("Must be a valid URL").optional(),
-  twitter: z.string().url("Must be a valid URL").optional(),
-  instagram: z.string().url("Must be a valid URL").optional(),
-  facebook: z.string().url("Must be a valid URL").optional(),
+  github: z.string().url("Must be a valid URL").optional().or(z.string().length(0)),
+  linkedin: z.string().url("Must be a valid URL").optional().or(z.string().length(0)),
+  twitter: z.string().url("Must be a valid URL").optional().or(z.string().length(0)),
+  instagram: z.string().url("Must be a valid URL").optional().or(z.string().length(0)),
+  facebook: z.string().url("Must be a valid URL").optional().or(z.string().length(0)),
   profileImage: z.string().optional(),
 });
 
 export function ProfileForm() {
   const { data, updateUserData, fetchPortfolioData } = usePortfolioData();
-  const { toast } = useToast();
+  const { toast: uiToast } = useToast();
   const { user } = useAuth();
   const [imagePreview, setImagePreview] = useState(data.user.profileImage || "/lovable-uploads/78295e37-4b4d-4900-b613-21ed6626ab3f.png");
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
   
   const form = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
@@ -69,68 +72,53 @@ export function ProfileForm() {
     
     const file = files[0];
     setUploading(true);
+    setUploadError("");
     
     try {
-      // Upload to Supabase storage
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-      const filePath = `profile/${user?.id}/${fileName}`;
-      
-      const { error: uploadError, data: uploadData } = await supabase.storage
-        .from('portfolio')
-        .upload(filePath, file);
-      
-      if (uploadError) throw uploadError;
-      
-      // Get public URL
-      const { data: publicUrlData } = supabase.storage
-        .from('portfolio')
-        .getPublicUrl(filePath);
-      
-      if (publicUrlData) {
-        const imageUrl = publicUrlData.publicUrl;
-        setImagePreview(imageUrl);
-        form.setValue('profileImage', imageUrl);
-        
-        // Also save to Supabase user_profile table
-        if (user) {
-          const { error: upsertError } = await supabase
-            .from('user_profile')
-            .upsert({
-              id: user.id,
-              name: form.getValues('name'),
-              title: form.getValues('title'),
-              email: form.getValues('email'),
-              phone: form.getValues('phone') || null,
-              location: form.getValues('location') || null,
-              bio: form.getValues('bio'),
-              profile_image: imageUrl
-            }, { onConflict: 'id' });
-          
-          if (upsertError) throw upsertError;
-          
-          // Update local data to reflect the change
-          updateUserData({
-            ...data.user,
-            profileImage: imageUrl
-          });
-          
-          // Refresh portfolio data to ensure changes are reflected immediately
-          await fetchPortfolioData();
-        }
-        
-        toast({
-          title: "Image Uploaded",
-          description: "Your profile image has been successfully updated."
-        });
+      if (!user) {
+        throw new Error("You must be logged in to upload an image");
       }
+      
+      const filePath = `profile/${user.id}/${Math.random().toString(36).substring(2)}_${file.name}`;
+      const result = await uploadFile(file, filePath);
+      
+      if (!result.success) {
+        throw new Error(result.message || "Failed to upload image");
+      }
+      
+      setImagePreview(result.path || imagePreview);
+      form.setValue('profileImage', result.path || '');
+      
+      // Also save to Supabase user_profile table
+      const { error: upsertError } = await supabase
+        .from('user_profile')
+        .upsert({
+          id: user.id,
+          name: form.getValues('name'),
+          title: form.getValues('title'),
+          email: form.getValues('email'),
+          phone: form.getValues('phone') || null,
+          location: form.getValues('location') || null,
+          bio: form.getValues('bio'),
+          profile_image: result.path
+        }, { onConflict: 'id' });
+      
+      if (upsertError) throw upsertError;
+      
+      // Update local data to reflect the change
+      updateUserData({
+        ...data.user,
+        profileImage: result.path
+      });
+      
+      // Refresh portfolio data to ensure changes are reflected immediately
+      await fetchPortfolioData();
+      
+      toast('Image uploaded successfully');
     } catch (error: any) {
       console.error("Error uploading image:", error);
-      toast({
-        title: "Upload Failed",
-        description: error.message || "There was an error uploading your image.",
-        variant: "destructive"
-      });
+      setUploadError(error.message || "There was an error uploading your image");
+      toast('Upload failed: ' + error.message);
     } finally {
       setUploading(false);
     }
@@ -202,17 +190,10 @@ export function ProfileForm() {
         await fetchPortfolioData();
       }
       
-      toast({
-        title: "Profile Updated",
-        description: "Your profile has been successfully updated.",
-      });
+      toast('Profile updated successfully');
     } catch (error: any) {
       console.error("Error saving profile:", error);
-      toast({
-        title: "Update Failed",
-        description: error.message || "There was an error updating your profile.",
-        variant: "destructive"
-      });
+      toast('Update failed: ' + error.message);
     }
   };
 
@@ -235,6 +216,9 @@ export function ProfileForm() {
                   src={imagePreview} 
                   alt="Profile" 
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = "/lovable-uploads/78295e37-4b4d-4900-b613-21ed6626ab3f.png";
+                  }}
                 />
               </div>
               <div>
@@ -259,6 +243,12 @@ export function ProfileForm() {
                 <p className="text-xs text-gray-500 mt-2">
                   Recommended: Square image, at least 300x300 pixels
                 </p>
+                {uploadError && (
+                  <div className="mt-2 text-sm text-red-500 flex items-center">
+                    <AlertCircle className="h-4 w-4 mr-1" />
+                    {uploadError}
+                  </div>
+                )}
               </div>
             </div>
           </div>

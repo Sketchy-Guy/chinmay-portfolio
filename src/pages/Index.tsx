@@ -11,6 +11,7 @@ import Header from "@/components/Header";
 import ScrollToTop from "@/components/ScrollToTop";
 import { usePortfolioData } from "@/components/DataManager";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 // Wrapper component to ensure data is loaded
 const IndexContent = () => {
@@ -21,6 +22,7 @@ const IndexContent = () => {
     console.log("IndexContent mounted - fetching portfolio data");
     fetchPortfolioData().catch(err => {
       console.error("Error fetching portfolio data in IndexContent:", err);
+      toast('Failed to load portfolio data. Please try refreshing the page.');
     });
     
     // Animation on scroll effect

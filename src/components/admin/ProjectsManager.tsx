@@ -19,26 +19,30 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { motion } from "framer-motion";
-import { Trash2, Plus, Upload } from "lucide-react";
+import { Trash2, Plus, Upload, Edit, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { uploadFile } from "@/utils/storage";
+import { toast } from "sonner";
 
 const projectSchema = z.object({
   title: z.string().min(2, "Title must be at least 2 characters"),
   description: z.string().min(10, "Description must be at least 10 characters"),
   technologies: z.string().optional(),
-  github_url: z.string().url("Must be a valid URL").optional(),
-  demo_url: z.string().url("Must be a valid URL").optional(),
+  github_url: z.string().url("Must be a valid URL").optional().or(z.string().length(0)),
+  demo_url: z.string().url("Must be a valid URL").optional().or(z.string().length(0)),
   image_url: z.string().optional(),
 });
 
 export function ProjectsManager() {
-  const { data, updateProject, addProject, removeProject, fetchPortfolioData } = usePortfolioData();
-  const { toast } = useToast();
+  const { data, fetchPortfolioData } = usePortfolioData();
+  const { toast: uiToast } = useToast();
   const { user } = useAuth();
   const [projects, setProjects] = useState<ProjectData[]>(data.projects);
   const [newProjectImage, setNewProjectImage] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
   
   useEffect(() => {
     setProjects(data.projects);
@@ -56,6 +60,35 @@ export function ProjectsManager() {
     },
   });
 
+  const resetForm = () => {
+    form.reset({
+      title: "",
+      description: "",
+      technologies: "",
+      github_url: "",
+      demo_url: "",
+      image_url: "",
+    });
+    setNewProjectImage(null);
+    setIsEditing(false);
+    setEditingProjectId(null);
+  };
+
+  const handleEditProject = (project: ProjectData) => {
+    setIsEditing(true);
+    setEditingProjectId(project.id);
+    setNewProjectImage(project.image || null);
+    
+    form.reset({
+      title: project.title,
+      description: project.description,
+      technologies: project.technologies.join(", "),
+      github_url: project.github || "",
+      demo_url: project.demo || "",
+      image_url: project.image || "",
+    });
+  };
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -64,52 +97,61 @@ export function ProjectsManager() {
     setUploading(true);
     
     try {
-      // Upload to Supabase storage
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-      const filePath = `projects/${user?.id}/${fileName}`;
-      
-      const { error: uploadError, data: uploadData } = await supabase.storage
-        .from('portfolio')
-        .upload(filePath, file);
-      
-      if (uploadError) throw uploadError;
-      
-      // Get public URL
-      const { data: publicUrlData } = supabase.storage
-        .from('portfolio')
-        .getPublicUrl(filePath);
-      
-      if (publicUrlData) {
-        const imageUrl = publicUrlData.publicUrl;
-        setNewProjectImage(imageUrl);
-        form.setValue('image_url', imageUrl);
-        
-        toast({
-          title: "Image Uploaded",
-          description: "Your project image has been successfully updated."
-        });
+      if (!user) {
+        throw new Error("You must be logged in to upload an image");
       }
+      
+      const filePath = `projects/${user.id}/${Math.random().toString(36).substring(2)}_${file.name}`;
+      const result = await uploadFile(file, filePath);
+      
+      if (!result.success) {
+        throw new Error(result.message || "Upload failed");
+      }
+      
+      setNewProjectImage(result.path);
+      form.setValue('image_url', result.path || '');
+      
+      toast('Image uploaded successfully');
     } catch (error: any) {
       console.error("Error uploading image:", error);
-      toast({
-        title: "Upload Failed",
-        description: error.message || "There was an error uploading your image.",
-        variant: "destructive"
-      });
+      toast('Upload failed: ' + error.message);
     } finally {
       setUploading(false);
     }
   };
 
-  const handleSave = async (values: z.infer<typeof projectSchema>) => {
-    const technologiesArray = values.technologies?.split(',').map(tech => tech.trim()) || [];
+  const handleSubmit = async (values: z.infer<typeof projectSchema>) => {
+    if (!user) {
+      toast('You must be logged in to save projects');
+      return;
+    }
     
     try {
-      if (user) {
+      const technologiesArray = values.technologies?.split(',').map(tech => tech.trim()) || [];
+      
+      if (isEditing && editingProjectId) {
+        // Update existing project
         const { error } = await supabase
           .from('projects')
-          .upsert({
+          .update({
+            title: values.title,
+            description: values.description,
+            technologies: technologiesArray,
+            github_url: values.github_url || null,
+            demo_url: values.demo_url || null,
+            image_url: newProjectImage || values.image_url || null,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', editingProjectId);
+        
+        if (error) throw error;
+        
+        toast('Project updated successfully');
+      } else {
+        // Add new project
+        const { error } = await supabase
+          .from('projects')
+          .insert({
             profile_id: user.id,
             title: values.title,
             description: values.description,
@@ -121,89 +163,43 @@ export function ProjectsManager() {
         
         if (error) throw error;
         
-        // After successfully saving to Supabase, fetch the latest data
-        await fetchPortfolioData();
-        
-        toast({
-          title: "Project Saved",
-          description: "The project has been successfully saved.",
-        });
+        toast('Project added successfully');
       }
+      
+      // After successfully saving to Supabase, fetch the latest data
+      await fetchPortfolioData();
+      resetForm();
     } catch (error: any) {
-      console.error("Error saving project:", error);
-      toast({
-        title: "Save Failed",
-        description: error.message || "There was an error saving the project.",
-        variant: "destructive"
-      });
-    }
-  };
-  
-  const handleAddProject = async () => {
-    const values = form.getValues();
-    const technologiesArray = values.technologies?.split(',').map(tech => tech.trim()) || [];
-    
-    try {
-      if (user) {
-        const { data: newProject, error } = await supabase
-          .from('projects')
-          .insert({
-            profile_id: user.id,
-            title: values.title,
-            description: values.description,
-            technologies: technologiesArray,
-            github_url: values.github_url || null,
-            demo_url: values.demo_url || null,
-            image_url: newProjectImage || values.image_url || null,
-          })
-          .select()
-          .single();
-        
-        if (error) throw error;
-        
-        // After successfully saving to Supabase, fetch the latest data
-        await fetchPortfolioData();
-        
-        toast({
-          title: "Project Added",
-          description: "The project has been successfully added.",
-        });
-      }
-    } catch (error: any) {
-      console.error("Error adding project:", error);
-      toast({
-        title: "Add Failed",
-        description: error.message || "There was an error adding the project.",
-        variant: "destructive"
-      });
+      console.error(isEditing ? "Error updating project:" : "Error adding project:", error);
+      toast(`${isEditing ? 'Update' : 'Add'} failed: ${error.message}`);
     }
   };
   
   const handleDeleteProject = async (id: string) => {
     try {
-      if (user) {
-        const { error } = await supabase
-          .from('projects')
-          .delete()
-          .eq('id', id);
-        
-        if (error) throw error;
-        
-        // After successfully deleting from Supabase, fetch the latest data
-        await fetchPortfolioData();
-        
-        toast({
-          title: "Project Deleted",
-          description: "The project has been successfully deleted.",
-        });
+      if (!user) {
+        throw new Error("You must be logged in to delete projects");
       }
+      
+      const { error } = await supabase
+        .from('projects')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      // After successfully deleting from Supabase, fetch the latest data
+      await fetchPortfolioData();
+      
+      // If deleting the project that's currently being edited, reset the form
+      if (id === editingProjectId) {
+        resetForm();
+      }
+      
+      toast('Project deleted successfully');
     } catch (error: any) {
       console.error("Error deleting project:", error);
-      toast({
-        title: "Delete Failed",
-        description: error.message || "There was an error deleting the project.",
-        variant: "destructive"
-      });
+      toast('Delete failed: ' + error.message);
     }
   };
 
@@ -214,12 +210,24 @@ export function ProjectsManager() {
       transition={{ duration: 0.5 }}
     >
       <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold text-portfolio-purple">Manage Projects</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-2xl font-bold text-portfolio-purple">
+            {isEditing ? 'Edit Project' : 'Add New Project'}
+          </CardTitle>
+          {isEditing && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={resetForm}
+              className="h-8 w-8"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSave)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
               <div className="mb-6">
                 <label className="block text-sm font-medium mb-2">Project Image</label>
                 <div className="flex items-center space-x-6">
@@ -228,6 +236,9 @@ export function ProjectsManager() {
                       src={newProjectImage || form.getValues("image_url") || "/placeholder-image.png"} 
                       alt="Project" 
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = "/placeholder.svg";
+                      }}
                     />
                   </div>
                   <div>
@@ -332,11 +343,10 @@ export function ProjectsManager() {
               />
               
               <Button 
-                type="button" 
+                type="submit" 
                 className="bg-portfolio-purple hover:bg-portfolio-purple/90 transition-all duration-300 transform hover:scale-105"
-                onClick={handleAddProject}
               >
-                Add Project
+                {isEditing ? 'Update Project' : 'Add Project'}
               </Button>
             </form>
           </Form>
@@ -357,19 +367,45 @@ export function ProjectsManager() {
             <div className="grid gap-4">
               {projects.map((project) => (
                 <div key={project.id} className="flex items-center justify-between p-4 rounded-md shadow-sm border border-gray-200">
-                  <div>
-                    <h3 className="text-lg font-medium">{project.title}</h3>
-                    <p className="text-sm text-gray-500">{project.description.substring(0, 50)}...</p>
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-md overflow-hidden border border-gray-200">
+                      <img 
+                        src={project.image || "/placeholder.svg"} 
+                        alt={project.title}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "/placeholder.svg";
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-medium">{project.title}</h3>
+                      <p className="text-sm text-gray-500">{project.description.substring(0, 50)}...</p>
+                    </div>
                   </div>
-                  <Button 
-                    variant="destructive"
-                    size="icon"
-                    onClick={() => handleDeleteProject(project.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleEditProject(project)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="destructive"
+                      size="icon"
+                      onClick={() => handleDeleteProject(project.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               ))}
+              {projects.length === 0 && (
+                <div className="text-center py-6 text-gray-500">
+                  No projects added yet. Add your first project above.
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

@@ -4,13 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Download, Github, Linkedin, Mail, Twitter, Instagram, Facebook } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { usePortfolioData } from "@/components/DataManager";
+import { toast } from "sonner";
 
 const Hero = () => {
   const [typedText, setTypedText] = useState("");
   const { data, isLoading } = usePortfolioData();
   const [imageTimestamp, setImageTimestamp] = useState(Date.now());
   const fullText = data.user.title;
-  const { toast } = useToast();
+  const { toast: uiToast } = useToast();
   
   // Refresh image when component mounts and whenever profile image changes
   useEffect(() => {
@@ -33,7 +34,7 @@ const Hero = () => {
   
   const handleDownloadCV = () => {
     // This would be a real download in a production environment
-    toast({
+    uiToast({
       title: "CV Downloaded",
       description: "Your CV has been downloaded successfully!",
     });
@@ -48,10 +49,13 @@ const Hero = () => {
     { icon: Mail, href: `mailto:${data.user.email}`, label: "Email" },
   ];
 
+  // Default image path with fallback
+  const defaultImage = "/lovable-uploads/78295e37-4b4d-4900-b613-21ed6626ab3f.png";
+  
   // Force the image to refresh by adding a timestamp as a query parameter
   const profileImage = data.user.profileImage 
     ? `${data.user.profileImage}?t=${imageTimestamp}` 
-    : "/lovable-uploads/78295e37-4b4d-4900-b613-21ed6626ab3f.png";
+    : defaultImage;
 
   return (
     <section className="min-h-screen flex flex-col justify-center pt-20">
@@ -114,6 +118,10 @@ const Hero = () => {
                 src={profileImage} 
                 alt={data.user.name}
                 className="rounded-full object-cover border-4 border-white shadow-xl w-full h-full"
+                onError={(e) => {
+                  console.log('Image failed to load, using fallback');
+                  (e.target as HTMLImageElement).src = defaultImage;
+                }}
               />
             </div>
           </div>
