@@ -29,9 +29,6 @@ export const initializeStorage = async () => {
         return { success: false, message: error.message };
       }
       
-      // We'll skip the RPC call since it's causing type errors
-      // The migration should have already created the policy
-      
       console.log('Portfolio storage bucket created successfully');
       return { success: true, message: 'Portfolio storage bucket created' };
     }
