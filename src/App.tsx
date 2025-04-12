@@ -30,24 +30,23 @@ const queryClient = new QueryClient({
 const App = () => {
   const [initializing, setInitializing] = useState(true);
 
+  // Run initialization once at the app level
   useEffect(() => {
     console.log("Initializing application...");
     
     const init = async () => {
       try {
-        // Only initialize storage once at the app level
+        // Initialize storage just once at the app level
         const result = await initializeStorage();
         if (!result.success) {
           console.warn('Storage initialization warning:', result.message);
           toast.error('Storage initialization warning: ' + result.message);
-          // Continue anyway, the app might still work since we've set up RLS policies
         } else {
-          console.log('Storage initialized:', result.message);
+          console.log('Storage initialized successfully:', result.message);
         }
       } catch (error: any) {
         console.error('Error during initialization:', error);
         toast.error('Error during initialization: ' + error.message);
-        // Continue anyway, the app might still work
       } finally {
         // Always complete initialization to allow rendering
         setInitializing(false);

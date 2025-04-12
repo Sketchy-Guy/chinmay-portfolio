@@ -2,12 +2,12 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-// Function to initialize the portfolio storage bucket
+// Function to initialize the portfolio storage bucket - now simplified since we manage it through SQL
 export const initializeStorage = async () => {
   try {
-    console.log("Initializing storage bucket...");
+    console.log("Checking storage bucket status...");
     
-    // Check if the bucket already exists
+    // Check if the bucket exists (but don't try to create it if it doesn't)
     const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
     
     if (bucketsError) {
@@ -18,15 +18,14 @@ export const initializeStorage = async () => {
     const portfolioBucket = buckets.find(bucket => bucket.name === 'portfolio');
     
     if (!portfolioBucket) {
-      // We don't need to create the bucket via the client as it was created via SQL
-      console.log('Using portfolio bucket created by SQL migration');
-      return { success: true, message: 'Using portfolio bucket created by SQL migration' };
+      console.log('Portfolio bucket not found. Using the one created by SQL migration.');
+      return { success: true, message: 'Portfolio bucket managed by SQL migration' };
     }
     
-    console.log('Portfolio bucket already exists');
-    return { success: true, message: 'Portfolio bucket already exists' };
+    console.log('Portfolio bucket verified');
+    return { success: true, message: 'Portfolio bucket exists' };
   } catch (error: any) {
-    console.error('Error initializing storage:', error);
+    console.error('Error checking storage bucket:', error);
     return { success: false, message: error.message };
   }
 };
@@ -34,13 +33,6 @@ export const initializeStorage = async () => {
 // Function to upload a file to the portfolio bucket
 export const uploadFile = async (file: File, path: string) => {
   try {
-    // Make sure the bucket exists
-    const initResult = await initializeStorage();
-    if (!initResult.success) {
-      toast('Error initializing storage: ' + initResult.message);
-      return { success: false, message: initResult.message, path: null };
-    }
-    
     console.log(`Uploading file to ${path}...`);
     
     // Upload the file with public access

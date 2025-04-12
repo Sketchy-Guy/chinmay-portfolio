@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -28,7 +27,7 @@ export interface SkillData {
 }
 
 export interface ProjectData {
-  id: string;  // Changed from number to string to match Supabase's UUID
+  id: string;
   title: string;
   description: string;
   technologies: string[];
@@ -38,7 +37,7 @@ export interface ProjectData {
 }
 
 export interface CertificationData {
-  id: string;  // Added id field
+  id: string;
   title: string;
   issuer: string;
   date: string;
@@ -56,14 +55,14 @@ interface PortfolioData {
 
 interface DataContextType {
   data: PortfolioData;
-  error: Error | null; // Added error property to the interface
+  error: Error | null;
   updateUserData: (userData: Partial<UserData>) => void;
   updateSkill: (index: number, skill: SkillData) => void;
   addSkill: (skill: SkillData) => void;
   removeSkill: (index: number) => void;
   updateProject: (index: number, project: ProjectData) => void;
   addProject: (project: ProjectData) => void;
-  removeProject: (id: string) => void;  // Changed from number to string
+  removeProject: (id: string) => void;
   updateCertification: (index: number, certification: CertificationData) => void;
   addCertification: (certification: CertificationData) => void;
   removeCertification: (index: number) => void;
@@ -112,7 +111,7 @@ const defaultData: PortfolioData = {
   ],
   projects: [
     {
-      id: "1",  // Changed from number to string
+      id: "1",
       title: "AI-Powered Symptom Checker",
       description: "Developed an AI-powered symptom checker that analyzes user health data and predicts potential diseases using Python, AI, ML, and Gemini AI.",
       technologies: ["Python", "AI", "ML", "Gemini AI"],
@@ -120,7 +119,7 @@ const defaultData: PortfolioData = {
       github: "https://github.com/chinmaykumarpanda/ai-symptom-checker",
     },
     {
-      id: "2",  // Changed from number to string
+      id: "2",
       title: "Coding Ninjas Platform",
       description: "Contributed to the Coding Ninjas developer club platform, organizing workshops and hackathons for students.",
       technologies: ["React", "Node.js", "MongoDB", "JavaScript"],
@@ -129,7 +128,7 @@ const defaultData: PortfolioData = {
       demo: "https://coding-ninjas.com",
     },
     {
-      id: "3",  // Changed from number to string
+      id: "3",
       title: "Portfolio Website",
       description: "My personal portfolio website showcasing my projects, skills, and experience. Built with modern web technologies.",
       technologies: ["React", "Tailwind CSS", "TypeScript"],
@@ -140,7 +139,7 @@ const defaultData: PortfolioData = {
   ],
   certifications: [
     {
-      id: "1",  // Added id field
+      id: "1",
       title: "Crash Course on Python",
       issuer: "Google",
       date: "Jun 2024",
@@ -149,7 +148,7 @@ const defaultData: PortfolioData = {
       logo: "/lovable-uploads/f9f301cf-7ee5-4609-845e-2f2afc316a9a.png",
     },
     {
-      id: "2",  // Added id field
+      id: "2",
       title: "Python for Data Science",
       issuer: "IBM",
       date: "In Progress",
@@ -157,7 +156,7 @@ const defaultData: PortfolioData = {
       logo: "/lovable-uploads/bb075ae5-f91f-43e6-b800-4ad15066260c.png",
     },
     {
-      id: "3",  // Added id field
+      id: "3",
       title: "Microsoft Cybersecurity Analyst",
       issuer: "Microsoft",
       date: "In Progress",
@@ -172,40 +171,16 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [data, setData] = useState<PortfolioData>(defaultData);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null); // Added error state
+  const [error, setError] = useState<Error | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
   
   const fetchPortfolioData = async () => {
     try {
       setIsLoading(true);
-      setError(null); // Reset error state when fetching
+      setError(null);
       console.log("Fetching portfolio data...");
       
-      // Check if the storage bucket exists before fetching data
-      const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
-      
-      if (bucketError) {
-        console.error("Error listing buckets:", bucketError);
-        // Attempt to create the portfolio bucket if it doesn't exist
-        await supabase.storage.createBucket('portfolio', {
-          public: true,
-          fileSizeLimit: 5242880 // 5MB
-        });
-        console.log("Created new portfolio bucket");
-      } else {
-        const portfolioBucket = buckets.find(bucket => bucket.name === 'portfolio');
-        if (!portfolioBucket) {
-          console.log("Portfolio bucket not found, creating one");
-          await supabase.storage.createBucket('portfolio', {
-            public: true,
-            fileSizeLimit: 5242880 // 5MB
-          });
-          console.log("Created new portfolio bucket");
-        }
-      }
-      
-      // Even if user is not logged in, provide default data
       if (!user) {
         console.log("No user logged in, using default data");
         setIsLoading(false);
@@ -214,7 +189,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       console.log("Fetching data for user:", user.id);
       
-      // Fetch profile data
       const { data: profileData, error: profileError } = await supabase
         .from('user_profile')
         .select('*')
@@ -227,7 +201,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log("Successfully fetched profile data:", profileData);
       }
       
-      // Fetch social links
       const { data: socialData, error: socialError } = await supabase
         .from('social_links')
         .select('*')
@@ -239,7 +212,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log("Successfully fetched social links, count:", socialData?.length);
       }
       
-      // Fetch skills
       const { data: skillsData, error: skillsError } = await supabase
         .from('skills')
         .select('*')
@@ -251,7 +223,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log("Successfully fetched skills, count:", skillsData?.length);
       }
       
-      // Fetch projects
       const { data: projectsData, error: projectsError } = await supabase
         .from('projects')
         .select('*')
@@ -263,7 +234,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log("Successfully fetched projects, count:", projectsData?.length);
       }
       
-      // Fetch certifications
       const { data: certificationsData, error: certificationsError } = await supabase
         .from('certifications')
         .select('*')
@@ -275,7 +245,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log("Successfully fetched certifications, count:", certificationsData?.length);
       }
       
-      // Process social links
       const socialLinks = {
         github: socialData?.find(link => link.platform === 'github')?.url || defaultData.user.social.github,
         linkedin: socialData?.find(link => link.platform === 'linkedin')?.url || defaultData.user.social.linkedin,
@@ -284,7 +253,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         facebook: socialData?.find(link => link.platform === 'facebook')?.url || defaultData.user.social.facebook,
       };
       
-      // Update state with fetched data or fallback to defaults
       setData(prev => ({
         user: {
           name: profileData?.name || prev.user.name,
@@ -302,7 +270,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           level: skill.level
         })) : prev.skills,
         projects: projectsData?.length ? projectsData.map(project => ({
-          id: project.id.toString(), // Ensure string type
+          id: project.id.toString(),
           title: project.title,
           description: project.description,
           technologies: project.technologies || [],
@@ -311,7 +279,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           demo: project.demo_url
         })) : prev.projects,
         certifications: certificationsData?.length ? certificationsData.map(cert => ({
-          id: cert.id.toString(), // Ensure string type
+          id: cert.id.toString(),
           title: cert.title,
           issuer: cert.issuer,
           date: cert.date,
@@ -382,7 +350,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }));
   };
   
-  const removeProject = (id: string) => {  // Changed from number to string
+  const removeProject = (id: string) => {
     console.log("Removing project with id:", id);
     const projects = data.projects.filter(project => project.id !== id);
     setData(prev => ({ ...prev, projects }));
@@ -413,7 +381,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return (
     <DataContext.Provider value={{
       data,
-      error, // Added error to the context value
+      error,
       updateUserData,
       updateSkill,
       addSkill,

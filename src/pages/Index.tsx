@@ -13,26 +13,24 @@ import { usePortfolioData } from "@/components/DataManager";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-// Wrapper component to ensure data is loaded
-const IndexContent = () => {
+const Index = () => {
   const { fetchPortfolioData, isLoading, error, data } = usePortfolioData();
   const [localLoading, setLocalLoading] = useState(true);
   
   useEffect(() => {
-    // Fetch portfolio data without re-initializing storage
-    const init = async () => {
+    const loadData = async () => {
       try {
-        console.log("IndexContent - fetching portfolio data");
+        console.log("Index - loading portfolio data");
         await fetchPortfolioData();
       } catch (err: any) {
-        console.error("Error in IndexContent:", err);
+        console.error("Error loading portfolio data:", err);
         toast.error('Failed to load portfolio data. Please try refreshing the page.');
       } finally {
         setLocalLoading(false);
       }
     };
     
-    init();
+    loadData();
     
     // Animation on scroll effect
     const revealElements = document.querySelectorAll('.reveal');
@@ -106,10 +104,6 @@ const IndexContent = () => {
       <ScrollToTop />
     </div>
   );
-};
-
-const Index = () => {
-  return <IndexContent />;
 };
 
 export default Index;
