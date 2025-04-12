@@ -17,6 +17,7 @@ import { initializeStorage } from "@/utils/storage";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
+// Create a single global query client instance
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -34,12 +35,12 @@ const App = () => {
     
     const init = async () => {
       try {
-        // Initialize the storage bucket
+        // Only initialize storage once at the app level
         const result = await initializeStorage();
         if (!result.success) {
           console.warn('Storage initialization warning:', result.message);
           toast.error('Storage initialization warning: ' + result.message);
-          // Continue anyway, the app might still work
+          // Continue anyway, the app might still work since we've set up RLS policies
         } else {
           console.log('Storage initialized:', result.message);
         }
@@ -48,6 +49,7 @@ const App = () => {
         toast.error('Error during initialization: ' + error.message);
         // Continue anyway, the app might still work
       } finally {
+        // Always complete initialization to allow rendering
         setInitializing(false);
       }
     };

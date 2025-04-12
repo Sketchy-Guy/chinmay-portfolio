@@ -12,7 +12,6 @@ import ScrollToTop from "@/components/ScrollToTop";
 import { usePortfolioData } from "@/components/DataManager";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { initializeStorage } from "@/utils/storage";
 
 // Wrapper component to ensure data is loaded
 const IndexContent = () => {
@@ -20,21 +19,13 @@ const IndexContent = () => {
   const [localLoading, setLocalLoading] = useState(true);
   
   useEffect(() => {
-    // Initialize storage first, then fetch portfolio data
+    // Fetch portfolio data without re-initializing storage
     const init = async () => {
       try {
-        console.log("IndexContent mounted - initializing storage");
-        // Make sure storage bucket exists first
-        const storageResult = await initializeStorage();
-        if (!storageResult.success) {
-          console.warn("Storage initialization warning:", storageResult.message);
-          // Continue anyway, might still work
-        }
-        
         console.log("IndexContent - fetching portfolio data");
         await fetchPortfolioData();
       } catch (err: any) {
-        console.error("Error initializing in IndexContent:", err);
+        console.error("Error in IndexContent:", err);
         toast.error('Failed to load portfolio data. Please try refreshing the page.');
       } finally {
         setLocalLoading(false);
@@ -67,6 +58,7 @@ const IndexContent = () => {
     };
   }, [fetchPortfolioData]);
 
+  // Show loading state while data is being fetched
   if (isLoading || localLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -78,6 +70,7 @@ const IndexContent = () => {
     );
   }
 
+  // Show error state if there was an error fetching data
   if (error || !data) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -95,6 +88,7 @@ const IndexContent = () => {
     );
   }
 
+  // Once data is loaded, display the content
   return (
     <div className="flex flex-col min-h-screen">
       <Header />

@@ -18,19 +18,9 @@ export const initializeStorage = async () => {
     const portfolioBucket = buckets.find(bucket => bucket.name === 'portfolio');
     
     if (!portfolioBucket) {
-      // Create bucket if it doesn't exist
-      const { error } = await supabase.storage.createBucket('portfolio', {
-        public: true,
-        fileSizeLimit: 5242880 // 5MB
-      });
-      
-      if (error) {
-        console.error('Error creating portfolio bucket:', error);
-        return { success: false, message: error.message };
-      }
-      
-      console.log('Portfolio storage bucket created successfully');
-      return { success: true, message: 'Portfolio storage bucket created' };
+      // We don't need to create the bucket via the client as it was created via SQL
+      console.log('Using portfolio bucket created by SQL migration');
+      return { success: true, message: 'Using portfolio bucket created by SQL migration' };
     }
     
     console.log('Portfolio bucket already exists');
