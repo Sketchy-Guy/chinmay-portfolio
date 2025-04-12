@@ -1,5 +1,5 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Hero from "@/components/Hero";
 import About from "@/components/About";
 import Skills from "@/components/Skills";
@@ -12,18 +12,36 @@ import ScrollToTop from "@/components/ScrollToTop";
 import { usePortfolioData } from "@/components/DataManager";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { initializeStorage } from "@/utils/storage";
 
 // Wrapper component to ensure data is loaded
 const IndexContent = () => {
-  const { fetchPortfolioData, isLoading } = usePortfolioData();
+  const { fetchPortfolioData, isLoading, data } = usePortfolioData();
+  const [localLoading, setLocalLoading] = useState(true);
   
   useEffect(() => {
-    // Refresh data when the index page loads
-    console.log("IndexContent mounted - fetching portfolio data");
-    fetchPortfolioData().catch(err => {
-      console.error("Error fetching portfolio data in IndexContent:", err);
-      toast('Failed to load portfolio data. Please try refreshing the page.');
-    });
+    // Initialize storage first, then fetch portfolio data
+    const init = async () => {
+      try {
+        console.log("IndexContent mounted - initializing storage");
+        // Make sure storage bucket exists first
+        const storageResult = await initializeStorage();
+        if (!storageResult.success) {
+          console.warn("Storage initialization warning:", storageResult.message);
+          // Continue anyway, might still work
+        }
+        
+        console.log("IndexContent - fetching portfolio data");
+        await fetchPortfolioData();
+      } catch (err: any) {
+        console.error("Error initializing in IndexContent:", err);
+        toast('Failed to load portfolio data. Please try refreshing the page.');
+      } finally {
+        setLocalLoading(false);
+      }
+    };
+    
+    init();
     
     // Animation on scroll effect
     const revealElements = document.querySelectorAll('.reveal');
@@ -49,7 +67,7 @@ const IndexContent = () => {
     };
   }, [fetchPortfolioData]);
 
-  if (isLoading) {
+  if (isLoading || localLoading || !data) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

@@ -36,12 +36,14 @@ const App = () => {
         // Initialize the storage bucket
         const result = await initializeStorage();
         if (!result.success) {
-          console.error('Failed to initialize storage:', result.message);
+          console.warn('Storage initialization warning:', result.message);
+          // Continue anyway, the app might still work
         } else {
           console.log('Storage initialized:', result.message);
         }
       } catch (error) {
         console.error('Error during initialization:', error);
+        // Continue anyway, the app might still work
       } finally {
         setInitializing(false);
       }

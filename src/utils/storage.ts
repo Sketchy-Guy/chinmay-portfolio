@@ -29,6 +29,18 @@ export const initializeStorage = async () => {
         return { success: false, message: error.message };
       }
       
+      // Enable public access to the bucket objects by default
+      const { error: policyError } = await supabase.rpc('create_storage_policy', {
+        bucket_name: 'portfolio',
+        policy_name: 'Public Access',
+        definition: `storage.object_owner = auth.uid() OR bucket_id = 'portfolio'`
+      });
+      
+      if (policyError) {
+        console.warn('Warning: Could not create storage policy:', policyError);
+        // Continue anyway, this is not critical for basic functionality
+      }
+      
       console.log('Portfolio storage bucket created successfully');
       return { success: true, message: 'Portfolio storage bucket created' };
     }
@@ -53,7 +65,7 @@ export const uploadFile = async (file: File, path: string) => {
     
     console.log(`Uploading file to ${path}...`);
     
-    // Upload the file
+    // Upload the file with public access
     const { data, error } = await supabase.storage
       .from('portfolio')
       .upload(path, file, {

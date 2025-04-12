@@ -10,15 +10,19 @@ const Hero = () => {
   const [typedText, setTypedText] = useState("");
   const { data, isLoading } = usePortfolioData();
   const [imageTimestamp, setImageTimestamp] = useState(Date.now());
-  const fullText = data.user.title;
+  const [imageError, setImageError] = useState(false);
+  const fullText = data?.user?.title || "";
   const { toast: uiToast } = useToast();
   
   // Refresh image when component mounts and whenever profile image changes
   useEffect(() => {
     setImageTimestamp(Date.now());
-  }, [data.user.profileImage]);
+    setImageError(false);
+  }, [data?.user?.profileImage]);
   
   useEffect(() => {
+    if (!fullText) return;
+    
     let currentIndex = 0;
     const typingInterval = setInterval(() => {
       if (currentIndex < fullText.length) {
@@ -40,6 +44,10 @@ const Hero = () => {
     });
   };
   
+  if (!data || !data.user) {
+    return null; // Don't render anything if data isn't loaded yet
+  }
+  
   const socialLinks = [
     { icon: Github, href: data.user.social.github || "#", label: "GitHub" },
     { icon: Linkedin, href: data.user.social.linkedin || "#", label: "LinkedIn" },
@@ -53,7 +61,7 @@ const Hero = () => {
   const defaultImage = "/lovable-uploads/78295e37-4b4d-4900-b613-21ed6626ab3f.png";
   
   // Force the image to refresh by adding a timestamp as a query parameter
-  const profileImage = data.user.profileImage 
+  const profileImage = !imageError && data.user.profileImage 
     ? `${data.user.profileImage}?t=${imageTimestamp}` 
     : defaultImage;
 
@@ -120,6 +128,7 @@ const Hero = () => {
                 className="rounded-full object-cover border-4 border-white shadow-xl w-full h-full"
                 onError={(e) => {
                   console.log('Image failed to load, using fallback');
+                  setImageError(true);
                   (e.target as HTMLImageElement).src = defaultImage;
                 }}
               />
