@@ -56,6 +56,7 @@ interface PortfolioData {
 
 interface DataContextType {
   data: PortfolioData;
+  error: Error | null; // Added error property to the interface
   updateUserData: (userData: Partial<UserData>) => void;
   updateSkill: (index: number, skill: SkillData) => void;
   addSkill: (skill: SkillData) => void;
@@ -171,12 +172,14 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [data, setData] = useState<PortfolioData>(defaultData);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null); // Added error state
   const { user } = useAuth();
   const { toast } = useToast();
   
   const fetchPortfolioData = async () => {
     try {
       setIsLoading(true);
+      setError(null); // Reset error state when fetching
       console.log("Fetching portfolio data...");
       
       // Check if the storage bucket exists before fetching data
@@ -319,8 +322,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }));
       
       console.log("Portfolio data fetched and updated successfully");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching portfolio data:", error);
+      setError(error instanceof Error ? error : new Error(error.message || 'Unknown error'));
       toast({
         title: "Error",
         description: "Failed to load portfolio data.",
@@ -409,6 +413,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return (
     <DataContext.Provider value={{
       data,
+      error, // Added error to the context value
       updateUserData,
       updateSkill,
       addSkill,
