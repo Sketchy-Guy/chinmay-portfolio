@@ -1,6 +1,5 @@
-
 import { useState } from "react";
-import { usePortfolioData, UserData } from "@/components/DataManager";
+import { usePortfolioData } from "@/components/DataManager";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,7 +21,7 @@ import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Upload, AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { uploadFile } from "@/utils/storage";
+import { uploadFile, initializeStorage } from "@/utils/storage";
 import { toast } from "sonner";
 
 const profileSchema = z.object({
@@ -79,6 +78,11 @@ export function ProfileForm() {
         throw new Error("You must be logged in to upload an image");
       }
       
+      const bucketInitResult = await initializeStorage();
+      if (!bucketInitResult.success) {
+        throw new Error(`Storage bucket not available: ${bucketInitResult.message}`);
+      }
+      
       const filePath = `profile/${user.id}/${Math.random().toString(36).substring(2)}_${file.name}`;
       const result = await uploadFile(file, filePath);
       
@@ -89,7 +93,6 @@ export function ProfileForm() {
       setImagePreview(result.path || imagePreview);
       form.setValue('profileImage', result.path || '');
       
-      // Also save to Supabase user_profile table
       const { error: upsertError } = await supabase
         .from('user_profile')
         .upsert({
@@ -105,13 +108,11 @@ export function ProfileForm() {
       
       if (upsertError) throw upsertError;
       
-      // Update local data to reflect the change
       updateUserData({
         ...data.user,
         profileImage: result.path
       });
       
-      // Refresh portfolio data to ensure changes are reflected immediately
       await fetchPortfolioData();
       
       toast('Image uploaded successfully');
@@ -126,7 +127,6 @@ export function ProfileForm() {
 
   const onSubmit = async (values: z.infer<typeof profileSchema>) => {
     try {
-      // Update local state
       updateUserData({
         name: values.name,
         title: values.title,
@@ -144,9 +144,7 @@ export function ProfileForm() {
         },
       });
       
-      // Save to Supabase database
       if (user) {
-        // Update user_profile
         const { error: profileError } = await supabase
           .from('user_profile')
           .upsert({
@@ -162,14 +160,11 @@ export function ProfileForm() {
         
         if (profileError) throw profileError;
         
-        // Update social links
-        // First delete existing links
         await supabase
           .from('social_links')
           .delete()
           .eq('profile_id', user.id);
         
-        // Insert new social links
         const socialLinks = [
           { platform: 'github', url: values.github || '', profile_id: user.id },
           { platform: 'linkedin', url: values.linkedin || '', profile_id: user.id },
@@ -186,7 +181,6 @@ export function ProfileForm() {
           if (socialError) throw socialError;
         }
         
-        // Refresh portfolio data after saving
         await fetchPortfolioData();
       }
       

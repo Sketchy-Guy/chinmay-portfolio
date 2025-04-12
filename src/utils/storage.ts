@@ -2,12 +2,12 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-// Function to initialize the portfolio storage bucket - now simplified since we manage it through SQL
+// Function to initialize the portfolio storage bucket
 export const initializeStorage = async () => {
   try {
     console.log("Checking storage bucket status...");
     
-    // Check if the bucket exists (but don't try to create it if it doesn't)
+    // Check if the portfolio bucket exists
     const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
     
     if (bucketsError) {
@@ -18,11 +18,25 @@ export const initializeStorage = async () => {
     const portfolioBucket = buckets.find(bucket => bucket.name === 'portfolio');
     
     if (!portfolioBucket) {
-      console.log('Portfolio bucket not found. Using the one created by SQL migration.');
-      return { success: true, message: 'Portfolio bucket managed by SQL migration' };
+      console.log('Portfolio bucket not found. Creating it now...');
+      
+      // Create the bucket if it doesn't exist
+      const { error: createError } = await supabase.storage.createBucket('portfolio', {
+        public: true,
+        fileSizeLimit: 5242880, // 5MB
+        allowedMimeTypes: ['image/png', 'image/jpeg', 'image/gif', 'image/webp']
+      });
+      
+      if (createError) {
+        console.error('Error creating portfolio bucket:', createError);
+        return { success: false, message: createError.message };
+      }
+      
+      console.log('Portfolio bucket created successfully');
+    } else {
+      console.log('Portfolio bucket verified');
     }
     
-    console.log('Portfolio bucket verified');
     return { success: true, message: 'Portfolio bucket exists' };
   } catch (error: any) {
     console.error('Error checking storage bucket:', error);
@@ -33,6 +47,12 @@ export const initializeStorage = async () => {
 // Function to upload a file to the portfolio bucket
 export const uploadFile = async (file: File, path: string) => {
   try {
+    // First ensure the bucket exists
+    const bucketStatus = await initializeStorage();
+    if (!bucketStatus.success) {
+      throw new Error(`Storage not initialized: ${bucketStatus.message}`);
+    }
+    
     console.log(`Uploading file to ${path}...`);
     
     // Upload the file with public access

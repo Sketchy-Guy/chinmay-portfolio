@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import Hero from "@/components/Hero";
 import About from "@/components/About";
 import Skills from "@/components/Skills";
@@ -15,7 +15,6 @@ import { toast } from "sonner";
 
 const Index = () => {
   const { fetchPortfolioData, isLoading, error, data } = usePortfolioData();
-  const [localLoading, setLocalLoading] = useState(true);
   
   useEffect(() => {
     const loadData = async () => {
@@ -25,17 +24,15 @@ const Index = () => {
       } catch (err: any) {
         console.error("Error loading portfolio data:", err);
         toast.error('Failed to load portfolio data. Please try refreshing the page.');
-      } finally {
-        setLocalLoading(false);
       }
     };
     
     loadData();
     
     // Animation on scroll effect
-    const revealElements = document.querySelectorAll('.reveal');
-    
-    const revealOnScroll = () => {
+    const handleRevealOnScroll = () => {
+      const revealElements = document.querySelectorAll('.reveal');
+      
       for (let i = 0; i < revealElements.length; i++) {
         const windowHeight = window.innerHeight;
         const elementTop = revealElements[i].getBoundingClientRect().top;
@@ -47,17 +44,38 @@ const Index = () => {
       }
     };
     
-    window.addEventListener('scroll', revealOnScroll);
+    window.addEventListener('scroll', handleRevealOnScroll);
     // Initial check on page load
-    revealOnScroll();
+    handleRevealOnScroll();
+    
+    // Apply fix for hover issues on tiles
+    const style = document.createElement('style');
+    style.textContent = `
+      /* Fix for tiles disappearing on hover */
+      .certifications-card:hover,
+      .project-card:hover,
+      .skills-card:hover {
+        opacity: 1 !important;
+        visibility: visible !important;
+        transform: none !important;
+      }
+      
+      /* Ensure all cards have proper z-index */
+      .card, .card-content {
+        z-index: 5;
+        position: relative;
+      }
+    `;
+    document.head.appendChild(style);
     
     return () => {
-      window.removeEventListener('scroll', revealOnScroll);
+      window.removeEventListener('scroll', handleRevealOnScroll);
+      document.head.removeChild(style);
     };
   }, [fetchPortfolioData]);
 
   // Show loading state while data is being fetched
-  if (isLoading || localLoading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

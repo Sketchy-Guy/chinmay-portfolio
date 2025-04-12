@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { usePortfolioData, ProjectData } from "@/components/DataManager";
 import { Button } from "@/components/ui/button";
@@ -130,7 +129,30 @@ export function ProjectsManager() {
       const technologiesArray = values.technologies?.split(',').map(tech => tech.trim()) || [];
       
       if (isEditing && editingProjectId) {
-        // Update existing project
+        let projectId = editingProjectId;
+        
+        if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(projectId)) {
+          console.log("Project ID is not a valid UUID, trying to find the actual UUID");
+          const { data: projectData, error: fetchError } = await supabase
+            .from('projects')
+            .select('id')
+            .eq('profile_id', user.id)
+            .eq('title', values.title)
+            .limit(1);
+          
+          if (fetchError) {
+            console.error("Error fetching project:", fetchError);
+            throw new Error("Could not find project: " + fetchError.message);
+          }
+          
+          if (projectData && projectData.length > 0) {
+            projectId = projectData[0].id;
+            console.log("Found project UUID:", projectId);
+          } else {
+            throw new Error("Could not find project with title: " + values.title);
+          }
+        }
+        
         const { error } = await supabase
           .from('projects')
           .update({
@@ -142,13 +164,12 @@ export function ProjectsManager() {
             image_url: newProjectImage || values.image_url || null,
             updated_at: new Date().toISOString()
           })
-          .eq('id', editingProjectId);
+          .eq('id', projectId);
         
         if (error) throw error;
         
         toast('Project updated successfully');
       } else {
-        // Add new project
         const { error } = await supabase
           .from('projects')
           .insert({
@@ -166,7 +187,6 @@ export function ProjectsManager() {
         toast('Project added successfully');
       }
       
-      // After successfully saving to Supabase, fetch the latest data
       await fetchPortfolioData();
       resetForm();
     } catch (error: any) {
@@ -181,17 +201,45 @@ export function ProjectsManager() {
         throw new Error("You must be logged in to delete projects");
       }
       
+      let projectId = id;
+      
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(projectId)) {
+        console.log("Project ID is not a valid UUID for deletion, trying to find the actual UUID");
+        const project = projects.find(p => p.id === id);
+        
+        if (!project) {
+          throw new Error("Could not find project with ID: " + id);
+        }
+        
+        const { data: projectData, error: fetchError } = await supabase
+          .from('projects')
+          .select('id')
+          .eq('profile_id', user.id)
+          .eq('title', project.title)
+          .limit(1);
+        
+        if (fetchError) {
+          console.error("Error fetching project for deletion:", fetchError);
+          throw new Error("Could not find project: " + fetchError.message);
+        }
+        
+        if (projectData && projectData.length > 0) {
+          projectId = projectData[0].id;
+          console.log("Found project UUID for deletion:", projectId);
+        } else {
+          throw new Error("Could not find project with title: " + project.title);
+        }
+      }
+      
       const { error } = await supabase
         .from('projects')
         .delete()
-        .eq('id', id);
+        .eq('id', projectId);
       
       if (error) throw error;
       
-      // After successfully deleting from Supabase, fetch the latest data
       await fetchPortfolioData();
       
-      // If deleting the project that's currently being edited, reset the form
       if (id === editingProjectId) {
         resetForm();
       }
@@ -233,7 +281,7 @@ export function ProjectsManager() {
                 <div className="flex items-center space-x-6">
                   <div className="relative w-32 h-32 rounded-md overflow-hidden border-2 border-gray-200 shadow-md">
                     <img 
-                      src={newProjectImage || form.getValues("image_url") || "/placeholder-image.png"} 
+                      src={newProjectImage || form.getValues("image_url") || "/placeholder.svg"} 
                       alt="Project" 
                       className="w-full h-full object-cover"
                       onError={(e) => {

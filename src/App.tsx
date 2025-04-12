@@ -17,12 +17,14 @@ import { initializeStorage } from "@/utils/storage";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-// Create a single global query client instance
+// Create a single global query client instance with more aggressive refetching
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
+      retry: 2,
+      refetchOnWindowFocus: true, // Changed to true to update data when window is focused
+      refetchOnMount: true,       // Always refetch when component mounts
+      staleTime: 10000,           // Data becomes stale after 10 seconds
     },
   },
 });
