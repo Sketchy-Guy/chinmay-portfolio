@@ -15,6 +15,7 @@ import Login from "./pages/Login";
 import { useEffect, useState } from "react";
 import { initializeStorage } from "@/utils/storage";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -37,12 +38,14 @@ const App = () => {
         const result = await initializeStorage();
         if (!result.success) {
           console.warn('Storage initialization warning:', result.message);
+          toast.error('Storage initialization warning: ' + result.message);
           // Continue anyway, the app might still work
         } else {
           console.log('Storage initialized:', result.message);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error during initialization:', error);
+        toast.error('Error during initialization: ' + error.message);
         // Continue anyway, the app might still work
       } finally {
         setInitializing(false);

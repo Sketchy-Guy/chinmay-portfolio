@@ -16,7 +16,7 @@ import { initializeStorage } from "@/utils/storage";
 
 // Wrapper component to ensure data is loaded
 const IndexContent = () => {
-  const { fetchPortfolioData, isLoading, data } = usePortfolioData();
+  const { fetchPortfolioData, isLoading, error, data } = usePortfolioData();
   const [localLoading, setLocalLoading] = useState(true);
   
   useEffect(() => {
@@ -35,7 +35,7 @@ const IndexContent = () => {
         await fetchPortfolioData();
       } catch (err: any) {
         console.error("Error initializing in IndexContent:", err);
-        toast('Failed to load portfolio data. Please try refreshing the page.');
+        toast.error('Failed to load portfolio data. Please try refreshing the page.');
       } finally {
         setLocalLoading(false);
       }
@@ -67,12 +67,29 @@ const IndexContent = () => {
     };
   }, [fetchPortfolioData]);
 
-  if (isLoading || localLoading || !data) {
+  if (isLoading || localLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-portfolio-purple mx-auto" />
           <p className="mt-4 text-portfolio-purple">Loading portfolio data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-500 text-xl mb-4">Error loading portfolio data</p>
+          <p className="text-gray-600">{error?.message || 'Unknown error'}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 px-4 py-2 bg-portfolio-purple text-white rounded hover:bg-portfolio-purple/80"
+          >
+            Retry
+          </button>
         </div>
       </div>
     );
