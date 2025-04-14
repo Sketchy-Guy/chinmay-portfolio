@@ -18,7 +18,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { motion } from "framer-motion";
-import { Trash2, Upload, Edit, X } from "lucide-react";
+import { Trash2, Upload, Edit, X, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { uploadFile } from "@/utils/storage";
@@ -40,6 +40,7 @@ export function ProjectsManager() {
   const [projects, setProjects] = useState<ProjectData[]>(data.projects);
   const [newProjectImage, setNewProjectImage] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
   
@@ -71,6 +72,7 @@ export function ProjectsManager() {
     setNewProjectImage(null);
     setIsEditing(false);
     setEditingProjectId(null);
+    setUploadError("");
   };
 
   const handleEditProject = (project: ProjectData) => {
@@ -94,13 +96,21 @@ export function ProjectsManager() {
     
     const file = files[0];
     setUploading(true);
+    setUploadError("");
     
     try {
       if (!user) {
         throw new Error("You must be logged in to upload an image");
       }
       
-      const filePath = `projects/${user.id}/${Math.random().toString(36).substring(2)}_${file.name}`;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error("Your session has expired. Please log in again.");
+      }
+      
+      const filePath = `projects/${user.id}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+      console.log("Uploading project image to path:", filePath);
+      
       const result = await uploadFile(file, filePath);
       
       if (!result.success) {
@@ -113,6 +123,7 @@ export function ProjectsManager() {
       toast.success('Image uploaded successfully');
     } catch (error: any) {
       console.error("Error uploading image:", error);
+      setUploadError(error.message || "Failed to upload image");
       toast.error('Upload failed: ' + error.message);
     } finally {
       setUploading(false);
@@ -126,68 +137,65 @@ export function ProjectsManager() {
     }
     
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("Your session has expired. Please log in again.");
+        return;
+      }
+      
       const technologiesArray = values.technologies?.split(',').map(tech => tech.trim()) || [];
       
       if (isEditing && editingProjectId) {
-        let projectId = editingProjectId;
-        let uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        console.log(`Updating project with ID: ${editingProjectId}`);
         
-        if (!uuidPattern.test(projectId)) {
-          console.log("Project ID is not a valid UUID, trying to find the actual UUID");
-          const { data: projectData, error: fetchError } = await supabase
-            .from('projects')
-            .select('id')
-            .eq('profile_id', user.id)
-            .eq('title', values.title)
-            .limit(1);
-          
-          if (fetchError) {
-            console.error("Error fetching project:", fetchError);
-            throw new Error("Could not find project: " + fetchError.message);
-          }
-          
-          if (projectData && projectData.length > 0) {
-            projectId = projectData[0].id;
-            console.log("Found project UUID:", projectId);
-          } else {
-            console.log("No existing project found with this title, creating new");
-            const { error } = await supabase
-              .from('projects')
-              .insert({
-                profile_id: user.id,
-                title: values.title,
-                description: values.description,
-                technologies: technologiesArray,
-                github_url: values.github_url || null,
-                demo_url: values.demo_url || null,
-                image_url: newProjectImage || values.image_url || null,
-              });
-            
-            if (error) throw error;
-            
-            toast.success('Project added successfully');
-            await fetchPortfolioData();
-            resetForm();
-            return;
-          }
+        const { data: existingProjects, error: fetchError } = await supabase
+          .from('projects')
+          .select('id, title')
+          .eq('profile_id', user.id)
+          .eq('title', values.title);
+        
+        if (fetchError) {
+          console.error("Error fetching project:", fetchError);
+          throw new Error("Could not find project: " + fetchError.message);
         }
         
-        const { error } = await supabase
-          .from('projects')
-          .update({
-            title: values.title,
-            description: values.description,
-            technologies: technologiesArray,
-            github_url: values.github_url || null,
-            demo_url: values.demo_url || null,
-            image_url: newProjectImage || values.image_url || null,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', projectId);
-        
-        if (error) throw error;
-        
-        toast.success('Project updated successfully');
+        if (existingProjects && existingProjects.length > 0) {
+          console.log("Found existing project to update:", existingProjects[0]);
+          
+          const { error } = await supabase
+            .from('projects')
+            .update({
+              title: values.title,
+              description: values.description,
+              technologies: technologiesArray,
+              github_url: values.github_url || null,
+              demo_url: values.demo_url || null,
+              image_url: newProjectImage || values.image_url || null,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', existingProjects[0].id);
+          
+          if (error) throw error;
+          
+          toast.success('Project updated successfully');
+        } else {
+          console.log("No existing project found with this title, creating new");
+          const { error } = await supabase
+            .from('projects')
+            .insert({
+              profile_id: user.id,
+              title: values.title,
+              description: values.description,
+              technologies: technologiesArray,
+              github_url: values.github_url || null,
+              demo_url: values.demo_url || null,
+              image_url: newProjectImage || values.image_url || null,
+            });
+          
+          if (error) throw error;
+          
+          toast.success('Project added successfully');
+        }
       } else {
         const { error } = await supabase
           .from('projects')
@@ -220,41 +228,43 @@ export function ProjectsManager() {
         throw new Error("You must be logged in to delete projects");
       }
       
-      let projectId = id;
-      let uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      
-      if (!uuidPattern.test(projectId)) {
-        console.log("Project ID is not a valid UUID for deletion, trying to find the actual UUID");
-        const project = projects.find(p => p.id === id);
-        
-        if (!project) {
-          throw new Error("Could not find project with ID: " + id);
-        }
-        
-        const { data: projectData, error: fetchError } = await supabase
-          .from('projects')
-          .select('id')
-          .eq('profile_id', user.id)
-          .eq('title', project.title)
-          .limit(1);
-        
-        if (fetchError) {
-          console.error("Error fetching project for deletion:", fetchError);
-          throw new Error("Could not find project: " + fetchError.message);
-        }
-        
-        if (projectData && projectData.length > 0) {
-          projectId = projectData[0].id;
-          console.log("Found project UUID for deletion:", projectId);
-        } else {
-          throw new Error("Could not find project with title: " + project.title);
-        }
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error("Your session has expired. Please log in again.");
       }
+      
+      console.log(`Attempting to delete project with ID: ${id}`);
+      
+      const project = projects.find(p => p.id === id);
+      
+      if (!project) {
+        throw new Error("Could not find project with ID: " + id);
+      }
+      
+      console.log(`Found project to delete: ${project.title}`);
+      
+      const { data: dbProjects, error: fetchError } = await supabase
+        .from('projects')
+        .select('id')
+        .eq('profile_id', user.id)
+        .eq('title', project.title);
+      
+      if (fetchError) {
+        console.error("Error fetching project for deletion:", fetchError);
+        throw new Error("Failed to find project: " + fetchError.message);
+      }
+      
+      if (!dbProjects || dbProjects.length === 0) {
+        throw new Error("No project found in database with title: " + project.title);
+      }
+      
+      const dbProjectId = dbProjects[0].id;
+      console.log(`Deleting project with database ID: ${dbProjectId}`);
       
       const { error } = await supabase
         .from('projects')
         .delete()
-        .eq('id', projectId);
+        .eq('id', dbProjectId);
       
       if (error) throw error;
       
@@ -331,6 +341,12 @@ export function ProjectsManager() {
                     <p className="text-xs text-gray-500 mt-2">
                       Recommended: Square image, at least 300x300 pixels
                     </p>
+                    {uploadError && (
+                      <div className="mt-2 text-sm text-red-500 flex items-center">
+                        <AlertCircle className="h-4 w-4 mr-1" />
+                        {uploadError}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

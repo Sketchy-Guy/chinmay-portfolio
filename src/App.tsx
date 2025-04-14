@@ -16,6 +16,7 @@ import { useEffect, useState } from "react";
 import { initializeStorage } from "@/utils/storage";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 // Create a single global query client instance with more aggressive refetching
 const queryClient = new QueryClient({
@@ -38,6 +39,10 @@ const App = () => {
     
     const init = async () => {
       try {
+        // First, check authentication status
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log("Auth session check:", session ? "User is authenticated" : "No authenticated user");
+        
         // Initialize storage just once at the app level
         const result = await initializeStorage();
         if (!result.success) {

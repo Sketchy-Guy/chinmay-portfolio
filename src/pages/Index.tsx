@@ -21,6 +21,7 @@ const Index = () => {
       try {
         console.log("Index - loading portfolio data");
         await fetchPortfolioData();
+        console.log("Index - portfolio data loaded successfully");
       } catch (err: any) {
         console.error("Error loading portfolio data:", err);
         toast.error('Failed to load portfolio data. Please try refreshing the page.');

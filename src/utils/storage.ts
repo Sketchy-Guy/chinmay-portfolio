@@ -7,6 +7,13 @@ export const initializeStorage = async () => {
   try {
     console.log("Checking storage bucket status...");
     
+    // Get the current session
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError) {
+      console.error('Error getting session:', sessionError);
+    }
+    
     // Check if the portfolio bucket exists
     const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
     
@@ -18,26 +25,12 @@ export const initializeStorage = async () => {
     const portfolioBucket = buckets.find(bucket => bucket.name === 'portfolio');
     
     if (!portfolioBucket) {
-      console.log('Portfolio bucket not found. Creating it now...');
-      
-      // Create the bucket if it doesn't exist
-      const { error: createError } = await supabase.storage.createBucket('portfolio', {
-        public: true,
-        fileSizeLimit: 5242880, // 5MB
-        allowedMimeTypes: ['image/png', 'image/jpeg', 'image/gif', 'image/webp']
-      });
-      
-      if (createError) {
-        console.error('Error creating portfolio bucket:', createError);
-        return { success: false, message: createError.message };
-      }
-      
-      console.log('Portfolio bucket created successfully');
+      console.log('Portfolio bucket not found, but should be already created via SQL migration');
+      return { success: true, message: 'Portfolio bucket should exist via SQL migration' };
     } else {
       console.log('Portfolio bucket verified');
+      return { success: true, message: 'Portfolio bucket exists' };
     }
-    
-    return { success: true, message: 'Portfolio bucket exists' };
   } catch (error: any) {
     console.error('Error checking storage bucket:', error);
     return { success: false, message: error.message };
@@ -50,7 +43,15 @@ export const uploadFile = async (file: File, path: string) => {
     // First ensure the bucket exists
     const bucketStatus = await initializeStorage();
     if (!bucketStatus.success) {
-      throw new Error(`Storage not initialized: ${bucketStatus.message}`);
+      console.warn(`Storage initialization warning: ${bucketStatus.message}`);
+    }
+    
+    // Check authentication status before uploading
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      console.error('Error uploading file: Not authenticated');
+      toast.error('Upload failed: You must be logged in to upload files');
+      return { success: false, message: 'Not authenticated', path: null };
     }
     
     console.log(`Uploading file to ${path}...`);
