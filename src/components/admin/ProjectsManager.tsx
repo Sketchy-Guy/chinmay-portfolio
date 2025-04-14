@@ -18,7 +18,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { motion } from "framer-motion";
-import { Trash2, Plus, Upload, Edit, X } from "lucide-react";
+import { Trash2, Upload, Edit, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { uploadFile } from "@/utils/storage";
@@ -110,10 +110,10 @@ export function ProjectsManager() {
       setNewProjectImage(result.path);
       form.setValue('image_url', result.path || '');
       
-      toast('Image uploaded successfully');
+      toast.success('Image uploaded successfully');
     } catch (error: any) {
       console.error("Error uploading image:", error);
-      toast('Upload failed: ' + error.message);
+      toast.error('Upload failed: ' + error.message);
     } finally {
       setUploading(false);
     }
@@ -121,7 +121,7 @@ export function ProjectsManager() {
 
   const handleSubmit = async (values: z.infer<typeof projectSchema>) => {
     if (!user) {
-      toast('You must be logged in to save projects');
+      toast.error('You must be logged in to save projects');
       return;
     }
     
@@ -130,8 +130,9 @@ export function ProjectsManager() {
       
       if (isEditing && editingProjectId) {
         let projectId = editingProjectId;
+        let uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
         
-        if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(projectId)) {
+        if (!uuidPattern.test(projectId)) {
           console.log("Project ID is not a valid UUID, trying to find the actual UUID");
           const { data: projectData, error: fetchError } = await supabase
             .from('projects')
@@ -149,7 +150,25 @@ export function ProjectsManager() {
             projectId = projectData[0].id;
             console.log("Found project UUID:", projectId);
           } else {
-            throw new Error("Could not find project with title: " + values.title);
+            console.log("No existing project found with this title, creating new");
+            const { error } = await supabase
+              .from('projects')
+              .insert({
+                profile_id: user.id,
+                title: values.title,
+                description: values.description,
+                technologies: technologiesArray,
+                github_url: values.github_url || null,
+                demo_url: values.demo_url || null,
+                image_url: newProjectImage || values.image_url || null,
+              });
+            
+            if (error) throw error;
+            
+            toast.success('Project added successfully');
+            await fetchPortfolioData();
+            resetForm();
+            return;
           }
         }
         
@@ -168,7 +187,7 @@ export function ProjectsManager() {
         
         if (error) throw error;
         
-        toast('Project updated successfully');
+        toast.success('Project updated successfully');
       } else {
         const { error } = await supabase
           .from('projects')
@@ -184,14 +203,14 @@ export function ProjectsManager() {
         
         if (error) throw error;
         
-        toast('Project added successfully');
+        toast.success('Project added successfully');
       }
       
       await fetchPortfolioData();
       resetForm();
     } catch (error: any) {
       console.error(isEditing ? "Error updating project:" : "Error adding project:", error);
-      toast(`${isEditing ? 'Update' : 'Add'} failed: ${error.message}`);
+      toast.error(`${isEditing ? 'Update' : 'Add'} failed: ${error.message}`);
     }
   };
   
@@ -202,8 +221,9 @@ export function ProjectsManager() {
       }
       
       let projectId = id;
+      let uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       
-      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(projectId)) {
+      if (!uuidPattern.test(projectId)) {
         console.log("Project ID is not a valid UUID for deletion, trying to find the actual UUID");
         const project = projects.find(p => p.id === id);
         
@@ -244,10 +264,10 @@ export function ProjectsManager() {
         resetForm();
       }
       
-      toast('Project deleted successfully');
+      toast.success('Project deleted successfully');
     } catch (error: any) {
       console.error("Error deleting project:", error);
-      toast('Delete failed: ' + error.message);
+      toast.error('Delete failed: ' + error.message);
     }
   };
 

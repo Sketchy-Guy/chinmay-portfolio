@@ -76,7 +76,7 @@ const App = () => {
           <AuthProvider>
             <DataProvider>
               <Toaster />
-              <Sonner />
+              <Sonner position="bottom-right" closeButton richColors />
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route 

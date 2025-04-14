@@ -65,7 +65,7 @@ export const uploadFile = async (file: File, path: string) => {
     
     if (error) {
       console.error('Error uploading file:', error);
-      toast('Upload failed: ' + error.message);
+      toast.error('Upload failed: ' + error.message);
       return { success: false, message: error.message, path: null };
     }
     
@@ -78,7 +78,7 @@ export const uploadFile = async (file: File, path: string) => {
     return { success: true, message: 'File uploaded successfully', path: publicUrl };
   } catch (error: any) {
     console.error('Error in uploadFile:', error);
-    toast('Upload failed: ' + error.message);
+    toast.error('Upload failed: ' + error.message);
     return { success: false, message: error.message, path: null };
   }
 };

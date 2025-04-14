@@ -3,48 +3,11 @@ import { useState } from "react";
 import { ArrowRight, Github, ExternalLink } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-
-interface Project {
-  id: number;
-  title: string;
-  description: string;
-  technologies: string[];
-  image: string;
-  github?: string;
-  demo?: string;
-}
-
-const projectsData: Project[] = [
-  {
-    id: 1,
-    title: "AI-Powered Symptom Checker",
-    description: "Developed an AI-powered symptom checker that analyzes user health data and predicts potential diseases using Python, AI, ML, and Gemini AI.",
-    technologies: ["Python", "AI", "ML", "Gemini AI"],
-    image: "/lovable-uploads/84ae8bec-4c2f-4a49-94cf-34673064b572.png",
-    github: "https://github.com/chinmaykumarpanda/ai-symptom-checker",
-  },
-  {
-    id: 2,
-    title: "Coding Ninjas Platform",
-    description: "Contributed to the Coding Ninjas developer club platform, organizing workshops and hackathons for students.",
-    technologies: ["React", "Node.js", "MongoDB", "JavaScript"],
-    image: "/lovable-uploads/1480455c-5be4-41bc-891a-58010ebc836f.png",
-    github: "https://github.com/chinmaykumarpanda/coding-ninjas",
-    demo: "https://coding-ninjas.com",
-  },
-  {
-    id: 3,
-    title: "Portfolio Website",
-    description: "My personal portfolio website showcasing my projects, skills, and experience. Built with modern web technologies.",
-    technologies: ["React", "Tailwind CSS", "TypeScript"],
-    image: "/lovable-uploads/a5f88509-5d42-4d11-8b7c-6abe9e64cfd0.png",
-    github: "https://github.com/chinmaykumarpanda/portfolio",
-    demo: "#",
-  },
-];
+import { usePortfolioData } from "@/components/DataManager";
 
 const Projects = () => {
-  const [hoveredProject, setHoveredProject] = useState<number | null>(null);
+  const { data } = usePortfolioData();
+  const [hoveredProject, setHoveredProject] = useState<string | null>(null);
 
   return (
     <section id="projects" className="py-16 md:py-24 bg-gradient-to-b from-portfolio-soft-teal/30 to-white">
@@ -58,7 +21,7 @@ const Projects = () => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {projectsData.map((project) => (
+          {data.projects.map((project) => (
             <Card 
               key={project.id}
               className={`overflow-hidden transition-all duration-300 hover:shadow-xl reveal ${
@@ -69,11 +32,14 @@ const Projects = () => {
             >
               <div className="relative h-48 overflow-hidden">
                 <img 
-                  src={project.image} 
+                  src={project.image || "/placeholder.svg"} 
                   alt={project.title}
                   className="w-full h-full object-cover object-center transition-all duration-500"
                   style={{
                     transform: hoveredProject === project.id ? 'scale(1.1)' : 'scale(1)'
+                  }}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = "/placeholder.svg";
                   }}
                 />
                 <div className="absolute inset-0 bg-portfolio-purple/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300">

@@ -65,6 +65,12 @@ const Index = () => {
         z-index: 5;
         position: relative;
       }
+      
+      /* Prevent elements from disappearing on hover */
+      section:hover *, div:hover * {
+        opacity: 1 !important;
+        visibility: visible !important;
+      }
     `;
     document.head.appendChild(style);
     
