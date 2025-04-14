@@ -13,7 +13,7 @@ import Admin from "./pages/Admin";
 import HireMe from "./pages/HireMe";
 import Login from "./pages/Login";
 import { useEffect, useState } from "react";
-import { initializeStorage } from "@/utils/storage";
+import { initializeStorage, createStorageBucket } from "@/utils/storage";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -43,11 +43,20 @@ const App = () => {
         const { data: { session } } = await supabase.auth.getSession();
         console.log("Auth session check:", session ? "User is authenticated" : "No authenticated user");
         
-        // Initialize storage
+        // Try to create the bucket first
+        const bucketResult = await createStorageBucket();
+        if (!bucketResult.success && !bucketResult.message.includes('already exists')) {
+          console.warn('Storage bucket creation warning:', bucketResult.message);
+          toast.warning('Storage initialization: ' + bucketResult.message);
+        } else {
+          console.log('Storage bucket setup:', bucketResult.message);
+        }
+        
+        // Then initialize storage
         const result = await initializeStorage();
         if (!result.success) {
           console.warn('Storage initialization warning:', result.message);
-          toast.error('Storage initialization warning: ' + result.message);
+          toast.warning('Storage initialization: ' + result.message);
         } else {
           console.log('Storage initialized successfully:', result.message);
         }

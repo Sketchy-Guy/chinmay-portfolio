@@ -60,10 +60,13 @@ const Hero = () => {
   // Default image path with fallback
   const defaultImage = "/lovable-uploads/78295e37-4b4d-4900-b613-21ed6626ab3f.png";
   
-  // Force the image to refresh by adding a timestamp as a query parameter
-  const profileImage = !imageError && data.user.profileImage 
-    ? `${data.user.profileImage}?t=${imageTimestamp}` 
-    : defaultImage;
+  // Make sure we don't add a timestamp to the default image
+  let profileImage = defaultImage;
+  
+  if (!imageError && data.user.profileImage) {
+    // Only add timestamp if it's not the default image
+    profileImage = `${data.user.profileImage}?t=${imageTimestamp}`;
+  }
 
   return (
     <section className="min-h-screen flex flex-col justify-center pt-20">
@@ -120,7 +123,10 @@ const Hero = () => {
               <div className="w-full h-full rounded-full bg-portfolio-purple opacity-5 animate-spin-slow blur-3xl"></div>
             </div>
             
-            {/* Move the image to the front with a higher z-index and add cache-busting query parameter */}
+            {/* Use console.log to track image loading */}
+            {console.log('Rendering Hero with profile image:', profileImage)}
+            
+            {/* Move the image to the front with a higher z-index */}
             <div className="w-64 h-64 md:w-80 md:h-80 mx-auto relative z-20 animate-float">
               <img 
                 src={profileImage} 
@@ -130,6 +136,8 @@ const Hero = () => {
                   console.log('Image failed to load, using fallback');
                   setImageError(true);
                   (e.target as HTMLImageElement).src = defaultImage;
+                  // Don't update the state while rendering to avoid warning
+                  setTimeout(() => setImageError(true), 0);
                 }}
               />
             </div>

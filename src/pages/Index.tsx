@@ -1,5 +1,5 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Hero from "@/components/Hero";
 import About from "@/components/About";
 import Skills from "@/components/Skills";
@@ -15,6 +15,7 @@ import { toast } from "sonner";
 
 const Index = () => {
   const { fetchPortfolioData, isLoading, error, data } = usePortfolioData();
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   
   useEffect(() => {
     const loadData = async () => {
@@ -25,6 +26,10 @@ const Index = () => {
       } catch (err: any) {
         console.error("Error loading portfolio data:", err);
         toast.error('Failed to load portfolio data. Please try refreshing the page.');
+      } finally {
+        // Set loading to false regardless of success or failure
+        // This ensures we don't get stuck on the loading screen
+        setIsInitialLoading(false);
       }
     };
     
@@ -81,8 +86,8 @@ const Index = () => {
     };
   }, [fetchPortfolioData]);
 
-  // Show loading state while data is being fetched
-  if (isLoading) {
+  // Show loading state while data is being fetched initially
+  if (isInitialLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -94,7 +99,7 @@ const Index = () => {
   }
 
   // Show error state if there was an error fetching data
-  if (error || !data) {
+  if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -111,7 +116,8 @@ const Index = () => {
     );
   }
 
-  // Once data is loaded, display the content
+  // Once data is loaded or ready to display, show the content
+  // We'll show default data even if data is not fully loaded
   return (
     <div className="flex flex-col min-h-screen">
       <Header />

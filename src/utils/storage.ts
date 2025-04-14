@@ -26,7 +26,7 @@ export const checkStorageBucket = async () => {
     const portfolioBucket = buckets.find(bucket => bucket.name === 'portfolio');
     
     if (!portfolioBucket) {
-      console.log('Portfolio bucket not found');
+      console.log('Portfolio bucket not found, will create it');
       return { success: false, message: 'Portfolio bucket not found' };
     } else {
       console.log('Portfolio bucket verified');
@@ -34,6 +34,32 @@ export const checkStorageBucket = async () => {
     }
   } catch (error: any) {
     console.error('Error checking storage bucket:', error);
+    return { success: false, message: error.message };
+  }
+};
+
+// Function to create the portfolio storage bucket
+export const createStorageBucket = async () => {
+  try {
+    console.log("Creating portfolio bucket...");
+    
+    const { error } = await supabase.storage.createBucket('portfolio', {
+      public: true,
+      fileSizeLimit: 10485760, // 10MB
+    });
+    
+    if (error) {
+      if (error.message.includes('already exists')) {
+        console.log('Bucket already exists, continuing...');
+        return { success: true, message: 'Bucket already exists' };
+      }
+      throw error;
+    }
+    
+    console.log('Portfolio bucket created successfully');
+    return { success: true, message: 'Bucket created successfully' };
+  } catch (error: any) {
+    console.error('Error creating bucket:', error);
     return { success: false, message: error.message };
   }
 };
@@ -47,10 +73,16 @@ export const initializeStorage = async () => {
     const bucketCheck = await checkStorageBucket();
     
     if (!bucketCheck.success) {
-      console.warn('Storage bucket check failed:', bucketCheck.message);
-      // Continue execution since policies are now set at the database level
+      console.log('Storage bucket check failed, creating bucket...');
+      const createResult = await createStorageBucket();
+      
+      if (!createResult.success) {
+        console.error('Failed to create storage bucket:', createResult.message);
+        return { success: false, message: createResult.message };
+      }
     }
     
+    console.log('Storage initialized successfully');
     return { success: true, message: 'Storage initialized' };
   } catch (error: any) {
     console.error('Error initializing storage:', error);
@@ -64,15 +96,15 @@ export const uploadFile = async (file: File, path: string) => {
     // First ensure the bucket exists
     const bucketStatus = await initializeStorage();
     if (!bucketStatus.success) {
-      console.warn(`Storage initialization warning: ${bucketStatus.message}`);
+      console.error(`Storage initialization error: ${bucketStatus.message}`);
+      throw new Error(`Storage bucket not available: ${bucketStatus.message}`);
     }
     
     // Check authentication status before uploading
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       console.error('Error uploading file: Not authenticated');
-      toast.error('Upload failed: You must be logged in to upload files');
-      return { success: false, message: 'Not authenticated', path: null };
+      throw new Error('Not authenticated');
     }
     
     console.log(`Uploading file to ${path}...`);
@@ -87,8 +119,7 @@ export const uploadFile = async (file: File, path: string) => {
     
     if (error) {
       console.error('Error uploading file:', error);
-      toast.error('Upload failed: ' + error.message);
-      return { success: false, message: error.message, path: null };
+      throw error;
     }
     
     // Get the public URL for the file

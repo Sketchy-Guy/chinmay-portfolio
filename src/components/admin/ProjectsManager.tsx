@@ -36,7 +36,7 @@ const projectSchema = z.object({
 });
 
 export function ProjectsManager() {
-  const { data, fetchPortfolioData } = usePortfolioData();
+  const { data, updateProject, addProject, removeProject, fetchPortfolioData } = usePortfolioData();
   const { toast: uiToast } = useToast();
   const { user } = useAuth();
   const [projects, setProjects] = useState<ProjectData[]>(data.projects);
@@ -45,6 +45,7 @@ export function ProjectsManager() {
   const [uploadError, setUploadError] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
+  const [editingProjectIndex, setEditingProjectIndex] = useState<number>(-1);
   
   useEffect(() => {
     setProjects(data.projects);
@@ -74,12 +75,19 @@ export function ProjectsManager() {
     setNewProjectImage(null);
     setIsEditing(false);
     setEditingProjectId(null);
+    setEditingProjectIndex(-1);
     setUploadError("");
   };
 
   const handleEditProject = (project: ProjectData) => {
+    console.log("Editing project:", project);
     setIsEditing(true);
     setEditingProjectId(project.id);
+    
+    // Find the index of the project in the array
+    const projectIndex = projects.findIndex(p => p.id === project.id);
+    setEditingProjectIndex(projectIndex);
+    
     setNewProjectImage(project.image || null);
     
     form.reset({
@@ -133,90 +141,58 @@ export function ProjectsManager() {
   };
 
   const handleSubmit = async (values: z.infer<typeof projectSchema>) => {
-    if (!user) {
-      toast.error('You must be logged in to save projects');
-      return;
-    }
-    
     try {
+      if (!user) {
+        toast.error('You must be logged in to save projects');
+        return;
+      }
+      
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         toast.error("Your session has expired. Please log in again.");
         return;
       }
       
-      const technologiesArray = values.technologies?.split(',').map(tech => tech.trim()) || [];
+      const technologiesArray = values.technologies?.split(',').map(tech => tech.trim()).filter(tech => tech) || [];
       
-      if (isEditing && editingProjectId) {
-        console.log(`Updating project with ID: ${editingProjectId}`);
+      if (isEditing && editingProjectId && editingProjectIndex >= 0) {
+        console.log(`Updating project with ID: ${editingProjectId} at index ${editingProjectIndex}`);
         
-        const { data: existingProjects, error: fetchError } = await supabase
-          .from('projects')
-          .select('id, title')
-          .eq('profile_id', user.id)
-          .eq('title', values.title);
+        // Create a new project object
+        const updatedProject: ProjectData = {
+          id: editingProjectId,
+          title: values.title,
+          description: values.description,
+          technologies: technologiesArray,
+          image: newProjectImage || values.image_url || '',
+          github: values.github_url || '',
+          demo: values.demo_url || ''
+        };
         
-        if (fetchError) {
-          console.error("Error fetching project:", fetchError);
-          throw new Error("Could not find project: " + fetchError.message);
-        }
-        
-        if (existingProjects && existingProjects.length > 0) {
-          console.log("Found existing project to update:", existingProjects[0]);
-          
-          const { error } = await supabase
-            .from('projects')
-            .update({
-              title: values.title,
-              description: values.description,
-              technologies: technologiesArray,
-              github_url: values.github_url || null,
-              demo_url: values.demo_url || null,
-              image_url: newProjectImage || values.image_url || null,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', existingProjects[0].id);
-          
-          if (error) throw error;
-          
-          toast.success('Project updated successfully');
-        } else {
-          console.log("No existing project found with this title, creating new");
-          const { error } = await supabase
-            .from('projects')
-            .insert({
-              profile_id: user.id,
-              title: values.title,
-              description: values.description,
-              technologies: technologiesArray,
-              github_url: values.github_url || null,
-              demo_url: values.demo_url || null,
-              image_url: newProjectImage || values.image_url || null,
-            });
-          
-          if (error) throw error;
-          
-          toast.success('Project added successfully');
-        }
+        // Update project using DataContext's function
+        await updateProject(editingProjectIndex, updatedProject);
+        toast.success('Project updated successfully');
       } else {
-        const { error } = await supabase
-          .from('projects')
-          .insert({
-            profile_id: user.id,
-            title: values.title,
-            description: values.description,
-            technologies: technologiesArray,
-            github_url: values.github_url || null,
-            demo_url: values.demo_url || null,
-            image_url: newProjectImage || values.image_url || null,
-          });
+        // Generate a temporary id for new project
+        const tempId = Date.now().toString();
         
-        if (error) throw error;
+        // Create project object
+        const newProject: ProjectData = {
+          id: tempId,
+          title: values.title,
+          description: values.description,
+          technologies: technologiesArray,
+          image: newProjectImage || values.image_url || '',
+          github: values.github_url || '',
+          demo: values.demo_url || ''
+        };
         
+        // Add project using DataContext's function
+        await addProject(newProject);
         toast.success('Project added successfully');
       }
       
-      await fetchPortfolioData();
+      // Reset form after successful save
       resetForm();
     } catch (error: any) {
       console.error(isEditing ? "Error updating project:" : "Error adding project:", error);
@@ -226,52 +202,21 @@ export function ProjectsManager() {
   
   const handleDeleteProject = async (id: string) => {
     try {
+      console.log(`Deleting project with ID: ${id}`);
+      
       if (!user) {
         throw new Error("You must be logged in to delete projects");
       }
       
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error("Your session has expired. Please log in again.");
+      // Confirm with user
+      if (!confirm("Are you sure you want to delete this project?")) {
+        return;
       }
       
-      console.log(`Attempting to delete project with ID: ${id}`);
+      // Use the DataContext's function to remove the project
+      await removeProject(id);
       
-      const project = projects.find(p => p.id === id);
-      
-      if (!project) {
-        throw new Error("Could not find project with ID: " + id);
-      }
-      
-      console.log(`Found project to delete: ${project.title}`);
-      
-      const { data: dbProjects, error: fetchError } = await supabase
-        .from('projects')
-        .select('id')
-        .eq('profile_id', user.id)
-        .eq('title', project.title);
-      
-      if (fetchError) {
-        console.error("Error fetching project for deletion:", fetchError);
-        throw new Error("Failed to find project: " + fetchError.message);
-      }
-      
-      if (!dbProjects || dbProjects.length === 0) {
-        throw new Error("No project found in database with title: " + project.title);
-      }
-      
-      const dbProjectId = dbProjects[0].id;
-      console.log(`Deleting project with database ID: ${dbProjectId}`);
-      
-      const { error } = await supabase
-        .from('projects')
-        .delete()
-        .eq('id', dbProjectId);
-      
-      if (error) throw error;
-      
-      await fetchPortfolioData();
-      
+      // If we were editing this project, reset the form
       if (id === editingProjectId) {
         resetForm();
       }
@@ -451,7 +396,7 @@ export function ProjectsManager() {
           </CardHeader>
           <CardContent>
             <div className="grid gap-4">
-              {projects.map((project) => (
+              {projects.map((project, index) => (
                 <div key={project.id} className="flex items-center justify-between p-4 rounded-md shadow-sm border border-gray-200">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-md overflow-hidden border border-gray-200">

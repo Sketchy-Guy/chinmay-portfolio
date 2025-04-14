@@ -22,7 +22,7 @@ import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Upload, AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { uploadFile, initializeStorage } from "@/utils/storage";
+import { uploadFile, initializeStorage, createStorageBucket } from "@/utils/storage";
 import { toast } from "sonner";
 
 const profileSchema = z.object({
@@ -79,12 +79,21 @@ export function ProfileForm() {
         throw new Error("You must be logged in to upload an image");
       }
       
+      // Ensure bucket exists and is properly initialized
+      console.log("Initializing storage for profile image upload...");
+      
+      // Try to create the bucket first in case it doesn't exist
+      await createStorageBucket();
+      
+      // Then initialize storage
       const bucketInitResult = await initializeStorage();
       if (!bucketInitResult.success) {
         throw new Error(`Storage bucket not available: ${bucketInitResult.message}`);
       }
       
-      const filePath = `profile/${user.id}/${Math.random().toString(36).substring(2)}_${file.name}`;
+      const filePath = `profile/${user.id}/${Math.random().toString(36).substring(2)}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+      console.log("Uploading profile image to path:", filePath);
+      
       const result = await uploadFile(file, filePath);
       
       if (!result.success) {
@@ -94,33 +103,17 @@ export function ProfileForm() {
       setImagePreview(result.path || imagePreview);
       form.setValue('profileImage', result.path || '');
       
-      const { error: upsertError } = await supabase
-        .from('user_profile')
-        .upsert({
-          id: user.id,
-          name: form.getValues('name'),
-          title: form.getValues('title'),
-          email: form.getValues('email'),
-          phone: form.getValues('phone') || null,
-          location: form.getValues('location') || null,
-          bio: form.getValues('bio'),
-          profile_image: result.path
-        }, { onConflict: 'id' });
-      
-      if (upsertError) throw upsertError;
-      
-      updateUserData({
+      // Update the user data immediately with the new image
+      await updateUserData({
         ...data.user,
         profileImage: result.path
       });
       
-      await fetchPortfolioData();
-      
-      toast('Image uploaded successfully');
+      toast.success('Profile image uploaded successfully');
     } catch (error: any) {
       console.error("Error uploading image:", error);
       setUploadError(error.message || "There was an error uploading your image");
-      toast('Upload failed: ' + error.message);
+      toast.error('Upload failed: ' + error.message);
     } finally {
       setUploading(false);
     }
@@ -128,7 +121,8 @@ export function ProfileForm() {
 
   const onSubmit = async (values: z.infer<typeof profileSchema>) => {
     try {
-      updateUserData({
+      // Update user data in context and database
+      await updateUserData({
         name: values.name,
         title: values.title,
         email: values.email,
@@ -145,50 +139,13 @@ export function ProfileForm() {
         },
       });
       
-      if (user) {
-        const { error: profileError } = await supabase
-          .from('user_profile')
-          .upsert({
-            id: user.id,
-            name: values.name,
-            title: values.title,
-            email: values.email,
-            phone: values.phone || null,
-            location: values.location || null,
-            bio: values.bio,
-            profile_image: values.profileImage
-          }, { onConflict: 'id' });
-        
-        if (profileError) throw profileError;
-        
-        await supabase
-          .from('social_links')
-          .delete()
-          .eq('profile_id', user.id);
-        
-        const socialLinks = [
-          { platform: 'github', url: values.github || '', profile_id: user.id },
-          { platform: 'linkedin', url: values.linkedin || '', profile_id: user.id },
-          { platform: 'twitter', url: values.twitter || '', profile_id: user.id },
-          { platform: 'instagram', url: values.instagram || '', profile_id: user.id },
-          { platform: 'facebook', url: values.facebook || '', profile_id: user.id },
-        ].filter(link => link.url);
-        
-        if (socialLinks.length > 0) {
-          const { error: socialError } = await supabase
-            .from('social_links')
-            .insert(socialLinks);
-          
-          if (socialError) throw socialError;
-        }
-        
-        await fetchPortfolioData();
-      }
+      // Refresh data after update
+      await fetchPortfolioData();
       
-      toast('Profile updated successfully');
+      toast.success('Profile updated successfully');
     } catch (error: any) {
       console.error("Error saving profile:", error);
-      toast('Update failed: ' + error.message);
+      toast.error('Update failed: ' + error.message);
     }
   };
 
