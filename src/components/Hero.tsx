@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Download, Github, Linkedin, Mail, Twitter, Instagram, Facebook } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { usePortfolioData } from "@/components/DataManager";
+import { usePortfolioData } from "@/contexts/DataContext";
 import { toast } from "sonner";
 
 const Hero = () => {
