@@ -34,7 +34,7 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [data, setData] = useState<PortfolioData>(defaultData);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const { user } = useAuth();
   const { toast: uiToast } = useToast();
@@ -47,6 +47,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (!user) {
         console.log("No user logged in, using default data");
+        // When no user is logged in, we just use the default data
+        // But importantly, we don't stay in a loading state
         setIsLoading(false);
         return;
       }

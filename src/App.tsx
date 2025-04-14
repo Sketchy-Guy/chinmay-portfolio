@@ -43,6 +43,14 @@ const App = () => {
         const { data: { session } } = await supabase.auth.getSession();
         console.log("Auth session check:", session ? "User is authenticated" : "No authenticated user");
         
+        // For non-authenticated users, we'll skip the bucket creation 
+        // which requires authentication due to RLS policies
+        if (!session) {
+          console.log("Skipping storage initialization for non-authenticated user");
+          setInitializing(false);
+          return;
+        }
+        
         // Try to create the bucket first
         const bucketResult = await createStorageBucket();
         if (!bucketResult.success && !bucketResult.message.includes('already exists')) {

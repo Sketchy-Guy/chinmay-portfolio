@@ -27,12 +27,12 @@ const Index = () => {
         console.error("Error loading portfolio data:", err);
         toast.error('Failed to load portfolio data. Please try refreshing the page.');
       } finally {
-        // Set loading to false regardless of success or failure
-        // This ensures we don't get stuck on the loading screen
+        // Always set loading to false after we attempt to fetch data
         setIsInitialLoading(false);
       }
     };
     
+    // Only fetch data if we haven't already loaded
     loadData();
     
     // Animation on scroll effect
@@ -87,7 +87,7 @@ const Index = () => {
   }, [fetchPortfolioData]);
 
   // Show loading state while data is being fetched initially
-  if (isInitialLoading) {
+  if (isInitialLoading && isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -98,26 +98,8 @@ const Index = () => {
     );
   }
 
-  // Show error state if there was an error fetching data
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-500 text-xl mb-4">Error loading portfolio data</p>
-          <p className="text-gray-600">{error?.message || 'Unknown error'}</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="mt-4 px-4 py-2 bg-portfolio-purple text-white rounded hover:bg-portfolio-purple/80"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Once data is loaded or ready to display, show the content
-  // We'll show default data even if data is not fully loaded
+  // Even if there was an error, we'll render the UI with default data
+  // This ensures that the site always shows something rather than getting stuck
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
