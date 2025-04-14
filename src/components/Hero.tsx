@@ -123,9 +123,6 @@ const Hero = () => {
               <div className="w-full h-full rounded-full bg-portfolio-purple opacity-5 animate-spin-slow blur-3xl"></div>
             </div>
             
-            {/* Use console.log to track image loading */}
-            {console.log('Rendering Hero with profile image:', profileImage)}
-            
             {/* Move the image to the front with a higher z-index */}
             <div className="w-64 h-64 md:w-80 md:h-80 mx-auto relative z-20 animate-float">
               <img 
