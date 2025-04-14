@@ -1,5 +1,6 @@
+
 import { useState } from "react";
-import { usePortfolioData } from "@/components/DataManager";
+import { usePortfolioData } from "@/contexts/DataContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";

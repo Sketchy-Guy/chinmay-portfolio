@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { usePortfolioData, CertificationData } from "@/components/DataManager";
+import { usePortfolioData } from "@/contexts/DataContext";
+import { CertificationData } from "@/types/portfolio";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";

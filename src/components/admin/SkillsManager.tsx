@@ -1,6 +1,7 @@
 
 import React, { useState } from "react";
-import { usePortfolioData, SkillData } from "@/components/DataManager";
+import { usePortfolioData } from "@/contexts/DataContext";
+import { SkillData } from "@/types/portfolio";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
