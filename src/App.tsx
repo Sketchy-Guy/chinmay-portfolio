@@ -5,7 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { DataProvider } from "@/components/DataManager";
+import { DataProvider } from "@/contexts/DataContext";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -23,9 +23,9 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 2,
-      refetchOnWindowFocus: true, // Changed to true to update data when window is focused
-      refetchOnMount: true,       // Always refetch when component mounts
-      staleTime: 10000,           // Data becomes stale after 10 seconds
+      refetchOnWindowFocus: true,
+      refetchOnMount: true,
+      staleTime: 10000,
     },
   },
 });
@@ -43,7 +43,7 @@ const App = () => {
         const { data: { session } } = await supabase.auth.getSession();
         console.log("Auth session check:", session ? "User is authenticated" : "No authenticated user");
         
-        // Initialize storage just once at the app level
+        // Initialize storage
         const result = await initializeStorage();
         if (!result.success) {
           console.warn('Storage initialization warning:', result.message);
@@ -94,7 +94,6 @@ const App = () => {
                 />
                 <Route path="/hire-me" element={<HireMe />} />
                 <Route path="/login" element={<Login />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </DataProvider>

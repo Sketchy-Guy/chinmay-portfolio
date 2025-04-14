@@ -9,7 +9,7 @@ import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import ScrollToTop from "@/components/ScrollToTop";
-import { usePortfolioData } from "@/components/DataManager";
+import { usePortfolioData } from "@/contexts/DataContext";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
