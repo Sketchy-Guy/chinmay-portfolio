@@ -22,7 +22,7 @@ import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Upload, AlertCircle, CropIcon } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { uploadFile, initializeStorage, createStorageBucket } from "@/utils/storage";
+import { uploadFile, ensureStorageBucket } from "@/utils/storage";
 import { toast } from "sonner";
 import { ImageCropper } from "./ImageCropper";
 
@@ -125,8 +125,8 @@ export function ProfileForm() {
       // Ensure bucket exists and is properly initialized
       console.log("Initializing storage for profile image upload...");
       
-      // Then initialize storage
-      const bucketInitResult = await initializeStorage();
+      // Initialize storage bucket
+      const bucketInitResult = await ensureStorageBucket();
       if (!bucketInitResult.success) {
         throw new Error(`Storage bucket not available: ${bucketInitResult.message}`);
       }
