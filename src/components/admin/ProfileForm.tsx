@@ -19,12 +19,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { motion } from "framer-motion";
-import { supabase } from "@/integrations/supabase/client";
-import { Upload, AlertCircle, CropIcon } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { uploadFile, ensureStorageBucket } from "@/utils/storage";
 import { toast } from "sonner";
-import { ImageCropper } from "./ImageCropper";
+import { ProfileImageUpload } from "./ProfileImageUpload";
 
 const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -45,127 +42,61 @@ export function ProfileForm() {
   const { data, updateUserData, fetchPortfolioData } = usePortfolioData();
   const { toast: uiToast } = useToast();
   const { user } = useAuth();
-  const [imagePreview, setImagePreview] = useState(data.user.profileImage || "/lovable-uploads/78295e37-4b4d-4900-b613-21ed6626ab3f.png");
-  const [uploading, setUploading] = useState(false);
-  const [uploadError, setUploadError] = useState("");
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [cropperOpen, setCropperOpen] = useState(false);
-  const [cropperSrc, setCropperSrc] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const form = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      name: data.user.name,
-      title: data.user.title,
-      email: data.user.email,
-      phone: data.user.phone,
-      location: data.user.location,
-      bio: data.user.bio,
-      github: data.user.social.github,
-      linkedin: data.user.social.linkedin,
-      twitter: data.user.social.twitter,
-      instagram: data.user.social.instagram,
-      facebook: data.user.social.facebook,
-      profileImage: data.user.profileImage,
+      name: data.user.name || "",
+      title: data.user.title || "",
+      email: data.user.email || "",
+      phone: data.user.phone || "",
+      location: data.user.location || "",
+      bio: data.user.bio || "",
+      github: data.user.social.github || "",
+      linkedin: data.user.social.linkedin || "",
+      twitter: data.user.social.twitter || "",
+      instagram: data.user.social.instagram || "",
+      facebook: data.user.social.facebook || "",
+      profileImage: data.user.profileImage || "",
     },
   });
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+  // Handle image upload completion
+  const handleImageUploaded = (imageUrl: string) => {
+    console.log("Profile image uploaded:", imageUrl);
+    form.setValue('profileImage', imageUrl);
     
-    const file = files[0];
-    setSelectedFile(file);
-    setUploadError("");
-    
-    // Check file size
-    if (file.size > 5 * 1024 * 1024) { // 5MB
-      toast.warning("Image is larger than 5MB. You'll need to crop it before uploading.");
-    }
-    
-    // Create object URL for the cropper
-    const objectUrl = URL.createObjectURL(file);
-    setCropperSrc(objectUrl);
-    setCropperOpen(true);
+    // Immediately update the profile with the new image to ensure it's saved
+    updateProfileImage(imageUrl);
   };
 
-  const handleCropCancel = () => {
-    setCropperOpen(false);
-    setSelectedFile(null);
-    
-    // Clean up object URL to prevent memory leaks
-    if (cropperSrc) {
-      URL.revokeObjectURL(cropperSrc);
-      setCropperSrc("");
-    }
-  };
-
-  const handleCropComplete = async (croppedBlob: Blob) => {
+  // Separate function to update just the profile image
+  const updateProfileImage = async (imageUrl: string) => {
     try {
-      setCropperOpen(false);
-      setUploading(true);
-      
-      if (!user) {
-        throw new Error("You must be logged in to upload an image");
-      }
-      
-      // Create a new File object from the blob
-      const croppedFile = new File(
-        [croppedBlob], 
-        selectedFile ? selectedFile.name : "cropped-image.jpg", 
-        { type: "image/jpeg" }
-      );
-      
-      // Clean up object URL
-      if (cropperSrc) {
-        URL.revokeObjectURL(cropperSrc);
-        setCropperSrc("");
-      }
-      
-      // Ensure bucket exists and is properly initialized
-      console.log("Initializing storage for profile image upload...");
-      
-      // Initialize storage bucket
-      const bucketInitResult = await ensureStorageBucket();
-      if (!bucketInitResult.success) {
-        throw new Error(`Storage bucket not available: ${bucketInitResult.message}`);
-      }
-      
-      const filePath = `profile/${Math.random().toString(36).substring(2)}_${croppedFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-      console.log("Uploading profile image to path:", filePath);
-      
-      const result = await uploadFile(croppedFile, filePath);
-      
-      if (!result.success) {
-        throw new Error(result.message || "Failed to upload image");
-      }
-      
-      const imagePath = result.path;
-      setImagePreview(imagePath || imagePreview);
-      form.setValue('profileImage', imagePath || '');
+      console.log("Updating profile image URL in database:", imageUrl);
       
       // Update the user data immediately with the new image
       await updateUserData({
         ...data.user,
-        profileImage: imagePath
+        profileImage: imageUrl
       });
       
       // Refresh data to ensure the UI updates
       await fetchPortfolioData();
       
-      toast.success('Profile image uploaded successfully');
+      console.log("Profile image updated successfully in database");
     } catch (error: any) {
-      console.error("Error uploading image:", error);
-      setUploadError(error.message || "There was an error uploading your image");
-      toast.error('Upload failed: ' + error.message);
-    } finally {
-      setUploading(false);
-      setSelectedFile(null);
+      console.error("Error updating profile image:", error);
+      toast.error('Failed to update profile image: ' + error.message);
     }
   };
 
   const onSubmit = async (values: z.infer<typeof profileSchema>) => {
     try {
+      setIsSubmitting(true);
+      console.log("Submitting profile form with values:", values);
+      
       // Update user data in context and database
       await updateUserData({
         name: values.name,
@@ -174,7 +105,7 @@ export function ProfileForm() {
         phone: values.phone || "",
         location: values.location || "",
         bio: values.bio,
-        profileImage: values.profileImage,
+        profileImage: values.profileImage || data.user.profileImage,
         social: {
           github: values.github || "",
           linkedin: values.linkedin || "",
@@ -191,6 +122,8 @@ export function ProfileForm() {
     } catch (error: any) {
       console.error("Error saving profile:", error);
       toast.error('Update failed: ' + error.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -206,64 +139,12 @@ export function ProfileForm() {
         </CardHeader>
         <CardContent>
           <div className="mb-6">
-            <label className="block text-sm font-medium mb-2">Profile Image</label>
-            <div className="flex items-center space-x-6">
-              <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg">
-                <img 
-                  src={imagePreview} 
-                  alt="Profile" 
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = "/lovable-uploads/78295e37-4b4d-4900-b613-21ed6626ab3f.png";
-                  }}
-                />
-              </div>
-              <div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => document.getElementById('profile-image-upload')?.click()}
-                  disabled={uploading}
-                  className="flex items-center"
-                >
-                  {uploading ? (
-                    <span className="animate-spin mr-2">◌</span>
-                  ) : (
-                    <CropIcon className="mr-2 h-4 w-4" />
-                  )}
-                  {uploading ? 'Uploading...' : 'Select & Crop Image'}
-                </Button>
-                <input
-                  id="profile-image-upload"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleImageSelect}
-                  disabled={uploading}
-                />
-                <p className="text-xs text-gray-500 mt-2">
-                  Recommended: Square image, at least 300x300 pixels
-                </p>
-                {uploadError && (
-                  <div className="mt-2 text-sm text-red-500 flex items-center">
-                    <AlertCircle className="h-4 w-4 mr-1" />
-                    {uploadError}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Image Cropper Modal */}
-          {cropperOpen && cropperSrc && (
-            <ImageCropper
-              imageSrc={cropperSrc}
-              onCropComplete={handleCropComplete}
-              onCancel={handleCropCancel}
-              aspectRatio={1}
-              open={cropperOpen}
+            <ProfileImageUpload 
+              currentImageUrl={data.user.profileImage || "/lovable-uploads/78295e37-4b4d-4900-b613-21ed6626ab3f.png"} 
+              onImageUploaded={handleImageUploaded}
+              user={user}
             />
-          )}
+          </div>
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -434,9 +315,17 @@ export function ProfileForm() {
               
               <Button 
                 type="submit" 
+                disabled={isSubmitting}
                 className="bg-portfolio-purple hover:bg-portfolio-purple/90 transition-all duration-300 transform hover:scale-105"
               >
-                Update Profile
+                {isSubmitting ? (
+                  <>
+                    <span className="animate-spin mr-2">◌</span>
+                    Updating...
+                  </>
+                ) : (
+                  'Update Profile'
+                )}
               </Button>
             </form>
           </Form>

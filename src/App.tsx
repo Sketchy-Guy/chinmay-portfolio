@@ -50,25 +50,59 @@ const App = () => {
           
           // If a user logs in, we should initialize storage
           if (event === 'SIGNED_IN' && newSession) {
-            ensureStorageBucket().catch(err => {
-              console.error('Error initializing storage after login:', err);
-            });
+            // Do this in a non-blocking way
+            setTimeout(async () => {
+              try {
+                const result = await ensureStorageBucket();
+                if (!result.success) {
+                  console.warn('Storage initialization after login:', result.message);
+                  toast.warning('Storage initialization: ' + result.message);
+                } else {
+                  console.log('Storage initialized after login:', result.message);
+                }
+              } catch (err) {
+                console.error('Error initializing storage after login:', err);
+              }
+            }, 1000);
           }
         });
         
         // Only try to initialize storage if the user is authenticated
         if (session) {
-          // Initialize storage
-          const result = await ensureStorageBucket();
-          if (!result.success) {
-            console.warn('Storage initialization warning:', result.message);
-            toast.warning('Storage initialization: ' + result.message);
-          } else {
-            console.log('Storage initialized successfully:', result.message);
+          // Initialize storage with multiple retries for transient issues
+          let retries = 0;
+          const maxRetries = 3;
+          let storageInitialized = false;
+          
+          while (retries < maxRetries && !storageInitialized) {
+            try {
+              // Wait 2 seconds before retrying to allow auth to fully initialize
+              if (retries > 0) {
+                console.log(`Retry ${retries}/${maxRetries} for storage initialization...`);
+                await new Promise(resolve => setTimeout(resolve, 2000));
+              }
+              
+              const result = await ensureStorageBucket();
+              if (result.success) {
+                console.log('Storage initialized successfully:', result.message);
+                storageInitialized = true;
+              } else {
+                console.warn('Storage initialization warning:', result.message);
+                toast.warning('Storage initialization: ' + result.message);
+                retries++;
+              }
+            } catch (error: any) {
+              console.error('Error during storage initialization:', error);
+              retries++;
+            }
+          }
+          
+          if (!storageInitialized) {
+            toast.error('Failed to initialize storage after multiple attempts. Some features may not work correctly.');
           }
         }
       } catch (error: any) {
-        console.error('Error during initialization:', error);
+        console.error('Error during application initialization:', error);
         toast.error('Error during initialization: ' + error.message);
       } finally {
         // Always complete initialization to allow rendering
