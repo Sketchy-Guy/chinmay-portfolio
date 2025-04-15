@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { usePortfolioData } from "@/contexts/DataContext";
 import { Button } from "@/components/ui/button";
@@ -19,10 +20,11 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload, AlertCircle } from "lucide-react";
+import { Upload, AlertCircle, CropIcon } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { uploadFile, initializeStorage, createStorageBucket } from "@/utils/storage";
 import { toast } from "sonner";
+import { ImageCropper } from "./ImageCropper";
 
 const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -46,6 +48,9 @@ export function ProfileForm() {
   const [imagePreview, setImagePreview] = useState(data.user.profileImage || "/lovable-uploads/78295e37-4b4d-4900-b613-21ed6626ab3f.png");
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [cropperSrc, setCropperSrc] = useState<string>("");
   
   const form = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
@@ -65,17 +70,56 @@ export function ProfileForm() {
     },
   });
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
     
     const file = files[0];
-    setUploading(true);
+    setSelectedFile(file);
     setUploadError("");
     
+    // Check file size
+    if (file.size > 5 * 1024 * 1024) { // 5MB
+      toast.warning("Image is larger than 5MB. You'll need to crop it before uploading.");
+    }
+    
+    // Create object URL for the cropper
+    const objectUrl = URL.createObjectURL(file);
+    setCropperSrc(objectUrl);
+    setCropperOpen(true);
+  };
+
+  const handleCropCancel = () => {
+    setCropperOpen(false);
+    setSelectedFile(null);
+    
+    // Clean up object URL to prevent memory leaks
+    if (cropperSrc) {
+      URL.revokeObjectURL(cropperSrc);
+      setCropperSrc("");
+    }
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
     try {
+      setCropperOpen(false);
+      setUploading(true);
+      
       if (!user) {
         throw new Error("You must be logged in to upload an image");
+      }
+      
+      // Create a new File object from the blob
+      const croppedFile = new File(
+        [croppedBlob], 
+        selectedFile ? selectedFile.name : "cropped-image.jpg", 
+        { type: "image/jpeg" }
+      );
+      
+      // Clean up object URL
+      if (cropperSrc) {
+        URL.revokeObjectURL(cropperSrc);
+        setCropperSrc("");
       }
       
       // Ensure bucket exists and is properly initialized
@@ -87,10 +131,10 @@ export function ProfileForm() {
         throw new Error(`Storage bucket not available: ${bucketInitResult.message}`);
       }
       
-      const filePath = `profile/${Math.random().toString(36).substring(2)}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+      const filePath = `profile/${Math.random().toString(36).substring(2)}_${croppedFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
       console.log("Uploading profile image to path:", filePath);
       
-      const result = await uploadFile(file, filePath);
+      const result = await uploadFile(croppedFile, filePath);
       
       if (!result.success) {
         throw new Error(result.message || "Failed to upload image");
@@ -116,6 +160,7 @@ export function ProfileForm() {
       toast.error('Upload failed: ' + error.message);
     } finally {
       setUploading(false);
+      setSelectedFile(null);
     }
   };
 
@@ -181,15 +226,19 @@ export function ProfileForm() {
                   disabled={uploading}
                   className="flex items-center"
                 >
-                  <Upload className="mr-2 h-4 w-4" />
-                  {uploading ? 'Uploading...' : 'Upload Image'}
+                  {uploading ? (
+                    <span className="animate-spin mr-2">◌</span>
+                  ) : (
+                    <CropIcon className="mr-2 h-4 w-4" />
+                  )}
+                  {uploading ? 'Uploading...' : 'Select & Crop Image'}
                 </Button>
                 <input
                   id="profile-image-upload"
                   type="file"
                   accept="image/*"
                   className="hidden"
-                  onChange={handleImageUpload}
+                  onChange={handleImageSelect}
                   disabled={uploading}
                 />
                 <p className="text-xs text-gray-500 mt-2">
@@ -204,6 +253,17 @@ export function ProfileForm() {
               </div>
             </div>
           </div>
+
+          {/* Image Cropper Modal */}
+          {cropperOpen && cropperSrc && (
+            <ImageCropper
+              imageSrc={cropperSrc}
+              onCropComplete={handleCropComplete}
+              onCancel={handleCropCancel}
+              aspectRatio={1}
+              open={cropperOpen}
+            />
+          )}
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">

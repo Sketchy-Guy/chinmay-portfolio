@@ -2,6 +2,18 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+// Helper function to check file size with better error message
+const validateFileSize = (file: File, maxSizeInMB: number = 5) => {
+  const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
+  if (file.size > maxSizeInBytes) {
+    return {
+      valid: false,
+      message: `File size exceeds the maximum allowed size of ${maxSizeInMB}MB. Please crop or resize the image.`
+    };
+  }
+  return { valid: true, message: 'File size is valid' };
+};
+
 // Function to check if the portfolio storage bucket exists
 export const checkStorageBucket = async () => {
   try {
@@ -112,10 +124,17 @@ export const initializeStorage = async () => {
   }
 };
 
-// Function to upload a file to the portfolio bucket
+// Function to upload a file to the portfolio bucket with enhanced validation
 export const uploadFile = async (file: File, path: string) => {
   try {
-    // First check if user is authenticated
+    // First validate file size
+    const sizeValidation = validateFileSize(file);
+    if (!sizeValidation.valid) {
+      console.error('File size validation failed:', sizeValidation.message);
+      throw new Error(sizeValidation.message);
+    }
+    
+    // Check if user is authenticated
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       console.error('Error uploading file: Not authenticated');
