@@ -46,7 +46,7 @@ const App = () => {
         
         // Set up real-time subscription to auth changes
         const { data: authListener } = supabase.auth.onAuthStateChange((event, newSession) => {
-          console.log(`Auth state changed: ${event}`, newSession);
+          console.log(`Auth state changed: ${event}`, newSession?.user?.email);
           
           // If a user logs in, we should initialize storage
           if (event === 'SIGNED_IN' && newSession) {

@@ -19,15 +19,15 @@ export const ensureStorageBucket = async () => {
   try {
     console.log("Checking and ensuring storage bucket...");
     
-    // Check if the bucket exists
+    // Check if the bucket exists first to avoid unnecessary operations
     const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
     
     if (bucketsError) {
       console.error('Error listing buckets:', bucketsError);
-      throw bucketsError;
+      // Don't throw immediately, try to create the bucket anyway
     }
     
-    const portfolioBucket = buckets.find(bucket => bucket.name === 'portfolio');
+    const portfolioBucket = buckets?.find(bucket => bucket.name === 'portfolio');
     
     if (!portfolioBucket) {
       console.log('Portfolio bucket not found, creating it...');
@@ -40,7 +40,7 @@ export const ensureStorageBucket = async () => {
       
       if (error) {
         console.error('Error creating bucket:', error);
-        throw error;
+        return { success: false, message: `Failed to create storage bucket: ${error.message}` };
       }
       
       console.log('Portfolio bucket created successfully');
@@ -51,7 +51,7 @@ export const ensureStorageBucket = async () => {
     return { success: true, message: 'Storage bucket verified' };
   } catch (error: any) {
     console.error('Storage initialization error:', error);
-    return { success: false, message: error.message };
+    return { success: false, message: error.message || "Unknown error during storage initialization" };
   }
 };
 
