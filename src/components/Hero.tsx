@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Download, Github, Linkedin, Mail, Twitter, Instagram, Facebook } from "lucide-react";
@@ -64,7 +63,7 @@ const Hero = () => {
   let profileImage = defaultImage;
   
   if (!imageError && data.user.profileImage) {
-    // Only add timestamp if it's not the default image
+    // Only add timestamp if it's not the default image to bust cache
     profileImage = `${data.user.profileImage}?t=${imageTimestamp}`;
   }
 
@@ -85,16 +84,18 @@ const Hero = () => {
             
             <div className="flex flex-wrap gap-4 mb-8">
               {socialLinks.map((link, index) => (
-                <a 
-                  key={index}
-                  href={link.href}
-                  aria-label={link.label}
-                  className="social-icon"
-                  rel="noopener noreferrer"
-                  target="_blank"
-                >
-                  <link.icon size={20} />
-                </a>
+                link.href !== "#" && (
+                  <a 
+                    key={index}
+                    href={link.href}
+                    aria-label={link.label}
+                    className="social-icon"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    <link.icon size={20} />
+                  </a>
+                )
               ))}
             </div>
             
@@ -131,10 +132,8 @@ const Hero = () => {
                 className="rounded-full object-cover border-4 border-white shadow-xl w-full h-full"
                 onError={(e) => {
                   console.log('Image failed to load, using fallback');
-                  setImageError(true);
                   (e.target as HTMLImageElement).src = defaultImage;
-                  // Don't update the state while rendering to avoid warning
-                  setTimeout(() => setImageError(true), 0);
+                  setImageError(true);
                 }}
               />
             </div>

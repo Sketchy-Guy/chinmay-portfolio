@@ -25,7 +25,8 @@ const queryClient = new QueryClient({
       retry: 2,
       refetchOnWindowFocus: true,
       refetchOnMount: true,
-      staleTime: 10000,
+      staleTime: 5000, // Reduced stale time for more frequent refreshes
+      cacheTime: 1000 * 60 * 10, // 10 minutes cache time
     },
   },
 });
@@ -50,6 +51,18 @@ const App = () => {
           setInitializing(false);
           return;
         }
+        
+        // Set up real-time subscription to auth changes
+        const { data: authListener } = supabase.auth.onAuthStateChange((event, newSession) => {
+          console.log(`Auth state changed: ${event}`, newSession);
+          
+          // If a user logs in, we should initialize storage
+          if (event === 'SIGNED_IN' && newSession) {
+            initializeStorage().catch(err => {
+              console.error('Error initializing storage after login:', err);
+            });
+          }
+        });
         
         // Try to create the bucket first
         const bucketResult = await createStorageBucket();

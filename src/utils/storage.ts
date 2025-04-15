@@ -43,6 +43,19 @@ export const createStorageBucket = async () => {
   try {
     console.log("Creating portfolio bucket...");
     
+    // Get the current session
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError) {
+      console.error('Session error when creating bucket:', sessionError);
+      return { success: false, message: 'Session error: ' + sessionError.message };
+    }
+    
+    if (!session) {
+      console.log("No authenticated session, cannot create bucket");
+      return { success: false, message: 'Authentication required to create bucket' };
+    }
+    
     const { error } = await supabase.storage.createBucket('portfolio', {
       public: true,
       fileSizeLimit: 10485760, // 10MB
@@ -53,7 +66,8 @@ export const createStorageBucket = async () => {
         console.log('Bucket already exists, continuing...');
         return { success: true, message: 'Bucket already exists' };
       }
-      throw error;
+      console.error('Error creating bucket:', error);
+      return { success: false, message: error.message };
     }
     
     console.log('Portfolio bucket created successfully');
@@ -68,6 +82,14 @@ export const createStorageBucket = async () => {
 export const initializeStorage = async () => {
   try {
     console.log("Initializing storage...");
+    
+    // Get the current session first to check authentication
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      console.log("No authenticated session, skipping storage initialization");
+      return { success: false, message: 'Authentication required for storage initialization' };
+    }
     
     // Check if bucket exists first
     const bucketCheck = await checkStorageBucket();
@@ -93,21 +115,29 @@ export const initializeStorage = async () => {
 // Function to upload a file to the portfolio bucket
 export const uploadFile = async (file: File, path: string) => {
   try {
-    // First ensure the bucket exists
+    // First check if user is authenticated
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      console.error('Error uploading file: Not authenticated');
+      throw new Error('Authentication required to upload files');
+    }
+    
+    // Then ensure the bucket exists
     const bucketStatus = await initializeStorage();
     if (!bucketStatus.success) {
       console.error(`Storage initialization error: ${bucketStatus.message}`);
       throw new Error(`Storage bucket not available: ${bucketStatus.message}`);
     }
     
-    // Check authentication status before uploading
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      console.error('Error uploading file: Not authenticated');
-      throw new Error('Not authenticated');
-    }
-    
     console.log(`Uploading file to ${path}...`);
+    
+    // Ensure path includes user ID from session to comply with RLS
+    const userId = session.user.id;
+    if (!path.startsWith(`${userId}/`) && !path.includes(`/${userId}/`)) {
+      // Prepend user ID to path if not already included
+      path = `${userId}/${path}`;
+      console.log(`Adjusted path to include user ID: ${path}`);
+    }
     
     // Upload the file with public access
     const { data, error } = await supabase.storage

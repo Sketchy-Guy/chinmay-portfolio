@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { usePortfolioData } from "@/contexts/DataContext";
 import { Button } from "@/components/ui/button";
@@ -82,16 +81,13 @@ export function ProfileForm() {
       // Ensure bucket exists and is properly initialized
       console.log("Initializing storage for profile image upload...");
       
-      // Try to create the bucket first in case it doesn't exist
-      await createStorageBucket();
-      
       // Then initialize storage
       const bucketInitResult = await initializeStorage();
       if (!bucketInitResult.success) {
         throw new Error(`Storage bucket not available: ${bucketInitResult.message}`);
       }
       
-      const filePath = `profile/${user.id}/${Math.random().toString(36).substring(2)}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+      const filePath = `profile/${Math.random().toString(36).substring(2)}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
       console.log("Uploading profile image to path:", filePath);
       
       const result = await uploadFile(file, filePath);
@@ -100,14 +96,18 @@ export function ProfileForm() {
         throw new Error(result.message || "Failed to upload image");
       }
       
-      setImagePreview(result.path || imagePreview);
-      form.setValue('profileImage', result.path || '');
+      const imagePath = result.path;
+      setImagePreview(imagePath || imagePreview);
+      form.setValue('profileImage', imagePath || '');
       
       // Update the user data immediately with the new image
       await updateUserData({
         ...data.user,
-        profileImage: result.path
+        profileImage: imagePath
       });
+      
+      // Refresh data to ensure the UI updates
+      await fetchPortfolioData();
       
       toast.success('Profile image uploaded successfully');
     } catch (error: any) {
@@ -139,7 +139,7 @@ export function ProfileForm() {
         },
       });
       
-      // Refresh data after update
+      // Force refresh data after update
       await fetchPortfolioData();
       
       toast.success('Profile updated successfully');

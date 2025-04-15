@@ -86,7 +86,8 @@ const Index = () => {
     };
   }, [fetchPortfolioData]);
 
-  // Show loading state while data is being fetched initially
+  // Show loading state while data is being fetched initially, but only if isLoading is also true
+  // This prevents a flash of loading state when we already have data
   if (isInitialLoading && isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
