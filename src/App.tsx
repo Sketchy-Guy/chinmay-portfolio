@@ -13,7 +13,7 @@ import Admin from "./pages/Admin";
 import HireMe from "./pages/HireMe";
 import Login from "./pages/Login";
 import { useEffect, useState } from "react";
-import { initializeStorage, createStorageBucket } from "@/utils/storage";
+import { ensureStorageBucket } from "@/utils/storage";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,42 +44,28 @@ const App = () => {
         const { data: { session } } = await supabase.auth.getSession();
         console.log("Auth session check:", session ? "User is authenticated" : "No authenticated user");
         
-        // For non-authenticated users, we'll skip the bucket creation 
-        // which requires authentication due to RLS policies
-        if (!session) {
-          console.log("Skipping storage initialization for non-authenticated user");
-          setInitializing(false);
-          return;
-        }
-        
         // Set up real-time subscription to auth changes
         const { data: authListener } = supabase.auth.onAuthStateChange((event, newSession) => {
           console.log(`Auth state changed: ${event}`, newSession);
           
           // If a user logs in, we should initialize storage
           if (event === 'SIGNED_IN' && newSession) {
-            initializeStorage().catch(err => {
+            ensureStorageBucket().catch(err => {
               console.error('Error initializing storage after login:', err);
             });
           }
         });
         
-        // Try to create the bucket first
-        const bucketResult = await createStorageBucket();
-        if (!bucketResult.success && !bucketResult.message.includes('already exists')) {
-          console.warn('Storage bucket creation warning:', bucketResult.message);
-          toast.warning('Storage initialization: ' + bucketResult.message);
-        } else {
-          console.log('Storage bucket setup:', bucketResult.message);
-        }
-        
-        // Then initialize storage
-        const result = await initializeStorage();
-        if (!result.success) {
-          console.warn('Storage initialization warning:', result.message);
-          toast.warning('Storage initialization: ' + result.message);
-        } else {
-          console.log('Storage initialized successfully:', result.message);
+        // Only try to initialize storage if the user is authenticated
+        if (session) {
+          // Initialize storage
+          const result = await ensureStorageBucket();
+          if (!result.success) {
+            console.warn('Storage initialization warning:', result.message);
+            toast.warning('Storage initialization: ' + result.message);
+          } else {
+            console.log('Storage initialized successfully:', result.message);
+          }
         }
       } catch (error: any) {
         console.error('Error during initialization:', error);

@@ -14,112 +14,43 @@ const validateFileSize = (file: File, maxSizeInMB: number = 5) => {
   return { valid: true, message: 'File size is valid' };
 };
 
-// Function to check if the portfolio storage bucket exists
-export const checkStorageBucket = async () => {
+// Function to ensure the storage bucket exists
+export const ensureStorageBucket = async () => {
   try {
-    console.log("Checking storage bucket status...");
+    console.log("Checking and ensuring storage bucket...");
     
-    // Get the current session
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    
-    if (sessionError) {
-      console.error('Error getting session:', sessionError);
-      return { success: false, message: 'Session error' };
-    }
-    
-    // Check if the portfolio bucket exists
+    // Check if the bucket exists
     const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
     
     if (bucketsError) {
       console.error('Error listing buckets:', bucketsError);
-      return { success: false, message: bucketsError.message };
+      throw bucketsError;
     }
     
     const portfolioBucket = buckets.find(bucket => bucket.name === 'portfolio');
     
     if (!portfolioBucket) {
-      console.log('Portfolio bucket not found, will create it');
-      return { success: false, message: 'Portfolio bucket not found' };
-    } else {
-      console.log('Portfolio bucket verified');
-      return { success: true, message: 'Portfolio bucket exists' };
-    }
-  } catch (error: any) {
-    console.error('Error checking storage bucket:', error);
-    return { success: false, message: error.message };
-  }
-};
-
-// Function to create the portfolio storage bucket
-export const createStorageBucket = async () => {
-  try {
-    console.log("Creating portfolio bucket...");
-    
-    // Get the current session
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    
-    if (sessionError) {
-      console.error('Session error when creating bucket:', sessionError);
-      return { success: false, message: 'Session error: ' + sessionError.message };
-    }
-    
-    if (!session) {
-      console.log("No authenticated session, cannot create bucket");
-      return { success: false, message: 'Authentication required to create bucket' };
-    }
-    
-    const { error } = await supabase.storage.createBucket('portfolio', {
-      public: true,
-      fileSizeLimit: 10485760, // 10MB
-    });
-    
-    if (error) {
-      if (error.message.includes('already exists')) {
-        console.log('Bucket already exists, continuing...');
-        return { success: true, message: 'Bucket already exists' };
-      }
-      console.error('Error creating bucket:', error);
-      return { success: false, message: error.message };
-    }
-    
-    console.log('Portfolio bucket created successfully');
-    return { success: true, message: 'Bucket created successfully' };
-  } catch (error: any) {
-    console.error('Error creating bucket:', error);
-    return { success: false, message: error.message };
-  }
-};
-
-// Function to initialize the portfolio storage bucket
-export const initializeStorage = async () => {
-  try {
-    console.log("Initializing storage...");
-    
-    // Get the current session first to check authentication
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session) {
-      console.log("No authenticated session, skipping storage initialization");
-      return { success: false, message: 'Authentication required for storage initialization' };
-    }
-    
-    // Check if bucket exists first
-    const bucketCheck = await checkStorageBucket();
-    
-    if (!bucketCheck.success) {
-      console.log('Storage bucket check failed, creating bucket...');
-      const createResult = await createStorageBucket();
+      console.log('Portfolio bucket not found, creating it...');
+      // Create the bucket if it doesn't exist
+      const { error } = await supabase.storage.createBucket('portfolio', {
+        public: true,
+        fileSizeLimit: 10485760, // 10MB
+        allowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+      });
       
-      if (!createResult.success) {
-        console.error('Failed to create storage bucket:', createResult.message);
-        return { success: false, message: createResult.message };
+      if (error) {
+        console.error('Error creating bucket:', error);
+        throw error;
       }
+      
+      console.log('Portfolio bucket created successfully');
+    } else {
+      console.log('Portfolio bucket exists');
     }
     
-    console.log('Storage initialized successfully');
-    return { success: true, message: 'Storage initialized' };
+    return { success: true, message: 'Storage bucket verified' };
   } catch (error: any) {
-    console.error('Error initializing storage:', error);
+    console.error('Storage initialization error:', error);
     return { success: false, message: error.message };
   }
 };
@@ -141,22 +72,10 @@ export const uploadFile = async (file: File, path: string) => {
       throw new Error('Authentication required to upload files');
     }
     
-    // Then ensure the bucket exists
-    const bucketStatus = await initializeStorage();
-    if (!bucketStatus.success) {
-      console.error(`Storage initialization error: ${bucketStatus.message}`);
-      throw new Error(`Storage bucket not available: ${bucketStatus.message}`);
-    }
+    // Ensure the bucket exists
+    await ensureStorageBucket();
     
     console.log(`Uploading file to ${path}...`);
-    
-    // Ensure path includes user ID from session to comply with RLS
-    const userId = session.user.id;
-    if (!path.startsWith(`${userId}/`) && !path.includes(`/${userId}/`)) {
-      // Prepend user ID to path if not already included
-      path = `${userId}/${path}`;
-      console.log(`Adjusted path to include user ID: ${path}`);
-    }
     
     // Upload the file with public access
     const { data, error } = await supabase.storage
