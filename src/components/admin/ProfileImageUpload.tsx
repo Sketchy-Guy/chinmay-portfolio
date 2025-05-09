@@ -101,6 +101,7 @@ export function ProfileImageUpload({
       }
       
       const imagePath = result.path;
+      console.log("Upload successful, image path:", imagePath);
       setImagePreview(imagePath || imagePreview);
       
       // Notify parent component of new image URL

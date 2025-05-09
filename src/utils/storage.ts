@@ -14,13 +14,12 @@ const validateFileSize = (file: File, maxSizeInMB: number = 5) => {
   return { valid: true, message: 'File size is valid' };
 };
 
-// Function to verify the storage bucket exists and is properly configured
+// Function to create a portfolio bucket if it doesn't exist
 export const ensureStorageBucket = async () => {
   try {
     console.log("Checking storage bucket status...");
     
-    // First try to use an existing bucket - this operation should succeed if the bucket exists
-    // and the policies are properly configured
+    // First check if buckets can be listed (tests permissions)
     const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
     
     if (bucketsError) {
@@ -30,12 +29,13 @@ export const ensureStorageBucket = async () => {
     
     console.log("Available buckets:", buckets?.map(b => b.name).join(', ') || 'None');
     
+    // Check if portfolio bucket exists
     const portfolioBucket = buckets?.find(bucket => bucket.name === 'portfolio');
     
     if (!portfolioBucket) {
       console.log('Portfolio bucket not found, attempting to create it...');
       
-      // Try to create the bucket with appropriate settings
+      // Create the bucket with public access and file type restrictions
       const { error: createError } = await supabase.storage.createBucket('portfolio', {
         public: true,
         fileSizeLimit: 10485760, // 10MB
@@ -44,32 +44,15 @@ export const ensureStorageBucket = async () => {
       
       if (createError) {
         console.error('Error creating portfolio bucket:', createError);
-        // We'll provide more detailed guidance based on the error
-        if (createError.message.includes('row-level security')) {
-          return { 
-            success: false, 
-            message: `Storage bucket access denied: ${createError.message}. Please check RLS policies.` 
-          };
-        }
         return { success: false, message: `Failed to create storage bucket: ${createError.message}` };
       }
       
       console.log('Portfolio bucket created successfully');
-      // Verify the bucket was actually created
-      const { data: verifyBuckets, error: verifyError } = await supabase.storage.listBuckets();
-      
-      if (verifyError || !verifyBuckets?.some(b => b.name === 'portfolio')) {
-        console.error('Failed to verify newly created bucket:', verifyError || 'Bucket not found');
-        return { 
-          success: false, 
-          message: 'Created bucket but failed to verify it exists. Check Supabase storage settings.'
-        };
-      }
     } else {
       console.log('Portfolio bucket exists');
     }
     
-    // Test the bucket permissions by attempting to list objects
+    // Test bucket permissions by listing objects
     const { error: listError } = await supabase.storage
       .from('portfolio')
       .list();
@@ -78,7 +61,7 @@ export const ensureStorageBucket = async () => {
       console.error('Cannot access portfolio bucket:', listError);
       return { 
         success: false, 
-        message: `Bucket exists but cannot be accessed: ${listError.message}. Check RLS policies.` 
+        message: `Bucket exists but cannot be accessed: ${listError.message}.` 
       };
     }
     
@@ -93,7 +76,7 @@ export const ensureStorageBucket = async () => {
   }
 };
 
-// Function to upload a file to the portfolio bucket with enhanced validation and error handling
+// Function to upload a file to the portfolio bucket
 export const uploadFile = async (file: File, path: string) => {
   try {
     // First validate file size
@@ -141,7 +124,7 @@ export const uploadFile = async (file: File, path: string) => {
     return { success: true, message: 'File uploaded successfully', path: publicUrl };
   } catch (error: any) {
     console.error('Error in uploadFile:', error);
-    toast.error('Upload failed: ' + error.message);
-    return { success: false, message: error.message, path: null };
+    toast.error('Upload failed: ' + (error.message || 'Unknown error'));
+    return { success: false, message: error.message || 'Unknown error', path: null };
   }
 };

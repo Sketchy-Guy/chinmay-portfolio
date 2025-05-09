@@ -18,7 +18,7 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-// Create a single global query client instance with more aggressive refetching
+// Create a query client instance with aggressive refetching
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -26,7 +26,7 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: true,
       refetchOnMount: true,
       staleTime: 5000, // Reduced stale time for more frequent refreshes
-      gcTime: 1000 * 60 * 10, // 10 minutes cache time (previously called cacheTime)
+      gcTime: 1000 * 60 * 10, // 10 minutes cache time
     },
   },
 });
@@ -40,77 +40,63 @@ const App = () => {
     
     const init = async () => {
       try {
-        // First, check authentication status
+        // Check authentication status
         const { data: { session } } = await supabase.auth.getSession();
         console.log("Auth session check:", session ? "User is authenticated" : "No authenticated user");
         
-        // Set up real-time subscription to auth changes
-        const { data: authListener } = supabase.auth.onAuthStateChange((event, newSession) => {
+        // Listen for auth changes
+        const { data: authListener } = supabase.auth.onAuthStateChange(async (event, newSession) => {
           console.log(`Auth state changed: ${event}`, newSession?.user?.email);
           
-          // If a user logs in, we should initialize storage
+          // When user logs in, set up storage
           if (event === 'SIGNED_IN' && newSession) {
-            // Do this in a non-blocking way
-            setTimeout(async () => {
-              try {
-                const result = await ensureStorageBucket();
-                if (!result.success) {
-                  console.warn('Storage initialization after login:', result.message);
-                  toast.warning('Storage initialization: ' + result.message);
-                } else {
-                  console.log('Storage initialized after login:', result.message);
-                }
-              } catch (err) {
-                console.error('Error initializing storage after login:', err);
+            try {
+              console.log('User signed in, initializing storage...');
+              const result = await ensureStorageBucket();
+              console.log('Storage initialization after login:', result);
+              
+              if (!result.success) {
+                toast.warning('Storage initialization: ' + result.message);
               }
-            }, 1000);
+            } catch (err) {
+              console.error('Error initializing storage after login:', err);
+            }
           }
         });
         
-        // Only try to initialize storage if the user is authenticated
+        // Only initialize storage if user is authenticated
         if (session) {
-          // Initialize storage with multiple retries for transient issues
-          let retries = 0;
-          const maxRetries = 3;
-          let storageInitialized = false;
-          
-          while (retries < maxRetries && !storageInitialized) {
-            try {
-              // Wait 2 seconds before retrying to allow auth to fully initialize
-              if (retries > 0) {
-                console.log(`Retry ${retries}/${maxRetries} for storage initialization...`);
-                await new Promise(resolve => setTimeout(resolve, 2000));
-              }
-              
-              const result = await ensureStorageBucket();
-              if (result.success) {
-                console.log('Storage initialized successfully:', result.message);
-                storageInitialized = true;
-              } else {
-                console.warn('Storage initialization warning:', result.message);
-                toast.warning('Storage initialization: ' + result.message);
-                retries++;
-              }
-            } catch (error: any) {
-              console.error('Error during storage initialization:', error);
-              retries++;
+          try {
+            console.log('User is authenticated, initializing storage...');
+            const result = await ensureStorageBucket();
+            
+            if (!result.success) {
+              console.warn('Storage initialization warning:', result.message);
+              toast.warning('Storage initialization: ' + result.message);
+            } else {
+              console.log('Storage initialized successfully');
             }
+          } catch (error) {
+            console.error('Error during storage initialization:', error);
+            toast.error('Error during storage initialization: ' + (error as Error).message);
           }
-          
-          if (!storageInitialized) {
-            toast.error('Failed to initialize storage after multiple attempts. Some features may not work correctly.');
-          }
+        } else {
+          console.log('User not authenticated, skipping storage initialization');
         }
-      } catch (error: any) {
+      } catch (error) {
         console.error('Error during application initialization:', error);
-        toast.error('Error during initialization: ' + error.message);
+        toast.error('Error during initialization: ' + (error as Error).message);
       } finally {
-        // Always complete initialization to allow rendering
         setInitializing(false);
       }
     };
     
     init();
+    
+    // Return cleanup function
+    return () => {
+      console.log('App unmounting, cleaning up...');
+    };
   }, []);
 
   if (initializing) {
