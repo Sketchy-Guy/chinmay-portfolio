@@ -246,6 +246,10 @@ export type Database = {
         Args: { table_name: string; column_name: string }
         Returns: boolean
       }
+      check_storage_policy_exists: {
+        Args: { policy_name: string; bucket_name: string }
+        Returns: boolean
+      }
       create_initial_admin: {
         Args: { admin_email: string }
         Returns: string
