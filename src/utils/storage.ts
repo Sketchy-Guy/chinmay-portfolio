@@ -52,25 +52,28 @@ export const ensureStorageBucket = async () => {
       console.log('Portfolio bucket exists');
     }
     
-    // Create necessary folders in the portfolio bucket
+    // Check if profile_photo folder exists
     try {
-      // Try to list files in the profile folder to see if it exists
+      // Try to list files in the profile_photo folder to see if it exists
       const { error: listError } = await supabase.storage
         .from('portfolio')
-        .list('profile');
+        .list('profile_photo');
       
-      // If we get a 404, the folder doesn't exist yet
-      if (listError && listError.message.includes('Not Found')) {
+      if (listError) {
+        console.log('Error checking profile_photo folder:', listError);
+        
         // Create an empty file to establish the folder
         const { error: uploadError } = await supabase.storage
           .from('portfolio')
-          .upload('profile/.folder', new Blob(['']));
+          .upload('profile_photo/.folder', new Blob(['']));
         
         if (uploadError && !uploadError.message.includes('already exists')) {
-          console.error('Error creating profile folder:', uploadError);
+          console.error('Error creating profile_photo folder:', uploadError);
         } else {
-          console.log('Profile folder created successfully');
+          console.log('profile_photo folder created or already exists');
         }
+      } else {
+        console.log('profile_photo folder exists');
       }
     } catch (folderError) {
       console.warn('Error checking/creating folders:', folderError);

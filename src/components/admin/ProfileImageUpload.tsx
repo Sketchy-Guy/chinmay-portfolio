@@ -89,10 +89,10 @@ export function ProfileImageUpload({
         throw new Error(`Storage bucket not available: ${bucketInitResult.message}`);
       }
       
-      // Use a simplified path for profile images
+      // Use the profile_photo folder that was created in Supabase
       const timestamp = new Date().getTime();
       const safeName = croppedFile.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-      const filePath = `profile/${timestamp}_${safeName}`;
+      const filePath = `profile_photo/${timestamp}_${safeName}`;
       
       console.log("Uploading profile image to path:", filePath);
       
