@@ -14,7 +14,7 @@ const validateFileSize = (file: File, maxSizeInMB: number = 5) => {
   return { valid: true, message: 'File size is valid' };
 };
 
-// Function to create a portfolio bucket if it doesn't exist
+// Function to create necessary folders in the portfolio bucket
 export const ensureStorageBucket = async () => {
   try {
     console.log("Checking storage bucket status...");
@@ -50,6 +50,31 @@ export const ensureStorageBucket = async () => {
       console.log('Portfolio bucket created successfully');
     } else {
       console.log('Portfolio bucket exists');
+    }
+    
+    // Create necessary folders in the portfolio bucket
+    try {
+      // Try to list files in the profile folder to see if it exists
+      const { error: listError } = await supabase.storage
+        .from('portfolio')
+        .list('profile');
+      
+      // If we get a 404, the folder doesn't exist yet
+      if (listError && listError.message.includes('Not Found')) {
+        // Create an empty file to establish the folder
+        const { error: uploadError } = await supabase.storage
+          .from('portfolio')
+          .upload('profile/.folder', new Blob(['']));
+        
+        if (uploadError && !uploadError.message.includes('already exists')) {
+          console.error('Error creating profile folder:', uploadError);
+        } else {
+          console.log('Profile folder created successfully');
+        }
+      }
+    } catch (folderError) {
+      console.warn('Error checking/creating folders:', folderError);
+      // Non-critical error, continue
     }
     
     // Test bucket permissions by listing objects

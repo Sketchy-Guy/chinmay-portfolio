@@ -71,7 +71,7 @@ export function ProfileImageUpload({
       // Create a new File object from the blob
       const croppedFile = new File(
         [croppedBlob], 
-        selectedFile ? selectedFile.name : "cropped-image.jpg", 
+        selectedFile ? selectedFile.name : "profile-image.jpg", 
         { type: "image/jpeg" }
       );
       
@@ -81,7 +81,7 @@ export function ProfileImageUpload({
         setCropperSrc("");
       }
       
-      // Initialize storage bucket
+      // Initialize storage bucket to ensure it exists
       console.log("Initializing storage for profile image upload...");
       const bucketInitResult = await ensureStorageBucket();
       
@@ -89,9 +89,11 @@ export function ProfileImageUpload({
         throw new Error(`Storage bucket not available: ${bucketInitResult.message}`);
       }
       
-      // Use current timestamp as part of filename to ensure uniqueness
+      // Use a simplified path for profile images
       const timestamp = new Date().getTime();
-      const filePath = `profile/${user.id}/${timestamp}_${croppedFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+      const safeName = croppedFile.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+      const filePath = `profile/${timestamp}_${safeName}`;
+      
       console.log("Uploading profile image to path:", filePath);
       
       const result = await uploadFile(croppedFile, filePath);
