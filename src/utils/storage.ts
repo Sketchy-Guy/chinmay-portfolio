@@ -87,7 +87,7 @@ export const ensureStorageBucket = async () => {
       .from('portfolio')
       .getPublicUrl('profile_photo/.folder');
     
-    // Fix: Remove error check as getPublicUrl doesn't return an error property
+    // Fixed: getPublicUrl doesn't return an error property
     console.log('Public URL test:', publicUrlResult.data.publicUrl);
     
     // Test bucket permissions by listing objects

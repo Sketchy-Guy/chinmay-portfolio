@@ -56,11 +56,14 @@ export function ProfileForm() {
         
         if (!result.success) {
           toast.warning("Storage initialization: " + result.message);
+        } else {
+          toast.success("Storage ready for image uploads");
         }
         
         setInitialCheckDone(true);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error initializing storage:", error);
+        toast.error("Storage initialization error: " + (error.message || "Unknown error"));
       }
     };
     
