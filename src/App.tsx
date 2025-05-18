@@ -57,35 +57,41 @@ const App = () => {
               
               if (!result.success) {
                 toast.warning('Storage initialization: ' + result.message);
+              } else {
+                toast.success('Storage ready for use');
               }
-            } catch (err) {
+            } catch (err: any) {
               console.error('Error initializing storage after login:', err);
+              toast.error('Storage error: ' + (err.message || "Unknown error"));
             }
           }
         });
         
-        // Only initialize storage if user is authenticated
-        if (session) {
-          try {
-            console.log('User is authenticated, initializing storage...');
-            const result = await ensureStorageBucket();
-            
-            if (!result.success) {
-              console.warn('Storage initialization warning:', result.message);
+        // Try to initialize storage anyway, even without authentication
+        // This is important for public access to images
+        try {
+          console.log('Initializing storage...');
+          const result = await ensureStorageBucket();
+          
+          if (!result.success) {
+            console.warn('Storage initialization warning:', result.message);
+            // Only show warning to authenticated users
+            if (session) {
               toast.warning('Storage initialization: ' + result.message);
-            } else {
-              console.log('Storage initialized successfully');
             }
-          } catch (error) {
-            console.error('Error during storage initialization:', error);
-            toast.error('Error during storage initialization: ' + (error as Error).message);
+          } else {
+            console.log('Storage initialized successfully');
           }
-        } else {
-          console.log('User not authenticated, skipping storage initialization');
+        } catch (error: any) {
+          console.error('Error during storage initialization:', error);
+          // Only show error to authenticated users
+          if (session) {
+            toast.error('Storage initialization error: ' + (error.message || "Unknown error"));
+          }
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error during application initialization:', error);
-        toast.error('Error during initialization: ' + (error as Error).message);
+        toast.error('Error during initialization: ' + (error.message || "Unknown error"));
       } finally {
         setInitializing(false);
       }

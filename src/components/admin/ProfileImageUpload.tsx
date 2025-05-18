@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, CropIcon } from "lucide-react";
@@ -40,7 +39,7 @@ export function ProfileImageUpload({
         const result = await ensureStorageBucket();
         if (!result.success) {
           console.warn("Storage setup issue:", result.message);
-          toast.warning("Storage setup issue: " + result.message);
+          // Don't show toast here, it's already shown at the app level
         }
       } catch (err) {
         console.error("Error checking storage:", err);
@@ -53,8 +52,8 @@ export function ProfileImageUpload({
     setImageTimestamp(Date.now());
     setImageLoaded(false);
     
-    // If the current image URL is empty, set the fallback
-    if (!currentImageUrl) {
+    // If the current image URL is empty or invalid, set the fallback
+    if (!currentImageUrl || currentImageUrl.includes("null")) {
       setImagePreview(fallbackImage);
     } else {
       // Add a timestamp to bust cache
@@ -137,6 +136,10 @@ export function ProfileImageUpload({
       console.error("Error uploading image:", error);
       setUploadError(error.message || "There was an error uploading your image");
       toast.error('Upload failed: ' + error.message);
+      
+      // Set fallback image if upload fails
+      setImagePreview(fallbackImage);
+      setImageLoaded(true);
     } finally {
       setUploading(false);
       setSelectedFile(null);
