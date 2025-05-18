@@ -62,8 +62,11 @@ const Hero = () => {
   ];
 
   // Default image path with fallback
-  const defaultImage = "/lovable-uploads/78295e37-4b4d-4900-b613-21ed6626ab3f.png";
+
   
+
+  const defaultImage = "/lovable-uploads/WhatsApp Image 2024-06-18 at 13.19.59_2b7a27bc.jpg";
+ 
   // Make sure we don't add a timestamp to the default image
   let profileImage = defaultImage;
   
