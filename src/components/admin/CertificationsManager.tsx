@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { usePortfolioData } from "@/contexts/DataContext";
 import { CertificationData } from "@/types/portfolio";
@@ -57,7 +56,7 @@ export function CertificationsManager() {
             credential: credential || null,
             link: link || null,
             logo_url: logo || null
-          }, { onConflict: 'id' });
+          } as any, { onConflict: 'id' });
         
         if (error) throw error;
         
@@ -95,7 +94,7 @@ export function CertificationsManager() {
             credential: credential || null,
             link: link || null,
             logo_url: logo || null
-          });
+          } as any);
         
         if (error) throw error;
         
@@ -124,7 +123,7 @@ export function CertificationsManager() {
         const { error } = await supabase
           .from('certifications')
           .delete()
-          .eq('id', data.certifications[index].id);
+          .eq('id', data.certifications[index].id as any); // Use type assertion for now
         
         if (error) throw error;
         

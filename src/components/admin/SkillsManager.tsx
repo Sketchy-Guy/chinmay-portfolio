@@ -24,6 +24,7 @@ import { Trash2 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { PostgrestError } from "@supabase/supabase-js";
 
 const skillSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -138,7 +139,7 @@ export function SkillsManager() {
             category: newSkill.category,
             level: newSkill.level,
             profile_id: user.id,
-          });
+          } as any); // Use type assertion as temporary solution
         
         if (error) {
           throw error;
@@ -175,8 +176,8 @@ export function SkillsManager() {
         const { error } = await supabase
           .from('skills')
           .delete()
-          .eq('profile_id', user.id)
-          .eq('name', skillToDelete.name);
+          .eq('profile_id', user.id as any) // Use type assertion
+          .eq('name', skillToDelete.name as any); // Use type assertion
         
         if (error) {
           throw error;
