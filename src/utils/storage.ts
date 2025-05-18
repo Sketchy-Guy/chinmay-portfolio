@@ -52,15 +52,16 @@ export const ensureStorageBucket = async () => {
       console.log('Portfolio bucket exists');
     }
     
-    // Check if profile_photo folder exists
+    // Explicitly check and create the profile_photo folder
     try {
+      console.log("Checking profile_photo folder existence...");
       // Try to list files in the profile_photo folder to see if it exists
-      const { error: listError } = await supabase.storage
+      const { data: folderContents, error: listError } = await supabase.storage
         .from('portfolio')
         .list('profile_photo');
       
       if (listError) {
-        console.log('Error checking profile_photo folder:', listError);
+        console.log('Error checking profile_photo folder, attempting to create it:', listError);
         
         // Create an empty file to establish the folder
         const { error: uploadError } = await supabase.storage
@@ -69,16 +70,29 @@ export const ensureStorageBucket = async () => {
         
         if (uploadError && !uploadError.message.includes('already exists')) {
           console.error('Error creating profile_photo folder:', uploadError);
+          toast.error('Failed to create profile_photo folder for image uploads');
         } else {
-          console.log('profile_photo folder created or already exists');
+          console.log('profile_photo folder created successfully');
         }
       } else {
-        console.log('profile_photo folder exists');
+        console.log('profile_photo folder exists with contents:', folderContents?.length || 0, 'files');
       }
     } catch (folderError) {
       console.warn('Error checking/creating folders:', folderError);
       // Non-critical error, continue
     }
+    
+    // Verify that the bucket is publicly accessible
+    const { data: publicUrl, error: urlError } = supabase.storage
+      .from('portfolio')
+      .getPublicUrl('profile_photo/.folder');
+    
+    if (urlError) {
+      console.error('Error getting public URL:', urlError);
+      return { success: false, message: 'Error validating public access to storage bucket' };
+    }
+    
+    console.log('Public URL test:', publicUrl);
     
     // Test bucket permissions by listing objects
     const { error: listError } = await supabase.storage
@@ -128,7 +142,11 @@ export const uploadFile = async (file: File, path: string) => {
       throw new Error(`Storage bucket not available: ${bucketResult.message}`);
     }
     
-    console.log(`Uploading file to ${path}...`);
+    console.log(`Uploading file to ${path}...`, file.type, file.size);
+    
+    // Generate a unique key for this upload for debugging
+    const uploadKey = Math.random().toString(36).substring(2, 8);
+    console.log(`Upload tracking ID: ${uploadKey}`);
     
     // Upload the file with public access
     const { data, error } = await supabase.storage
@@ -139,20 +157,64 @@ export const uploadFile = async (file: File, path: string) => {
       });
     
     if (error) {
-      console.error('Error uploading file:', error);
+      console.error(`Upload ${uploadKey} failed:`, error);
       throw error;
     }
+    
+    console.log(`Upload ${uploadKey} succeeded:`, data);
     
     // Get the public URL for the file
     const { data: { publicUrl } } = supabase.storage
       .from('portfolio')
-      .getPublicUrl(data.path);
+      .getPublicUrl(path);
     
-    console.log('File uploaded successfully:', publicUrl);
+    console.log(`Upload ${uploadKey} public URL:`, publicUrl);
+    
+    // Verify the file was uploaded
+    const { data: fileCheck, error: checkError } = await supabase.storage
+      .from('portfolio')
+      .list(path.split('/')[0], {
+        search: path.split('/')[1]
+      });
+    
+    if (checkError) {
+      console.warn(`Upload ${uploadKey} verification check error:`, checkError);
+    } else {
+      console.log(`Upload ${uploadKey} verification:`, 
+        fileCheck && fileCheck.length > 0 ? 'File found in storage' : 'File not found in verification');
+    }
+    
     return { success: true, message: 'File uploaded successfully', path: publicUrl };
   } catch (error: any) {
     console.error('Error in uploadFile:', error);
     toast.error('Upload failed: ' + (error.message || 'Unknown error'));
     return { success: false, message: error.message || 'Unknown error', path: null };
+  }
+};
+
+// Function to specifically upload a profile photo
+export const uploadProfilePhoto = async (file: File, userId: string) => {
+  try {
+    // First ensure the bucket and folder exist
+    await ensureStorageBucket();
+    
+    // Create a timestamped file path to avoid cache issues
+    const timestamp = new Date().getTime();
+    const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+    const filePath = `profile_photo/${userId}_${timestamp}_${safeName}`;
+    
+    // Upload the file
+    const result = await uploadFile(file, filePath);
+    
+    if (!result.success) {
+      throw new Error(result.message);
+    }
+    
+    console.log('Profile photo uploaded successfully:', result.path);
+    
+    return result;
+  } catch (error: any) {
+    console.error('Profile photo upload failed:', error);
+    return { success: false, message: error.message, path: null };
   }
 };

@@ -1,15 +1,18 @@
+
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Download, Github, Linkedin, Mail, Twitter, Instagram, Facebook } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { usePortfolioData } from "@/contexts/DataContext";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const Hero = () => {
   const [typedText, setTypedText] = useState("");
   const { data, isLoading } = usePortfolioData();
   const [imageTimestamp, setImageTimestamp] = useState(Date.now());
   const [imageError, setImageError] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const fullText = data?.user?.title || "";
   const { toast: uiToast } = useToast();
   
@@ -17,6 +20,8 @@ const Hero = () => {
   useEffect(() => {
     setImageTimestamp(Date.now());
     setImageError(false);
+    setImageLoaded(false);
+    console.log("Hero: Refreshing profile image with new timestamp:", imageTimestamp);
   }, [data?.user?.profileImage]);
   
   useEffect(() => {
@@ -126,14 +131,24 @@ const Hero = () => {
             
             {/* Move the image to the front with a higher z-index */}
             <div className="w-64 h-64 md:w-80 md:h-80 mx-auto relative z-20 animate-float">
+              {!imageLoaded && !imageError && (
+                <div className="absolute inset-0 flex items-center justify-center rounded-full bg-gray-100">
+                  <div className="animate-spin h-12 w-12 border-4 border-portfolio-purple border-t-transparent rounded-full"></div>
+                </div>
+              )}
               <img 
                 src={profileImage} 
                 alt={data.user.name}
-                className="rounded-full object-cover border-4 border-white shadow-xl w-full h-full"
+                className={`rounded-full object-cover border-4 border-white shadow-xl w-full h-full transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
                 onError={(e) => {
-                  console.log('Image failed to load, using fallback');
+                  console.log('Hero: Image failed to load, using fallback');
                   (e.target as HTMLImageElement).src = defaultImage;
                   setImageError(true);
+                  setImageLoaded(true);
+                }}
+                onLoad={() => {
+                  console.log('Hero: Image loaded successfully');
+                  setImageLoaded(true);
                 }}
               />
             </div>

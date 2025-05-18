@@ -1,11 +1,13 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { CropIcon, AlertCircle } from "lucide-react";
+import { AlertCircle, CropIcon } from "lucide-react";
 import { ImageCropper } from "./ImageCropper";
-import { uploadFile, ensureStorageBucket } from "@/utils/storage";
+import { uploadProfilePhoto, ensureStorageBucket } from "@/utils/storage";
 import { toast } from "sonner";
 import { User } from "@supabase/supabase-js";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { supabase } from '@/integrations/supabase/client';
 
 interface ProfileImageUploadProps {
   currentImageUrl: string;
@@ -24,9 +26,41 @@ export function ProfileImageUpload({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [cropperOpen, setCropperOpen] = useState(false);
   const [cropperSrc, setCropperSrc] = useState<string>("");
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageTimestamp, setImageTimestamp] = useState(Date.now());
   
   // Default fallback image if current image fails to load
   const fallbackImage = "/lovable-uploads/78295e37-4b4d-4900-b613-21ed6626ab3f.png";
+
+  // Refresh image when mounted or when current image changes
+  useEffect(() => {
+    const checkStorage = async () => {
+      try {
+        // Verify storage is set up correctly
+        const result = await ensureStorageBucket();
+        if (!result.success) {
+          console.warn("Storage setup issue:", result.message);
+          toast.warning("Storage setup issue: " + result.message);
+        }
+      } catch (err) {
+        console.error("Error checking storage:", err);
+      }
+    };
+    
+    checkStorage();
+    
+    // Force refresh the image cache
+    setImageTimestamp(Date.now());
+    setImageLoaded(false);
+    
+    // If the current image URL is empty, set the fallback
+    if (!currentImageUrl) {
+      setImagePreview(fallbackImage);
+    } else {
+      // Add a timestamp to bust cache
+      setImagePreview(`${currentImageUrl}?t=${Date.now()}`);
+    }
+  }, [currentImageUrl]);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -81,33 +115,22 @@ export function ProfileImageUpload({
         setCropperSrc("");
       }
       
-      // Initialize storage bucket to ensure it exists
-      console.log("Initializing storage for profile image upload...");
-      const bucketInitResult = await ensureStorageBucket();
+      // Upload the profile photo
+      const result = await uploadProfilePhoto(croppedFile, user.id);
       
-      if (!bucketInitResult.success) {
-        throw new Error(`Storage bucket not available: ${bucketInitResult.message}`);
-      }
-      
-      // Use the profile_photo folder that was created in Supabase
-      const timestamp = new Date().getTime();
-      const safeName = croppedFile.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-      const filePath = `profile_photo/${timestamp}_${safeName}`;
-      
-      console.log("Uploading profile image to path:", filePath);
-      
-      const result = await uploadFile(croppedFile, filePath);
-      
-      if (!result.success) {
+      if (!result.success || !result.path) {
         throw new Error(result.message || "Failed to upload image");
       }
       
-      const imagePath = result.path;
-      console.log("Upload successful, image path:", imagePath);
-      setImagePreview(imagePath || imagePreview);
+      console.log("Profile image uploaded successfully, URL:", result.path);
+      
+      // Update the image with a cache-busting timestamp
+      const newImageUrl = result.path;
+      setImagePreview(`${newImageUrl}?t=${Date.now()}`);
+      setImageLoaded(false);
       
       // Notify parent component of new image URL
-      onImageUploaded(imagePath || '');
+      onImageUploaded(newImageUrl);
       
       toast.success('Profile image uploaded successfully');
     } catch (error: any) {
@@ -120,19 +143,33 @@ export function ProfileImageUpload({
     }
   };
 
+  const handleImageError = () => {
+    console.log("Image failed to load, using fallback:", fallbackImage);
+    setImagePreview(fallbackImage);
+    setImageLoaded(true);
+  };
+
+  const handleImageLoad = () => {
+    console.log("Image loaded successfully");
+    setImageLoaded(true);
+  };
+
   return (
     <div>
       <label className="block text-sm font-medium mb-2">Profile Image</label>
       <div className="flex items-center space-x-6">
-        <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg">
+        <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg bg-gray-100">
+          {!imageLoaded && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="animate-spin h-8 w-8 border-4 border-portfolio-purple border-t-transparent rounded-full"></div>
+            </div>
+          )}
           <img 
             src={imagePreview} 
             alt="Profile" 
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              console.log("Image failed to load, using fallback:", fallbackImage);
-              (e.target as HTMLImageElement).src = fallbackImage;
-            }}
+            className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+            onError={handleImageError}
+            onLoad={handleImageLoad}
           />
         </div>
         <div>

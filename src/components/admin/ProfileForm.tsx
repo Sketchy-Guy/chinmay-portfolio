@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePortfolioData } from "@/contexts/DataContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,7 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { ProfileImageUpload } from "./ProfileImageUpload";
+import { ensureStorageBucket } from "@/utils/storage";
 
 const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -43,6 +44,30 @@ export function ProfileForm() {
   const { toast: uiToast } = useToast();
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [initialCheckDone, setInitialCheckDone] = useState(false);
+  
+  // Initialize storage on component mount
+  useEffect(() => {
+    const initStorage = async () => {
+      try {
+        console.log("ProfileForm: Initializing storage...");
+        const result = await ensureStorageBucket();
+        console.log("ProfileForm: Storage initialization result:", result);
+        
+        if (!result.success) {
+          toast.warning("Storage initialization: " + result.message);
+        }
+        
+        setInitialCheckDone(true);
+      } catch (error) {
+        console.error("Error initializing storage:", error);
+      }
+    };
+    
+    if (user) {
+      initStorage();
+    }
+  }, [user]);
   
   const form = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
@@ -61,14 +86,32 @@ export function ProfileForm() {
       profileImage: data.user.profileImage || "",
     },
   });
+  
+  // Update form when data changes
+  useEffect(() => {
+    form.reset({
+      name: data.user.name || "",
+      title: data.user.title || "",
+      email: data.user.email || "",
+      phone: data.user.phone || "",
+      location: data.user.location || "",
+      bio: data.user.bio || "",
+      github: data.user.social.github || "",
+      linkedin: data.user.social.linkedin || "",
+      twitter: data.user.social.twitter || "",
+      instagram: data.user.social.instagram || "",
+      facebook: data.user.social.facebook || "",
+      profileImage: data.user.profileImage || "",
+    });
+  }, [data, form]);
 
   // Handle image upload completion
-  const handleImageUploaded = (imageUrl: string) => {
+  const handleImageUploaded = async (imageUrl: string) => {
     console.log("Profile image uploaded:", imageUrl);
     form.setValue('profileImage', imageUrl);
     
     // Immediately update the profile with the new image to ensure it's saved
-    updateProfileImage(imageUrl);
+    await updateProfileImage(imageUrl);
   };
 
   // Separate function to update just the profile image

@@ -20,6 +20,10 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
       'x-application-name': 'portfolio-website',
     },
   },
+  storage: {
+    // This debug info can be helpful for diagnosing storage issues
+    debug: true,
+  }
 });
 
 // Log creation of Supabase client

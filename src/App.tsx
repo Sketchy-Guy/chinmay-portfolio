@@ -33,6 +33,7 @@ const queryClient = new QueryClient({
 
 const App = () => {
   const [initializing, setInitializing] = useState(true);
+  const [storageInitialized, setStorageInitialized] = useState(false);
 
   // Run initialization once at the app level
   useEffect(() => {
@@ -57,6 +58,8 @@ const App = () => {
               
               if (!result.success) {
                 toast.warning('Storage initialization: ' + result.message);
+              } else {
+                setStorageInitialized(true);
               }
             } catch (err) {
               console.error('Error initializing storage after login:', err);
@@ -75,6 +78,7 @@ const App = () => {
               toast.warning('Storage initialization: ' + result.message);
             } else {
               console.log('Storage initialized successfully');
+              setStorageInitialized(true);
             }
           } catch (error) {
             console.error('Error during storage initialization:', error);
