@@ -83,16 +83,12 @@ export const ensureStorageBucket = async () => {
     }
     
     // Verify that the bucket is publicly accessible
-    const { data: publicUrl, error: urlError } = supabase.storage
+    const publicUrlResult = supabase.storage
       .from('portfolio')
       .getPublicUrl('profile_photo/.folder');
     
-    if (urlError) {
-      console.error('Error getting public URL:', urlError);
-      return { success: false, message: 'Error validating public access to storage bucket' };
-    }
-    
-    console.log('Public URL test:', publicUrl);
+    // Fix: Remove error check as getPublicUrl doesn't return an error property
+    console.log('Public URL test:', publicUrlResult.data.publicUrl);
     
     // Test bucket permissions by listing objects
     const { error: listError } = await supabase.storage
@@ -164,11 +160,11 @@ export const uploadFile = async (file: File, path: string) => {
     console.log(`Upload ${uploadKey} succeeded:`, data);
     
     // Get the public URL for the file
-    const { data: { publicUrl } } = supabase.storage
+    const publicUrlResult = supabase.storage
       .from('portfolio')
       .getPublicUrl(path);
     
-    console.log(`Upload ${uploadKey} public URL:`, publicUrl);
+    console.log(`Upload ${uploadKey} public URL:`, publicUrlResult.data.publicUrl);
     
     // Verify the file was uploaded
     const { data: fileCheck, error: checkError } = await supabase.storage
@@ -184,7 +180,7 @@ export const uploadFile = async (file: File, path: string) => {
         fileCheck && fileCheck.length > 0 ? 'File found in storage' : 'File not found in verification');
     }
     
-    return { success: true, message: 'File uploaded successfully', path: publicUrl };
+    return { success: true, message: 'File uploaded successfully', path: publicUrlResult.data.publicUrl };
   } catch (error: any) {
     console.error('Error in uploadFile:', error);
     toast.error('Upload failed: ' + (error.message || 'Unknown error'));
