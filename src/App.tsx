@@ -31,7 +31,8 @@ const queryClient = new QueryClient({
   },
 });
 
-const App = () => {
+// Create a function component to properly wrap the TooltipProvider
+function AppContent() {
   const [initializing, setInitializing] = useState(true);
 
   // Run initialization once at the app level
@@ -117,30 +118,36 @@ const App = () => {
   }
 
   return (
+    <BrowserRouter>
+      <AuthProvider>
+        <DataProvider>
+          <Toaster />
+          <Sonner position="bottom-right" closeButton richColors />
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route 
+              path="/admin" 
+              element={
+                <AuthGuard requireAdmin={true}>
+                  <Admin />
+                </AuthGuard>
+              } 
+            />
+            <Route path="/hire-me" element={<HireMe />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </DataProvider>
+      </AuthProvider>
+    </BrowserRouter>
+  );
+}
+
+const App = () => {
+  return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <BrowserRouter>
-          <AuthProvider>
-            <DataProvider>
-              <Toaster />
-              <Sonner position="bottom-right" closeButton richColors />
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route 
-                  path="/admin" 
-                  element={
-                    <AuthGuard requireAdmin={true}>
-                      <Admin />
-                    </AuthGuard>
-                  } 
-                />
-                <Route path="/hire-me" element={<HireMe />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </DataProvider>
-          </AuthProvider>
-        </BrowserRouter>
+        <AppContent />
       </TooltipProvider>
     </QueryClientProvider>
   );

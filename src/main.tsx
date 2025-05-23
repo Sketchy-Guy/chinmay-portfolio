@@ -1,5 +1,6 @@
 
 import { createRoot } from 'react-dom/client'
+import React from 'react'
 import App from './App.tsx'
 import './index.css'
 import { supabase } from '@/integrations/supabase/client';
@@ -16,4 +17,8 @@ supabase.auth.getSession().then(({ data }) => {
   console.log("Supabase auth status:", data.session ? "Authenticated" : "Not authenticated");
 });
 
-root.render(<App />);
+root.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
