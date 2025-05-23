@@ -4,13 +4,14 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, LogOut, User, Code, Award, Briefcase, AlertTriangle } from "lucide-react";
+import { Loader2, LogOut, User, Code, Award, Briefcase, AlertTriangle, FileText } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { ProfileForm } from "@/components/admin/ProfileForm";
 import { SkillsManager } from "@/components/admin/SkillsManager";
 import { ProjectsManager } from "@/components/admin/ProjectsManager";
 import { CertificationsManager } from "@/components/admin/CertificationsManager";
+import { AboutManager } from "@/components/admin/AboutManager";
 import { forceAdminAccess } from '@/utils/auth';
 
 const Admin = () => {
@@ -158,9 +159,12 @@ const Admin = () => {
       
       <main className="container mx-auto p-6">
         <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="grid grid-cols-4 mb-8 shadow-md">
+          <TabsList className="grid grid-cols-5 mb-8 shadow-md">
             <TabsTrigger value="profile" className="flex items-center">
               <User className="mr-2 h-4 w-4" /> Profile
+            </TabsTrigger>
+            <TabsTrigger value="about" className="flex items-center">
+              <FileText className="mr-2 h-4 w-4" /> About
             </TabsTrigger>
             <TabsTrigger value="skills" className="flex items-center">
               <Code className="mr-2 h-4 w-4" /> Skills
@@ -180,6 +184,10 @@ const Admin = () => {
           >
             <TabsContent value="profile" className="glass-card p-6 shadow-xl">
               <ProfileForm />
+            </TabsContent>
+            
+            <TabsContent value="about" className="glass-card p-6 shadow-xl">
+              <AboutManager />
             </TabsContent>
             
             <TabsContent value="skills" className="glass-card p-6 shadow-xl">
