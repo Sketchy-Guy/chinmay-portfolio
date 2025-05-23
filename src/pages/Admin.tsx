@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -21,7 +20,6 @@ const Admin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Force check admin status on load
   useEffect(() => {
     const checkAccess = async () => {
       if (!isLoading && user) {
