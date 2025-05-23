@@ -15,6 +15,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogDescription
 } from '@/components/ui/dialog';
 import {
   Table,
@@ -81,6 +82,7 @@ export const AboutManager = () => {
   const fetchAboutEntries = async () => {
     setIsLoading(true);
     try {
+      console.log('Fetching about entries');
       const { data, error } = await supabase
         .from('about_me')
         .select('*')
@@ -90,6 +92,7 @@ export const AboutManager = () => {
         throw error;
       }
       
+      console.log('Fetched about entries:', data);
       setAboutEntries(data || []);
     } catch (error: any) {
       console.error('Error fetching about entries:', error);
@@ -151,8 +154,9 @@ export const AboutManager = () => {
 
       const entryData = {
         ...currentEntry,
-        profile_id: user.id,
       };
+      
+      console.log('Saving about entry:', entryData);
 
       let result;
       
@@ -320,6 +324,9 @@ export const AboutManager = () => {
         <DialogContent className="sm:max-w-[550px]">
           <DialogHeader>
             <DialogTitle>{currentEntry.id ? 'Edit About Me Entry' : 'Add New About Me Entry'}</DialogTitle>
+            <DialogDescription>
+              Fill in the details below to {currentEntry.id ? 'update' : 'create'} an about me entry.
+            </DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
