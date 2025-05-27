@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Plus, Edit, Trash2 } from 'lucide-react';
+import { Loader2, Plus, Edit, Trash2, Database } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,6 +34,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { migrateAboutData } from '@/utils/migrateAboutData';
 
 // Define types for About Me entries
 interface AboutMeEntry {
@@ -69,6 +69,7 @@ export const AboutManager = () => {
   const [currentEntry, setCurrentEntry] = useState<AboutMeFormData>({});
   const [entryToDelete, setEntryToDelete] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isMigrating, setIsMigrating] = useState(false);
 
   // Types for about me entries
   const aboutTypes = [
@@ -103,6 +104,37 @@ export const AboutManager = () => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Handle data migration
+  const handleMigration = async () => {
+    setIsMigrating(true);
+    try {
+      const result = await migrateAboutData();
+      
+      if (result.success) {
+        toast({
+          title: "Migration Successful",
+          description: result.message,
+        });
+        fetchAboutEntries(); // Refresh the data
+      } else {
+        toast({
+          title: "Migration Failed",
+          description: result.message,
+          variant: "destructive"
+        });
+      }
+    } catch (error: any) {
+      console.error('Migration error:', error);
+      toast({
+        title: "Migration Error",
+        description: error.message || "An error occurred during migration",
+        variant: "destructive"
+      });
+    } finally {
+      setIsMigrating(false);
     }
   };
 
@@ -154,6 +186,7 @@ export const AboutManager = () => {
 
       const entryData = {
         ...currentEntry,
+        profile_id: user.id, // Ensure profile_id is set
       };
       
       console.log('Saving about entry:', entryData);
@@ -241,12 +274,24 @@ export const AboutManager = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-semibold text-slate-800 dark:text-slate-100">About Me Manager</h2>
-        <Button 
-          onClick={() => openEntryDialog()} 
-          className="bg-portfolio-purple hover:bg-portfolio-purple/80"
-        >
-          <Plus className="mr-2 h-4 w-4" /> Add Entry
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={handleMigration}
+            disabled={isMigrating}
+            variant="outline"
+            className="border-portfolio-purple text-portfolio-purple hover:bg-portfolio-purple hover:text-white"
+          >
+            {isMigrating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Database className="mr-2 h-4 w-4" />
+            Migrate Data
+          </Button>
+          <Button 
+            onClick={() => openEntryDialog()} 
+            className="bg-portfolio-purple hover:bg-portfolio-purple/80"
+          >
+            <Plus className="mr-2 h-4 w-4" /> Add Entry
+          </Button>
+        </div>
       </div>
 
       {isLoading ? (
@@ -261,15 +306,25 @@ export const AboutManager = () => {
         >
           <h3 className="text-lg font-medium text-gray-500 dark:text-gray-400">No about me entries yet</h3>
           <p className="mt-1 text-sm text-gray-400 dark:text-gray-500">
-            Start adding entries to showcase your personal and professional journey.
+            Start by migrating your existing data or adding new entries to showcase your personal and professional journey.
           </p>
-          <Button 
-            onClick={() => openEntryDialog()} 
-            variant="outline" 
-            className="mt-4"
-          >
-            <Plus className="mr-2 h-4 w-4" /> Add Your First Entry
-          </Button>
+          <div className="flex gap-4 justify-center mt-4">
+            <Button 
+              onClick={handleMigration}
+              disabled={isMigrating}
+              variant="outline"
+            >
+              {isMigrating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <Database className="mr-2 h-4 w-4" />
+              Migrate Existing Data
+            </Button>
+            <Button 
+              onClick={() => openEntryDialog()} 
+              variant="outline"
+            >
+              <Plus className="mr-2 h-4 w-4" /> Add Your First Entry
+            </Button>
+          </div>
         </motion.div>
       ) : (
         <div className="border rounded-lg overflow-hidden">
