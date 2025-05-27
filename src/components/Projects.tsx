@@ -1,10 +1,10 @@
-
 import { useState } from "react";
 import { ArrowRight, Github, ExternalLink } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { usePortfolioData } from "@/contexts/DataContext";
 import { ProjectData } from "@/types/portfolio";
+import Projects3D from "./3d/Projects3D";
 
 const ProjectCard = ({ project, isHovered, onHover, onLeaveHover }: { 
   project: ProjectData, 
@@ -14,7 +14,7 @@ const ProjectCard = ({ project, isHovered, onHover, onLeaveHover }: {
 }) => {
   return (
     <Card 
-      className={`overflow-hidden transition-all duration-300 hover:shadow-xl reveal ${
+      className={`overflow-hidden transition-all duration-300 hover:shadow-xl reveal backdrop-blur-sm bg-white/10 border border-gray-600 hover:bg-white/20 ${
         isHovered ? 'scale-[1.03]' : 'scale-100'
       }`}
       onMouseEnter={onHover}
@@ -59,14 +59,14 @@ const ProjectCard = ({ project, isHovered, onHover, onLeaveHover }: {
       </div>
       
       <CardHeader>
-        <CardTitle className="text-xl text-portfolio-purple">{project.title}</CardTitle>
-        <CardDescription>{project.description}</CardDescription>
+        <CardTitle className="text-xl text-white">{project.title}</CardTitle>
+        <CardDescription className="text-gray-300">{project.description}</CardDescription>
       </CardHeader>
       
       <CardContent>
         <div className="flex flex-wrap gap-2">
           {project.technologies.map((tech, index) => (
-            <span key={index} className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
+            <span key={index} className="px-2 py-1 bg-portfolio-purple/20 text-purple-300 text-xs rounded-full border border-purple-400/30">
               {tech}
             </span>
           ))}
@@ -76,7 +76,7 @@ const ProjectCard = ({ project, isHovered, onHover, onLeaveHover }: {
       <CardFooter>
         <Button 
           variant="ghost" 
-          className="p-0 text-portfolio-purple hover:text-portfolio-teal hover:bg-transparent"
+          className="p-0 text-portfolio-teal hover:text-white hover:bg-transparent"
           asChild
         >
           <a href={project.github || project.demo || "#"} target="_blank" rel="noopener noreferrer">
@@ -91,32 +91,52 @@ const ProjectCard = ({ project, isHovered, onHover, onLeaveHover }: {
 const Projects = () => {
   const { data } = usePortfolioData();
   const [hoveredProject, setHoveredProject] = useState<string | null>(null);
+  const [view3D, setView3D] = useState(true);
 
   return (
-    <section id="projects" className="py-16 md:py-24 bg-gradient-to-b from-portfolio-soft-teal/30 to-white">
+    <section id="projects" className="py-16 md:py-24 bg-gradient-to-b from-black to-gray-900">
       <div className="container mx-auto px-4">
         <div className="max-w-3xl mx-auto text-center mb-16 reveal">
           <h2 className="text-3xl md:text-4xl font-bold mb-4 gradient-text">My Projects</h2>
           <div className="w-20 h-1 bg-portfolio-teal mx-auto mb-8 rounded-full"></div>
-          <p className="text-gray-700 dark:text-gray-300">
-            Here are some of my recent projects that showcase my skills and passion for software development.
+          <p className="text-gray-300">
+            Explore my projects in an immersive 3D gallery. Hover over project cards to see details and links.
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {data.projects.map((project) => (
-            <ProjectCard
-              key={project.id}
-              project={project}
-              isHovered={hoveredProject === project.id}
-              onHover={() => setHoveredProject(project.id)}
-              onLeaveHover={() => setHoveredProject(null)}
-            />
-          ))}
+        <div className="mb-10 text-center reveal">
+          <button
+            className={`px-6 py-3 rounded-full text-sm font-medium transition-all duration-300 ${
+              view3D 
+              ? "bg-portfolio-purple text-white shadow-lg shadow-purple-500/25" 
+              : "bg-white/10 backdrop-blur-sm hover:bg-white/20 text-gray-300 border border-gray-600"
+            }`}
+            onClick={() => setView3D(!view3D)}
+          >
+            {view3D ? "3D Gallery" : "Grid View"}
+          </button>
         </div>
         
+        {view3D ? (
+          <div className="reveal">
+            <Projects3D projects={data.projects} />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {data.projects.map((project) => (
+              <ProjectCard
+                key={project.id}
+                project={project}
+                isHovered={hoveredProject === project.id}
+                onHover={() => setHoveredProject(project.id)}
+                onLeaveHover={() => setHoveredProject(null)}
+              />
+            ))}
+          </div>
+        )}
+        
         <div className="text-center mt-12 reveal">
-          <Button className="bg-portfolio-purple hover:bg-portfolio-purple/90" asChild>
+          <Button className="bg-portfolio-purple hover:bg-portfolio-purple/90 backdrop-blur-sm hover:scale-105 transition-all duration-300 shadow-lg shadow-purple-500/25" asChild>
             <a href="https://github.com/chinmaykumarpanda" target="_blank" rel="noopener noreferrer">
               <Github className="mr-2 h-4 w-4" /> View More on GitHub
             </a>

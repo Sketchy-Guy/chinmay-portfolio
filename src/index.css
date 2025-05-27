@@ -84,6 +84,8 @@
   }
   body {
     @apply bg-background text-foreground font-sans;
+    background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+    min-height: 100vh;
   }
   
   h1, h2, h3, h4, h5, h6 {
@@ -93,7 +95,7 @@
 
 @layer components {
   .social-icon {
-    @apply flex items-center justify-center w-10 h-10 rounded-full bg-white text-portfolio-purple shadow-md hover:bg-portfolio-purple hover:text-white transition-colors duration-300;
+    @apply flex items-center justify-center w-10 h-10 rounded-full bg-white/10 text-portfolio-purple shadow-lg hover:bg-portfolio-purple hover:text-white transition-all duration-300 backdrop-blur-sm border border-white/20;
   }
   
   .section-title {
@@ -106,66 +108,105 @@
   }
   
   .skill-item {
-    @apply flex items-center gap-2 py-2 px-4 bg-white rounded-md shadow-sm hover:shadow-md transition-shadow;
+    @apply flex items-center gap-2 py-2 px-4 bg-white/10 rounded-md shadow-sm hover:shadow-md transition-all backdrop-blur-sm border border-white/20;
   }
   
   .contact-input {
-    @apply rounded-md border-gray-300 bg-white shadow-sm focus:border-portfolio-purple focus:ring-portfolio-purple;
+    @apply rounded-md border-gray-600 bg-white/10 backdrop-blur-sm shadow-sm focus:border-portfolio-purple focus:ring-portfolio-purple text-white placeholder-gray-400;
   }
   
   .gradient-text {
-    @apply bg-gradient-to-r from-portfolio-purple to-portfolio-teal text-transparent bg-clip-text;
+    @apply bg-gradient-to-r from-portfolio-purple via-portfolio-teal to-pink-500 text-transparent bg-clip-text;
   }
   
   .glass-card {
-    @apply bg-white/80 backdrop-blur-sm rounded-xl shadow-xl border border-white/20;
+    @apply bg-white/10 backdrop-blur-md rounded-xl shadow-2xl border border-white/20;
   }
 }
 
-/* Scroll animations */
+/* Enhanced scroll animations */
 .reveal {
   opacity: 0;
-  transform: translateY(30px);
-  transition: all 0.6s ease;
+  transform: translateY(50px) rotateX(10deg);
+  transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .reveal.active {
   opacity: 1;
-  transform: translateY(0);
+  transform: translateY(0) rotateX(0deg);
 }
 
-/* Custom scrollbar */
+/* Futuristic floating animation */
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  25% { transform: translateY(-10px) rotate(1deg); }
+  50% { transform: translateY(-20px) rotate(0deg); }
+  75% { transform: translateY(-10px) rotate(-1deg); }
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 20s linear infinite;
+}
+
+/* Glowing effects */
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.3); }
+  50% { box-shadow: 0 0 40px rgba(139, 92, 246, 0.6), 0 0 60px rgba(139, 92, 246, 0.4); }
+}
+
+.glow {
+  animation: glow 2s ease-in-out infinite;
+}
+
+/* Particle effects */
+@keyframes particles {
+  0% { opacity: 0; transform: translateY(0px) rotate(0deg); }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-100px) rotate(360deg); }
+}
+
+.particle {
+  animation: particles 3s linear infinite;
+}
+
+/* Enhanced scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-muted;
+  @apply bg-gray-900;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-portfolio-purple/50 rounded-full;
+  @apply bg-gradient-to-b from-portfolio-purple to-portfolio-teal rounded-full;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-portfolio-purple;
+  @apply from-portfolio-teal to-portfolio-purple;
 }
 
-/* Page transition animation */
-.page-transition-enter {
-  opacity: 0;
+/* Smooth transitions for all interactive elements */
+button, a, .card {
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
-.page-transition-enter-active {
-  opacity: 1;
-  transition: opacity 300ms;
+button:hover, a:hover {
+  transform: translateY(-2px);
 }
 
-.page-transition-exit {
-  opacity: 1;
-}
-
-.page-transition-exit-active {
-  opacity: 0;
-  transition: opacity 300ms;
+/* Backdrop blur support */
+.backdrop-blur-glass {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
