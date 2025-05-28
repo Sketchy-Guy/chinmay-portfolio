@@ -393,3 +393,44 @@ section::before {
 section:hover::before {
   left: 100%;
 }
+
+/* Project card specific fixes */
+.glass-card-hover {
+  will-change: transform, opacity;
+  z-index: 10;
+}
+
+.glass-card-hover:hover {
+  z-index: 20;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.glass-card-hover .group {
+  will-change: transform;
+}
+
+/* Prevent cards from disappearing */
+section .glass-card-hover,
+section .glass-card {
+  opacity: 1 !important;
+  visibility: visible !important;
+  position: relative;
+}
+
+/* Enhanced card stability */
+.card-stable {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Improved hover states */
+.card-hover-stable {
+  transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
+}
+
+.card-hover-stable:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1), 0 0 20px rgba(139, 92, 246, 0.2);
+}

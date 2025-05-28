@@ -15,7 +15,7 @@ const ProjectCard = ({ project, isHovered, onHover, onLeaveHover, index }: {
 }) => {
   return (
     <Card 
-      className={`glass-card-hover p-6 group transition-all duration-700 ease-out reveal-stagger ${
+      className={`glass-card-hover p-6 group transition-all duration-700 ease-out reveal-stagger relative z-10 ${
         isHovered ? 'scale-[1.02] -translate-y-2' : ''
       }`}
       style={{ animationDelay: `${index * 0.1}s` }}
