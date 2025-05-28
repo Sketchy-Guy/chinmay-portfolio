@@ -1,4 +1,3 @@
-
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&family=Poppins:wght@300;400;500;600;700;800&display=swap');
 
 @tailwind base;
@@ -167,6 +166,20 @@
   
   .page-transition.loaded {
     @apply opacity-100 translate-y-0;
+  }
+  
+  /* Certification specific styles */
+  .certification-card {
+    @apply glass-card-hover p-8 group relative overflow-hidden;
+  }
+  
+  .certification-card::before {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-br from-portfolio-purple/5 via-transparent to-portfolio-teal/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl pointer-events-none;
+  }
+  
+  .border-gradient-to-b {
+    border-image: linear-gradient(to bottom, #8B5CF6, #0EA5E9) 1;
   }
 }
 
