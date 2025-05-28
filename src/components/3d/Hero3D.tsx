@@ -100,8 +100,22 @@ const Hero3DScene = () => {
 
 const Hero3D = () => {
   return (
-    <div className="absolute inset-0 w-full h-full">
-      <Canvas camera={{ position: [0, 0, 10], fov: 75 }}>
+    <div className="absolute inset-0 w-full h-full" style={{ pointerEvents: 'none' }}>
+      <Canvas 
+        camera={{ position: [0, 0, 10], fov: 75 }}
+        style={{ pointerEvents: 'auto' }}
+        onCreated={({ gl }) => {
+          // Ensure the canvas doesn't inherit problematic attributes
+          gl.domElement.removeAttribute('data-lov');
+          const attributes = gl.domElement.attributes;
+          for (let i = attributes.length - 1; i >= 0; i--) {
+            const attr = attributes[i];
+            if (attr.name.startsWith('data-lov')) {
+              gl.domElement.removeAttribute(attr.name);
+            }
+          }
+        }}
+      >
         <Hero3DScene />
       </Canvas>
     </div>
