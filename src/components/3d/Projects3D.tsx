@@ -1,9 +1,8 @@
-
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Text, Float, Html } from '@react-three/drei';
 import { useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
+import { Mesh, Vector3 } from 'three';
 
 interface Project3DProps {
   project: {
@@ -21,7 +20,7 @@ interface Project3DProps {
 }
 
 const Project3D = ({ project, position, onClick, isSelected }: Project3DProps) => {
-  const meshRef = useRef<THREE.Mesh>(null);
+  const meshRef = useRef<Mesh>(null);
   const [hovered, setHovered] = useState(false);
   
   useFrame((state) => {
@@ -29,7 +28,7 @@ const Project3D = ({ project, position, onClick, isSelected }: Project3DProps) =
       meshRef.current.rotation.y = state.clock.elapsedTime * 0.5;
       
       const scale = hovered || isSelected ? 1.1 : 1;
-      meshRef.current.scale.lerp(new THREE.Vector3(scale, scale, scale), 0.1);
+      meshRef.current.scale.lerp(new Vector3(scale, scale, scale), 0.1);
     }
   });
 

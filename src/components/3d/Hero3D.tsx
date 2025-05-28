@@ -3,10 +3,10 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Sphere, MeshDistortMaterial, Float, Text3D, Center } from '@react-three/drei';
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
+import { Mesh, Points, Vector3 } from 'three';
 
 const FloatingGeometry = ({ position, color, scale = 1 }: { position: [number, number, number], color: string, scale?: number }) => {
-  const meshRef = useRef<THREE.Mesh>(null);
+  const meshRef = useRef<Mesh>(null);
   
   useFrame((state) => {
     if (meshRef.current) {
@@ -22,7 +22,6 @@ const FloatingGeometry = ({ position, color, scale = 1 }: { position: [number, n
         <icosahedronGeometry args={[1, 0]} />
         <MeshDistortMaterial
           color={color}
-          attach="material"
           distort={0.6}
           speed={2}
           roughness={0.1}
@@ -34,7 +33,7 @@ const FloatingGeometry = ({ position, color, scale = 1 }: { position: [number, n
 };
 
 const ParticleField = () => {
-  const points = useRef<THREE.Points>(null);
+  const points = useRef<Points>(null);
   
   const particlesPosition = useMemo(() => {
     const positions = new Float32Array(2000 * 3);
@@ -85,7 +84,6 @@ const Hero3DScene = () => {
       <Sphere args={[1, 32, 32]} position={[0, 0, -5]} scale={2}>
         <MeshDistortMaterial
           color="#8b5cf6"
-          attach="material"
           distort={0.4}
           speed={2}
           roughness={0.2}

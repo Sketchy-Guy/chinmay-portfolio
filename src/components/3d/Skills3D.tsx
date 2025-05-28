@@ -1,9 +1,8 @@
-
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Text, Float, MeshDistortMaterial } from '@react-three/drei';
 import { useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
+import { Mesh, Vector3 } from 'three';
 
 interface Skill3DProps {
   skill: {
@@ -17,7 +16,7 @@ interface Skill3DProps {
 }
 
 const Skill3D = ({ skill, position, onClick, isSelected }: Skill3DProps) => {
-  const meshRef = useRef<THREE.Mesh>(null);
+  const meshRef = useRef<Mesh>(null);
   const [hovered, setHovered] = useState(false);
   
   useFrame((state) => {
@@ -26,7 +25,7 @@ const Skill3D = ({ skill, position, onClick, isSelected }: Skill3DProps) => {
       meshRef.current.rotation.y = state.clock.elapsedTime * 0.3;
       
       const scale = hovered || isSelected ? 1.2 : 1;
-      meshRef.current.scale.lerp(new THREE.Vector3(scale, scale, scale), 0.1);
+      meshRef.current.scale.lerp(new Vector3(scale, scale, scale), 0.1);
     }
   });
 
@@ -55,7 +54,6 @@ const Skill3D = ({ skill, position, onClick, isSelected }: Skill3DProps) => {
           <sphereGeometry args={[0.8, 32, 32]} />
           <MeshDistortMaterial
             color={getColorByCategory(skill.category)}
-            attach="material"
             distort={hovered || isSelected ? 0.8 : 0.4}
             speed={3}
             roughness={0.1}

@@ -1,9 +1,7 @@
 
-declare module 'three' {
-  export * from 'three/src/Three';
-}
+import * as THREE from 'three';
 
-declare global {
+declare module '@react-three/fiber' {
   namespace JSX {
     interface IntrinsicElements {
       mesh: any;
@@ -23,3 +21,5 @@ declare global {
     }
   }
 }
+
+export { THREE };
