@@ -1,10 +1,10 @@
+
 import { useState } from "react";
 import { ArrowRight, Github, ExternalLink } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { usePortfolioData } from "@/contexts/DataContext";
 import { ProjectData } from "@/types/portfolio";
-import Projects3D from "./3d/Projects3D";
 
 const ProjectCard = ({ project, isHovered, onHover, onLeaveHover }: { 
   project: ProjectData, 
@@ -91,7 +91,6 @@ const ProjectCard = ({ project, isHovered, onHover, onLeaveHover }: {
 const Projects = () => {
   const { data } = usePortfolioData();
   const [hoveredProject, setHoveredProject] = useState<string | null>(null);
-  const [view3D, setView3D] = useState(true);
 
   return (
     <section id="projects" className="py-16 md:py-24 bg-gradient-to-b from-black to-gray-900">
@@ -100,40 +99,21 @@ const Projects = () => {
           <h2 className="text-3xl md:text-4xl font-bold mb-4 gradient-text">My Projects</h2>
           <div className="w-20 h-1 bg-portfolio-teal mx-auto mb-8 rounded-full"></div>
           <p className="text-gray-300">
-            Explore my projects in an immersive 3D gallery. Hover over project cards to see details and links.
+            Explore my projects and see the technologies I've worked with.
           </p>
         </div>
         
-        <div className="mb-10 text-center reveal">
-          <button
-            className={`px-6 py-3 rounded-full text-sm font-medium transition-all duration-300 ${
-              view3D 
-              ? "bg-portfolio-purple text-white shadow-lg shadow-purple-500/25" 
-              : "bg-white/10 backdrop-blur-sm hover:bg-white/20 text-gray-300 border border-gray-600"
-            }`}
-            onClick={() => setView3D(!view3D)}
-          >
-            {view3D ? "3D Gallery" : "Grid View"}
-          </button>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {data.projects.map((project) => (
+            <ProjectCard
+              key={project.id}
+              project={project}
+              isHovered={hoveredProject === project.id}
+              onHover={() => setHoveredProject(project.id)}
+              onLeaveHover={() => setHoveredProject(null)}
+            />
+          ))}
         </div>
-        
-        {view3D ? (
-          <div className="reveal">
-            <Projects3D projects={data.projects} />
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {data.projects.map((project) => (
-              <ProjectCard
-                key={project.id}
-                project={project}
-                isHovered={hoveredProject === project.id}
-                onHover={() => setHoveredProject(project.id)}
-                onLeaveHover={() => setHoveredProject(null)}
-              />
-            ))}
-          </div>
-        )}
         
         <div className="text-center mt-12 reveal">
           <Button className="bg-portfolio-purple hover:bg-portfolio-purple/90 backdrop-blur-sm hover:scale-105 transition-all duration-300 shadow-lg shadow-purple-500/25" asChild>
