@@ -1,6 +1,7 @@
+
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Download, Github, Linkedin, Mail, Twitter, Instagram, Facebook } from "lucide-react";
+import { Download, Github, Linkedin, Mail, Twitter, Instagram, Facebook, Sparkles, ArrowDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { usePortfolioData } from "@/contexts/DataContext";
 import Hero3D from "./3d/Hero3D";
@@ -12,15 +13,18 @@ const Hero = () => {
   const [imageTimestamp, setImageTimestamp] = useState(Date.now());
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
   const fullText = data?.user?.title || "";
   const { toast: uiToast } = useToast();
   
-  // Refresh image when component mounts and whenever profile image changes
+  useEffect(() => {
+    setIsVisible(true);
+  }, []);
+  
   useEffect(() => {
     setImageTimestamp(Date.now());
     setImageError(false);
     setImageLoaded(false);
-    console.log("Hero: Refreshing profile image with new timestamp:", imageTimestamp);
   }, [data?.user?.profileImage]);
   
   useEffect(() => {
@@ -34,7 +38,7 @@ const Hero = () => {
       } else {
         clearInterval(typingInterval);
       }
-    }, 50);
+    }, 80);
     
     return () => clearInterval(typingInterval);
   }, [fullText]);
@@ -47,7 +51,7 @@ const Hero = () => {
   };
   
   if (!data || !data.user) {
-    return null; // Don't render anything if data isn't loaded yet
+    return null;
   }
   
   const socialLinks = [
@@ -59,100 +63,146 @@ const Hero = () => {
     { icon: Mail, href: `mailto:${data.user.email}`, label: "Email" },
   ];
 
-  // Default image path with fallback
-
-  
-
   const defaultImage = "/lovable-uploads/WhatsApp Image 2024-06-18 at 13.19.59_2b7a27bc.jpg";
- 
-  // Make sure we don't add a timestamp to the default image
   let profileImage = defaultImage;
   
   if (!imageError && data.user.profileImage) {
-    // Only add timestamp if it's not the default image to bust cache
     profileImage = `${data.user.profileImage}?t=${imageTimestamp}`;
   }
 
   return (
-    <section className="min-h-screen flex flex-col justify-center pt-20 relative overflow-hidden">
-      {/* 3D Background Scene with Error Boundary */}
+    <section className={`min-h-screen flex flex-col justify-center pt-20 relative overflow-hidden ${isVisible ? 'page-transition loaded' : 'page-transition'}`}>
+      {/* Enhanced background effects */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-full blur-3xl animate-pulse-glow"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-full blur-3xl animate-pulse-glow" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-r from-portfolio-purple/10 to-portfolio-teal/10 rounded-full blur-2xl animate-spin-slow"></div>
+      </div>
+
+      {/* 3D Background Scene */}
       <ThreeJSErrorBoundary>
         <Hero3D />
       </ThreeJSErrorBoundary>
       
       <div className="container mx-auto px-4 relative z-10">
-        <div className="flex flex-col-reverse lg:flex-row items-center gap-12">
-          <div className="lg:w-1/2 animate-fade-in">
-            <h3 className="text-2xl font-medium text-portfolio-teal mb-2 drop-shadow-lg">Hello, I'm</h3>
-            <h1 className="text-5xl md:text-7xl font-bold mb-4 gradient-text drop-shadow-2xl">{data.user.name}</h1>
-            <h2 className="text-xl md:text-2xl font-medium text-gray-100 dark:text-gray-200 mb-6 h-6 drop-shadow-lg">
-              {typedText}
-              <span className="ml-1 inline-block w-2 h-full bg-portfolio-purple animate-pulse"></span>
-            </h2>
-            <p className="text-gray-200 dark:text-gray-200 mb-8 max-w-lg drop-shadow-lg backdrop-blur-sm bg-black/20 p-4 rounded-lg">
-              {data.user.bio}
-            </p>
+        <div className="flex flex-col-reverse lg:flex-row items-center gap-16">
+          <div className="lg:w-1/2 space-y-8">
+            {/* Welcome badge */}
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-sm font-medium text-white/80 animate-fade-in">
+              <Sparkles className="w-4 h-4 text-portfolio-purple" />
+              Welcome to my digital space
+            </div>
             
-            <div className="flex flex-wrap gap-4 mb-8">
+            <div className="space-y-6">
+              <h3 className="text-2xl md:text-3xl font-medium text-portfolio-teal animate-fade-in" style={{ animationDelay: '0.2s' }}>
+                Hello, I'm
+              </h3>
+              
+              <h1 className="text-6xl md:text-8xl font-bold leading-tight animate-fade-in" style={{ animationDelay: '0.4s' }}>
+                <span className="gradient-text animate-gradient">{data.user.name}</span>
+              </h1>
+              
+              <div className="h-12 md:h-16 flex items-center animate-fade-in" style={{ animationDelay: '0.6s' }}>
+                <h2 className="text-xl md:text-3xl font-medium text-gray-200">
+                  {typedText}
+                  <span className="ml-1 inline-block w-1 h-8 bg-gradient-to-b from-portfolio-purple to-portfolio-teal animate-pulse"></span>
+                </h2>
+              </div>
+              
+              <p className="text-gray-300 text-lg leading-relaxed max-w-xl backdrop-blur-sm bg-black/20 p-6 rounded-2xl border border-white/10 animate-fade-in" style={{ animationDelay: '0.8s' }}>
+                {data.user.bio}
+              </p>
+            </div>
+            
+            <div className="flex flex-wrap gap-4 animate-fade-in" style={{ animationDelay: '1s' }}>
               {socialLinks.map((link, index) => (
                 link.href !== "#" && (
                   <a 
                     key={index}
                     href={link.href}
                     aria-label={link.label}
-                    className="social-icon backdrop-blur-sm bg-white/20 hover:bg-portfolio-purple transition-all duration-300 hover:scale-110"
+                    className="social-icon"
                     rel="noopener noreferrer"
                     target="_blank"
+                    style={{ animationDelay: `${1.2 + index * 0.1}s` }}
                   >
-                    <link.icon size={20} />
+                    <link.icon size={24} />
                   </a>
                 )
               ))}
             </div>
             
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-4 animate-fade-in" style={{ animationDelay: '1.4s' }}>
               <Button 
-                className="bg-portfolio-purple hover:bg-portfolio-purple/90 backdrop-blur-sm hover:scale-105 transition-all duration-300 shadow-2xl border border-purple-400/30"
+                className="btn-primary group"
                 onClick={handleDownloadCV}
               >
-                <Download className="mr-2 h-4 w-4" /> Download CV
+                <Download className="mr-3 h-5 w-5 group-hover:animate-bounce" /> 
+                Download CV
               </Button>
               <Button 
                 variant="outline" 
-                className="border-portfolio-teal text-portfolio-teal hover:bg-portfolio-teal hover:text-white backdrop-blur-sm hover:scale-105 transition-all duration-300 shadow-2xl border-2"
+                className="btn-secondary group"
                 asChild
               >
                 <a href={`mailto:${data.user.email}`}>
-                  <Mail className="mr-2 h-4 w-4" /> Contact Me
+                  <Mail className="mr-3 h-5 w-5 group-hover:animate-pulse" /> 
+                  Contact Me
                 </a>
               </Button>
             </div>
           </div>
           
-          <div className="lg:w-1/2 relative z-20">
-            <div className="w-64 h-64 md:w-80 md:h-80 mx-auto relative animate-float">
+          <div className="lg:w-1/2 relative z-20 animate-fade-in" style={{ animationDelay: '0.5s' }}>
+            {/* Enhanced background elements */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-full h-full max-w-lg max-h-lg">
+                <div className="absolute inset-0 bg-gradient-to-r from-portfolio-purple/20 via-portfolio-teal/20 to-pink-500/20 rounded-full blur-3xl animate-spin-slow"></div>
+                <div className="absolute inset-4 bg-gradient-to-l from-cyan-500/20 via-purple-500/20 to-portfolio-purple/20 rounded-full blur-2xl animate-spin-slow" style={{ animationDirection: 'reverse', animationDuration: '40s' }}></div>
+              </div>
+            </div>
+            
+            <div className="relative z-30 w-80 h-80 md:w-96 md:h-96 mx-auto">
+              {/* Loading state */}
               {!imageLoaded && !imageError && (
-                <div className="absolute inset-0 flex items-center justify-center rounded-full bg-gray-100/20 backdrop-blur-sm">
-                  <div className="animate-spin h-12 w-12 border-4 border-portfolio-purple border-t-transparent rounded-full"></div>
+                <div className="absolute inset-0 flex items-center justify-center rounded-full bg-white/5 backdrop-blur-md border border-white/20">
+                  <div className="loading-shimmer w-16 h-16 rounded-full"></div>
                 </div>
               )}
-              <img 
-                src={profileImage} 
-                alt={data.user.name}
-                className={`rounded-full object-cover border-4 border-white/30 shadow-2xl w-full h-full transition-all duration-300 hover:scale-105 backdrop-blur-sm ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
-                onError={(e) => {
-                  console.log('Hero: Image failed to load, using fallback');
-                  (e.target as HTMLImageElement).src = defaultImage;
-                  setImageError(true);
-                  setImageLoaded(true);
-                }}
-                onLoad={() => {
-                  console.log('Hero: Image loaded successfully');
-                  setImageLoaded(true);
-                }}
-              />
+              
+              {/* Profile image */}
+              <div className="relative w-full h-full animate-float">
+                <img 
+                  src={profileImage} 
+                  alt={data.user.name}
+                  className={`rounded-full object-cover border-4 border-white/20 shadow-2xl w-full h-full transition-all duration-700 hover:scale-105 backdrop-blur-sm hover:border-white/40 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                  onError={(e) => {
+                    console.log('Hero: Image failed to load, using fallback');
+                    (e.target as HTMLImageElement).src = defaultImage;
+                    setImageError(true);
+                    setImageLoaded(true);
+                  }}
+                  onLoad={() => {
+                    console.log('Hero: Image loaded successfully');
+                    setImageLoaded(true);
+                  }}
+                />
+                
+                {/* Decorative elements */}
+                <div className="absolute -top-4 -right-4 w-8 h-8 bg-gradient-to-r from-portfolio-purple to-portfolio-teal rounded-full animate-pulse"></div>
+                <div className="absolute -bottom-4 -left-4 w-6 h-6 bg-gradient-to-r from-portfolio-teal to-pink-500 rounded-full animate-pulse" style={{ animationDelay: '0.5s' }}></div>
+                <div className="absolute top-1/4 -left-6 w-4 h-4 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full animate-pulse" style={{ animationDelay: '1s' }}></div>
+              </div>
             </div>
           </div>
+        </div>
+        
+        {/* Scroll indicator */}
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
+          <a href="#about" className="flex flex-col items-center text-white/60 hover:text-white transition-colors duration-300">
+            <span className="text-sm mb-2">Scroll to explore</span>
+            <ArrowDown className="w-5 h-5" />
+          </a>
         </div>
       </div>
     </section>
