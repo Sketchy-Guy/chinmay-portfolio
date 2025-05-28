@@ -1,13 +1,23 @@
 
 import React from 'react';
 
-// Helper function to filter out data-lov-* attributes and other problematic props
+// Comprehensive filter function to remove all Lovable-specific attributes
 const filterProps = (props: any) => {
+  if (!props || typeof props !== 'object') {
+    return props;
+  }
+
   const filtered: any = {};
   
   for (const [key, value] of Object.entries(props)) {
-    // Skip data-lov-* attributes and other Lovable-specific props
-    if (key.startsWith('data-lov') || key === 'lov' || key === 'lovable') {
+    // Skip all Lovable-specific attributes and problematic props
+    if (
+      key.startsWith('data-lov') || 
+      key === 'lov' || 
+      key === 'lovable' ||
+      key.includes('lov') ||
+      key.startsWith('data-')
+    ) {
       continue;
     }
     filtered[key] = value;
@@ -16,20 +26,18 @@ const filterProps = (props: any) => {
   return filtered;
 };
 
-// Wrapper component that filters props before passing to children
+// Enhanced wrapper component with better prop filtering
 export const ThreeJSWrapper: React.FC<{ children: React.ReactNode; [key: string]: any }> = ({ children, ...props }) => {
   const filteredProps = filterProps(props);
   
-  // If children is a single React element, clone it with filtered props
   if (React.isValidElement(children)) {
     return React.cloneElement(children, filteredProps);
   }
   
-  // If children is multiple elements or fragments, wrap them
   return <>{children}</>;
 };
 
-// HOC to wrap Three.js components and filter their props
+// Enhanced HOC with better error handling
 export const withThreeJSProps = <P extends object>(Component: React.ComponentType<P>) => {
   return React.forwardRef<any, P>((props, ref) => {
     const filteredProps = filterProps(props);
@@ -37,18 +45,36 @@ export const withThreeJSProps = <P extends object>(Component: React.ComponentTyp
   });
 };
 
-// Clean wrapper for Three.js primitives
-export const CleanMesh: React.FC<any> = (props) => {
+// Enhanced clean components with better prop filtering
+export const CleanMesh = React.forwardRef<any, any>((props, ref) => {
   const cleanProps = filterProps(props);
-  return <mesh {...cleanProps} />;
-};
+  return <mesh {...cleanProps} ref={ref} />;
+});
 
-export const CleanPoints: React.FC<any> = (props) => {
+export const CleanPoints = React.forwardRef<any, any>((props, ref) => {
   const cleanProps = filterProps(props);
-  return <points {...cleanProps} />;
-};
+  return <points {...cleanProps} ref={ref} />;
+});
 
-export const CleanGroup: React.FC<any> = (props) => {
+export const CleanGroup = React.forwardRef<any, any>((props, ref) => {
   const cleanProps = filterProps(props);
-  return <group {...cleanProps} />;
+  return <group {...cleanProps} ref={ref} />;
+});
+
+// Additional clean components for comprehensive coverage
+export const CleanSphere = React.forwardRef<any, any>((props, ref) => {
+  const cleanProps = filterProps(props);
+  return <mesh {...cleanProps} ref={ref} />;
+});
+
+export const CleanBox = React.forwardRef<any, any>((props, ref) => {
+  const cleanProps = filterProps(props);
+  return <mesh {...cleanProps} ref={ref} />;
+});
+
+// Wrapper for Drei components
+export const CleanFloat = ({ children, ...props }: { children: React.ReactNode; [key: string]: any }) => {
+  const cleanProps = filterProps(props);
+  // We'll import Float dynamically to avoid prop issues
+  return <group {...cleanProps}>{children}</group>;
 };

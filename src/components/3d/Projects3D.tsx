@@ -1,9 +1,10 @@
 
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Text, Float, Html } from '@react-three/drei';
+import { OrbitControls, Text, Html } from '@react-three/drei';
 import { useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Mesh, Vector3 } from 'three';
+import { CleanMesh, CleanGroup } from './ThreeJSWrapper';
 
 interface Project3DProps {
   project: {
@@ -34,9 +35,9 @@ const Project3D = ({ project, position, onClick, isSelected }: Project3DProps) =
   });
 
   return (
-    <group position={position}>
-      <Float speed={1.5} rotationIntensity={0.3} floatIntensity={0.5}>
-        <mesh
+    <CleanGroup position={position}>
+      <CleanGroup>
+        <CleanMesh
           ref={meshRef}
           onClick={onClick}
           onPointerOver={() => setHovered(true)}
@@ -50,7 +51,7 @@ const Project3D = ({ project, position, onClick, isSelected }: Project3DProps) =
             transparent
             opacity={0.9}
           />
-        </mesh>
+        </CleanMesh>
         
         {(hovered || isSelected) && (
           <Html
@@ -139,8 +140,8 @@ const Project3D = ({ project, position, onClick, isSelected }: Project3DProps) =
         >
           {project.title}
         </Text>
-      </Float>
-    </group>
+      </CleanGroup>
+    </CleanGroup>
   );
 };
 
@@ -182,7 +183,32 @@ const Projects3D = ({ projects }: Projects3DProps) => {
 
   return (
     <div className="w-full h-[600px]">
-      <Canvas camera={{ position: [0, 0, 10], fov: 75 }}>
+      <Canvas 
+        camera={{ position: [0, 0, 10], fov: 75 }}
+        onCreated={({ gl, scene, camera }) => {
+          // Clean up Lovable attributes
+          const canvas = gl.domElement;
+          const attributesToRemove = [];
+          for (let i = 0; i < canvas.attributes.length; i++) {
+            const attr = canvas.attributes[i];
+            if (attr.name.startsWith('data-lov') || attr.name.includes('lov')) {
+              attributesToRemove.push(attr.name);
+            }
+          }
+          attributesToRemove.forEach(attr => canvas.removeAttribute(attr));
+          
+          // Clean scene
+          scene.traverse((child) => {
+            if (child.userData) {
+              Object.keys(child.userData).forEach(key => {
+                if (key.startsWith('lov') || key.includes('lovable')) {
+                  delete child.userData[key];
+                }
+              });
+            }
+          });
+        }}
+      >
         <ambientLight intensity={0.3} />
         <directionalLight position={[10, 10, 5]} intensity={1} color="#8b5cf6" />
         <pointLight position={[-10, -10, -10]} color="#06b6d4" intensity={0.5} />

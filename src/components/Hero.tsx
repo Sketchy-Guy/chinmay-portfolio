@@ -3,9 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Download, Github, Linkedin, Mail, Twitter, Instagram, Facebook } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { usePortfolioData } from "@/contexts/DataContext";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import Hero3D from "./3d/Hero3D";
+import ThreeJSErrorBoundary from "./3d/ThreeJSErrorBoundary";
 
 const Hero = () => {
   const [typedText, setTypedText] = useState("");
@@ -76,8 +75,10 @@ const Hero = () => {
 
   return (
     <section className="min-h-screen flex flex-col justify-center pt-20 relative overflow-hidden">
-      {/* 3D Background Scene */}
-      <Hero3D />
+      {/* 3D Background Scene with Error Boundary */}
+      <ThreeJSErrorBoundary>
+        <Hero3D />
+      </ThreeJSErrorBoundary>
       
       <div className="container mx-auto px-4 relative z-10">
         <div className="flex flex-col-reverse lg:flex-row items-center gap-12">
