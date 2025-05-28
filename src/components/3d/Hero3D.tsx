@@ -4,6 +4,7 @@ import { OrbitControls, Sphere, MeshDistortMaterial, Float } from '@react-three/
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Mesh, Points, Vector3 } from 'three';
+import { ThreeJSWrapper } from './ThreeJSWrapper';
 
 const FloatingGeometry = ({ position, color, scale = 1 }: { position: [number, number, number], color: string, scale?: number }) => {
   const meshRef = useRef<Mesh>(null);
@@ -18,16 +19,18 @@ const FloatingGeometry = ({ position, color, scale = 1 }: { position: [number, n
 
   return (
     <Float speed={2} rotationIntensity={1} floatIntensity={2}>
-      <mesh ref={meshRef} position={position} scale={scale}>
-        <icosahedronGeometry args={[1, 0]} />
-        <MeshDistortMaterial
-          color={color}
-          distort={0.6}
-          speed={2}
-          roughness={0.1}
-          metalness={0.8}
-        />
-      </mesh>
+      <ThreeJSWrapper>
+        <mesh ref={meshRef} position={position} scale={scale}>
+          <icosahedronGeometry args={[1, 0]} />
+          <MeshDistortMaterial
+            color={color}
+            distort={0.6}
+            speed={2}
+            roughness={0.1}
+            metalness={0.8}
+          />
+        </mesh>
+      </ThreeJSWrapper>
     </Float>
   );
 };
@@ -53,17 +56,19 @@ const ParticleField = () => {
   });
 
   return (
-    <points ref={points}>
-      <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          count={particlesPosition.length / 3}
-          array={particlesPosition}
-          itemSize={3}
-        />
-      </bufferGeometry>
-      <pointsMaterial size={0.015} color="#8b5cf6" sizeAttenuation transparent opacity={0.8} />
-    </points>
+    <ThreeJSWrapper>
+      <points ref={points}>
+        <bufferGeometry>
+          <bufferAttribute
+            attach="attributes-position"
+            count={particlesPosition.length / 3}
+            array={particlesPosition}
+            itemSize={3}
+          />
+        </bufferGeometry>
+        <pointsMaterial size={0.015} color="#8b5cf6" sizeAttenuation transparent opacity={0.8} />
+      </points>
+    </ThreeJSWrapper>
   );
 };
 
@@ -81,17 +86,19 @@ const Hero3DScene = () => {
       <FloatingGeometry position={[2, 3, -3]} color="#ec4899" scale={0.4} />
       <FloatingGeometry position={[-3, -2, 1]} color="#10b981" scale={0.5} />
       
-      <Sphere args={[1, 32, 32]} position={[0, 0, -5]} scale={2}>
-        <MeshDistortMaterial
-          color="#8b5cf6"
-          distort={0.4}
-          speed={2}
-          roughness={0.2}
-          metalness={0.9}
-          transparent
-          opacity={0.1}
-        />
-      </Sphere>
+      <ThreeJSWrapper>
+        <Sphere args={[1, 32, 32]} position={[0, 0, -5]} scale={2}>
+          <MeshDistortMaterial
+            color="#8b5cf6"
+            distort={0.4}
+            speed={2}
+            roughness={0.2}
+            metalness={0.9}
+            transparent
+            opacity={0.1}
+          />
+        </Sphere>
+      </ThreeJSWrapper>
       
       <OrbitControls enableZoom={false} enablePan={false} enableRotate={true} autoRotate autoRotateSpeed={0.5} />
     </>
