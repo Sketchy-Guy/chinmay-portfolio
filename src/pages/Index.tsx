@@ -9,7 +9,6 @@ import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import ScrollToTop from "@/components/ScrollToTop";
-import FloatingNavigation from "@/components/ui/FloatingNavigation";
 import ThemeSwitcher from "@/components/ui/ThemeSwitcher";
 import ParticleSystem from "@/components/effects/ParticleSystem";
 import MatrixRain from "@/components/effects/MatrixRain";
@@ -75,83 +74,16 @@ const IndexContent = () => {
       }
     };
     
-    // Parallax effect
-    const handleParallax = () => {
-      const scrolled = window.pageYOffset;
-      const parallaxElements = document.querySelectorAll('.parallax');
-      
-      parallaxElements.forEach((element) => {
-        const speed = element.getAttribute('data-speed') || '0.5';
-        const yPos = -(scrolled * parseFloat(speed));
-        (element as HTMLElement).style.transform = `translate3d(0, ${yPos}px, 0)`;
-      });
-    };
-    
     // Add event listeners
     window.addEventListener('scroll', handleRevealOnScroll, { passive: true });
-    window.addEventListener('scroll', handleParallax, { passive: true });
     document.addEventListener('click', handleSmoothScroll);
     
     // Initial check
     handleRevealOnScroll();
     
-    // Enhanced styling fixes
-    const style = document.createElement('style');
-    style.textContent = `
-      /* Theme-specific styles */
-      [data-theme="cyber"] {
-        --portfolio-purple: #ff00ff;
-        --portfolio-teal: #00ffff;
-        --bg-gradient: linear-gradient(135deg, #0a0a0f 0%, #1a0a2e 25%, #2e0a3e 50%, #3e0a4f 75%, #0a0a0f 100%);
-      }
-      
-      [data-theme="neon"] {
-        --portfolio-purple: #ff0080;
-        --portfolio-teal: #80ff00;
-        --bg-gradient: linear-gradient(135deg, #000000 0%, #1a001a 25%, #001a1a 50%, #1a1a00 75%, #000000 100%);
-      }
-      
-      [data-theme="holographic"] {
-        --portfolio-purple: #8b5cf6;
-        --portfolio-teal: #06b6d4;
-        --bg-gradient: linear-gradient(135deg, #0a0a0f 0%, #2a1a3e 25%, #1a2a3e 50%, #3e2a1a 75%, #0a0a0f 100%);
-      }
-      
-      /* Enhanced animations */
-      @keyframes shimmer {
-        0% { transform: translateX(-100%); }
-        100% { transform: translateX(100%); }
-      }
-      
-      .animate-shimmer {
-        animation: shimmer 2s infinite;
-      }
-      
-      /* Improved hover effects */
-      .enhanced-hover {
-        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-      }
-      
-      .enhanced-hover:hover {
-        transform: translateY(-8px) scale(1.02);
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 
-                    0 0 0 1px rgba(255, 255, 255, 0.1), 
-                    0 0 40px rgba(139, 92, 246, 0.15);
-      }
-      
-      /* Parallax optimization */
-      .parallax {
-        will-change: transform;
-        transform: translate3d(0, 0, 0);
-      }
-    `;
-    document.head.appendChild(style);
-    
     return () => {
       window.removeEventListener('scroll', handleRevealOnScroll);
-      window.removeEventListener('scroll', handleParallax);
       document.removeEventListener('click', handleSmoothScroll);
-      document.head.removeChild(style);
     };
   }, [fetchPortfolioData]);
 
@@ -197,8 +129,7 @@ const IndexContent = () => {
       />
       <MatrixRain isActive={theme === 'matrix'} />
       
-      {/* Navigation */}
-      <FloatingNavigation />
+      {/* Theme Switcher */}
       <ThemeSwitcher />
       
       <Header />
