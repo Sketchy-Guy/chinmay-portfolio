@@ -15,8 +15,8 @@ const ProjectCard = ({ project, isHovered, onHover, onLeaveHover, index }: {
 }) => {
   return (
     <Card 
-      className={`glass-card-hover p-6 group transition-all duration-700 ease-out reveal-stagger relative z-10 ${
-        isHovered ? 'scale-[1.02] -translate-y-2' : ''
+      className={`glass-card group transition-all duration-500 ease-out reveal-stagger relative overflow-hidden ${
+        isHovered ? 'scale-[1.02] -translate-y-2 shadow-2xl shadow-purple-500/25' : 'shadow-xl'
       }`}
       style={{ animationDelay: `${index * 0.1}s` }}
       onMouseEnter={onHover}
@@ -150,7 +150,7 @@ const Projects = () => {
         </div>
         
         {/* Projects grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto p-6">
           {data.projects.map((project, index) => (
             <ProjectCard
               key={project.id}

@@ -45,9 +45,19 @@ const Hero = () => {
   
   const handleDownloadCV = () => {
     uiToast({
-      title: "CV Downloaded",
+      title: "CV Downloaded! 📄",
       description: "Your CV has been downloaded successfully!",
     });
+  };
+
+  const handleContactClick = () => {
+    const contactSection = document.getElementById('contact');
+    if (contactSection) {
+      contactSection.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
   };
   
   if (!data || !data.user) {
@@ -141,14 +151,11 @@ const Hero = () => {
                 Download CV
               </Button>
               <Button 
-                variant="outline" 
                 className="btn-secondary group"
-                asChild
+                onClick={handleContactClick}
               >
-                <a href={`mailto:${data.user.email}`}>
-                  <Mail className="mr-3 h-5 w-5 group-hover:animate-pulse" /> 
-                  Contact Me
-                </a>
+                <Mail className="mr-3 h-5 w-5 group-hover:animate-pulse" /> 
+                Contact Me
               </Button>
             </div>
           </div>

@@ -1,3 +1,4 @@
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&family=Poppins:wght@300;400;500;600;700;800&display=swap');
 
 @tailwind base;
@@ -141,7 +142,11 @@
   }
   
   .glass-card {
-    @apply bg-white/5 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/10 hover:border-white/20 transition-all duration-500 hover:bg-white/10;
+    @apply bg-white/5 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/10 hover:border-white/20 transition-all duration-500 hover:bg-white/10 p-6;
+    opacity: 1 !important;
+    visibility: visible !important;
+    position: relative;
+    z-index: 10;
   }
   
   .glass-card:hover {
@@ -358,7 +363,7 @@ button:hover, a:hover {
   background-clip: text;
 }
 
-/* Enhanced card animations */
+/* Enhanced card animations - FIXED */
 .card-hover {
   transform-style: preserve-3d;
   transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -394,43 +399,64 @@ section:hover::before {
   left: 100%;
 }
 
-/* Project card specific fixes */
-.glass-card-hover {
-  will-change: transform, opacity;
-  z-index: 10;
-}
-
-.glass-card-hover:hover {
-  z-index: 20;
-  opacity: 1 !important;
-  visibility: visible !important;
-}
-
-.glass-card-hover .group {
-  will-change: transform;
-}
-
-/* Prevent cards from disappearing */
+/* FIXED PROJECT CARD STYLES */
+/* Ensure all cards are always visible and stable */
+.glass-card,
+.glass-card-hover,
+section .glass-card,
 section .glass-card-hover,
-section .glass-card {
+.card {
   opacity: 1 !important;
   visibility: visible !important;
-  position: relative;
+  position: relative !important;
+  z-index: 10 !important;
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
-/* Enhanced card stability */
-.card-stable {
+/* Enhanced hover effects that don't cause disappearing */
+.glass-card:hover,
+.glass-card-hover:hover {
+  opacity: 1 !important;
+  visibility: visible !important;
+  z-index: 20 !important;
+  transform: translateY(-8px) scale(1.02) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 
+              0 0 0 1px rgba(255, 255, 255, 0.1), 
+              0 0 40px rgba(139, 92, 246, 0.15) !important;
+}
+
+/* Prevent any parent elements from hiding cards */
+section:hover *,
+div:hover *,
+.container:hover *,
+.grid:hover * {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Stable card content */
+.card-content,
+.card-header,
+.card-footer {
+  opacity: 1 !important;
+  visibility: visible !important;
+  position: relative !important;
+}
+
+/* Enhanced stability for project cards specifically */
+#projects .glass-card,
+#projects .glass-card-hover {
+  will-change: transform;
   transform: translateZ(0);
   backface-visibility: hidden;
   perspective: 1000px;
 }
 
-/* Improved hover states */
-.card-hover-stable {
-  transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
-}
-
-.card-hover-stable:hover {
-  transform: translateY(-8px) scale(1.02);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1), 0 0 20px rgba(139, 92, 246, 0.2);
+/* Smooth animation performance */
+.card,
+.glass-card,
+.glass-card-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
