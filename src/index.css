@@ -120,18 +120,8 @@
     @apply bg-white/80 backdrop-blur-sm rounded-xl shadow-xl border border-white/20;
   }
 
-  /* Enhanced button styles */
   .btn-primary {
     @apply bg-gradient-to-r from-portfolio-purple to-portfolio-teal text-white border-2 border-transparent hover:border-white/30 transition-all duration-300 hover:scale-105 hover:shadow-lg;
-  }
-
-  /* Futuristic glow effects */
-  .glow-border {
-    box-shadow: 0 0 10px var(--portfolio-purple), 0 0 20px var(--portfolio-purple), 0 0 30px var(--portfolio-purple);
-  }
-
-  .text-glow {
-    text-shadow: 0 0 10px var(--portfolio-purple), 0 0 20px var(--portfolio-purple);
   }
 }
 
@@ -158,23 +148,21 @@
   transform: translateY(0) scale(1);
 }
 
-/* Custom scrollbar with theme awareness */
+/* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-black/50;
+  @apply bg-gray-100 dark:bg-gray-800;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, var(--portfolio-purple), var(--portfolio-teal));
-  border-radius: 5px;
-  box-shadow: var(--border-glow);
+  @apply bg-portfolio-purple/50 rounded-full;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, var(--portfolio-teal), var(--portfolio-purple));
+  @apply bg-portfolio-purple;
 }
 
 /* Enhanced animations */
@@ -188,41 +176,12 @@
   50% { transform: translateY(-20px); }
 }
 
-@keyframes pulse-glow {
-  0%, 100% { 
-    box-shadow: 0 0 5px var(--portfolio-purple), 0 0 10px var(--portfolio-purple);
-  }
-  50% { 
-    box-shadow: 0 0 20px var(--portfolio-purple), 0 0 30px var(--portfolio-purple), 0 0 40px var(--portfolio-purple);
-  }
-}
-
 .animate-shimmer {
   animation: shimmer 2s infinite;
 }
 
 .animate-float {
   animation: float 3s ease-in-out infinite;
-}
-
-.animate-pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
-}
-
-/* Theme-specific enhancements */
-[data-theme="cyber"] {
-  --glow-primary: #ff00ff;
-  --glow-secondary: #00ffff;
-}
-
-[data-theme="neon"] {
-  --glow-primary: #ff0080;
-  --glow-secondary: #80ff00;
-}
-
-[data-theme="holographic"] {
-  --glow-primary: #8b5cf6;
-  --glow-secondary: #06b6d4;
 }
 
 /* Smooth page transitions */
@@ -266,8 +225,7 @@
   .reveal,
   .reveal-stagger,
   .animate-shimmer,
-  .animate-float,
-  .animate-pulse-glow {
+  .animate-float {
     animation: none;
     transition: none;
   }
@@ -282,7 +240,7 @@
 /* Focus indicators for accessibility */
 button:focus-visible,
 a:focus-visible {
-  outline: 2px solid var(--portfolio-purple);
+  outline: 2px solid rgb(139 92 246);
   outline-offset: 2px;
   border-radius: 4px;
 }
