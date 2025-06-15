@@ -190,7 +190,7 @@
   }
   
   .skill-badge {
-    @apply futuristic-card text-center group cursor-pointer;
+    @apply futuristic-card text-center cursor-pointer;
     min-height: 120px;
   }
   

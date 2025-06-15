@@ -160,7 +160,7 @@ const Skills = () => {
             return (
               <div 
                 key={`${skill.name}-${activeCategory}`}
-                className={`skill-badge transition-all duration-700 ${
+                className={`skill-badge group transition-all duration-700 ${
                   isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
                 }`}
                 style={{ transitionDelay: `${index * 100}ms` }}
