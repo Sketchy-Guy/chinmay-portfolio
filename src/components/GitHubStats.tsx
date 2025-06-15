@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Github, Star, GitFork, Calendar, RefreshCw } from "lucide-react";
+import { Github, Star, GitFork, Calendar, RefreshCw, AlertCircle, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -19,6 +19,8 @@ const GitHubStats = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [hasAttemptedAutoSync, setHasAttemptedAutoSync] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -43,6 +45,7 @@ const GitHubStats = () => {
 
     try {
       console.log('Attempting auto-sync of GitHub data...');
+      setSyncError(null);
       
       // Check if GitHub URL exists in social links
       const { data: socialLinks } = await supabase
@@ -53,6 +56,7 @@ const GitHubStats = () => {
 
       if (!socialLinks?.url) {
         console.log('No GitHub URL found in social links');
+        setSyncError('GitHub profile URL not configured in admin settings');
         return;
       }
 
@@ -65,13 +69,16 @@ const GitHubStats = () => {
 
       if (error) {
         console.error('GitHub auto-sync error:', error);
+        setSyncError(`Auto-sync failed: ${error.message}`);
         return;
       }
 
       console.log('GitHub auto-sync successful:', syncResult);
       toast.success('GitHub stats synced automatically!');
-    } catch (error) {
+      setLastSyncTime(new Date().toISOString());
+    } catch (error: any) {
       console.error('Error in auto-sync:', error);
+      setSyncError(`Auto-sync error: ${error.message}`);
     }
   };
 
@@ -79,6 +86,9 @@ const GitHubStats = () => {
   useEffect(() => {
     const fetchGitHubStats = async () => {
       try {
+        setIsLoading(true);
+        console.log('Fetching GitHub stats from database...');
+        
         const { data: githubData, error } = await supabase
           .from('github_stats')
           .select('*')
@@ -92,7 +102,9 @@ const GitHubStats = () => {
         }
 
         if (githubData) {
-          // Safely cast the contribution_data JSON to number array
+          console.log('GitHub stats found in database:', githubData);
+          
+          // Safely parse the contribution_data JSON to number array
           let contributionData: number[] = generateRealisticContributionData();
           
           if (githubData.contribution_data && Array.isArray(githubData.contribution_data)) {
@@ -112,12 +124,15 @@ const GitHubStats = () => {
             streak: githubData.current_streak || 0,
             contributionData
           });
+          
+          setLastSyncTime(githubData.last_updated);
+          setSyncError(null);
         } else {
           // No data found, attempt auto-sync
           console.log('No GitHub stats found, attempting auto-sync...');
           await attemptAutoSync();
           
-          // Set fallback data
+          // Set fallback data for display while sync is happening
           setStats({
             totalRepos: 25,
             totalStars: 150,
@@ -127,8 +142,10 @@ const GitHubStats = () => {
             contributionData: generateRealisticContributionData()
           });
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error fetching GitHub stats:', error);
+        setSyncError(`Failed to load stats: ${error.message}`);
+        
         // Set fallback data
         setStats({
           totalRepos: 25,
@@ -150,9 +167,13 @@ const GitHubStats = () => {
         event: '*', 
         schema: 'public', 
         table: 'github_stats' 
-      }, () => {
-        console.log('GitHub stats changed, refetching...');
+      }, (payload) => {
+        console.log('GitHub stats changed, refetching...', payload);
         fetchGitHubStats();
+        
+        if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
+          toast.success('GitHub stats updated!');
+        }
       })
       .subscribe();
 
@@ -168,7 +189,11 @@ const GitHubStats = () => {
   // Manual refresh function
   const refreshGitHubStats = async () => {
     setIsRefreshing(true);
+    setSyncError(null);
+    
     try {
+      console.log('Manual refresh of GitHub stats...');
+      
       // Get GitHub URL from social links
       const { data: socialLinks } = await supabase
         .from('social_links')
@@ -178,8 +203,11 @@ const GitHubStats = () => {
 
       if (!socialLinks?.url) {
         toast.error('GitHub profile URL not found in admin settings');
+        setSyncError('GitHub profile URL not configured');
         return;
       }
+
+      console.log('Calling GitHub sync function...');
 
       // Call the edge function to sync GitHub data
       const { data, error } = await supabase.functions.invoke('github-sync', {
@@ -189,13 +217,18 @@ const GitHubStats = () => {
       if (error) {
         console.error('GitHub sync error:', error);
         toast.error('Failed to sync GitHub data');
+        setSyncError(`Sync failed: ${error.message}`);
         return;
       }
 
+      console.log('GitHub sync successful:', data);
       toast.success('GitHub stats refreshed successfully!');
-    } catch (error) {
+      setLastSyncTime(new Date().toISOString());
+      setSyncError(null);
+    } catch (error: any) {
       console.error('Error refreshing GitHub stats:', error);
       toast.error('Failed to refresh GitHub stats');
+      setSyncError(`Refresh failed: ${error.message}`);
     } finally {
       setIsRefreshing(false);
     }
@@ -282,9 +315,25 @@ const GitHubStats = () => {
               {isRefreshing ? 'Syncing...' : 'Refresh'}
             </Button>
           </div>
-          <p className="text-xl text-gray-300 leading-relaxed max-w-3xl mx-auto">
+          
+          <p className="text-xl text-gray-300 leading-relaxed max-w-3xl mx-auto mb-4">
             My open source contributions and development activity on GitHub
           </p>
+          
+          {/* Sync Status */}
+          {syncError ? (
+            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mb-4 flex items-center gap-2 text-red-400">
+              <AlertCircle className="w-4 h-4" />
+              <span className="text-sm">{syncError}</span>
+            </div>
+          ) : lastSyncTime && (
+            <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 mb-4 flex items-center gap-2 text-green-400">
+              <CheckCircle className="w-4 h-4" />
+              <span className="text-sm">
+                Last synced: {new Date(lastSyncTime).toLocaleString()}
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 max-w-6xl mx-auto mb-12">

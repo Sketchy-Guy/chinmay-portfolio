@@ -4,19 +4,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mail, Phone, MapPin, Download, Send, MessageSquare } from "lucide-react";
+import { Mail, Phone, MapPin, Download, Send, MessageSquare, AlertCircle, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { usePortfolioData } from "@/contexts/DataContext";
 
 const Contact = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     subject: "",
     message: ""
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const { toast } = useToast();
   const { data } = usePortfolioData();
 
@@ -27,16 +29,44 @@ const Contact = () => {
       ...prev,
       [name]: value
     }));
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  // Validate form
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.name.trim()) {
+      newErrors.name = 'Name is required';
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+
+    if (!formData.message.trim()) {
+      newErrors.message = 'Message is required';
+    } else if (formData.message.trim().length < 10) {
+      newErrors.message = 'Message must be at least 10 characters long';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   // Submit contact form to database
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.email || !formData.message) {
+    if (!validateForm()) {
       toast({
-        title: "Error",
-        description: "Please fill in all required fields.",
+        title: "Validation Error",
+        description: "Please fix the form errors before submitting.",
         variant: "destructive",
       });
       return;
@@ -45,20 +75,27 @@ const Contact = () => {
     setIsSubmitting(true);
 
     try {
+      console.log('Submitting contact form...');
+      
       // Insert contact message into database
       const { error } = await supabase
         .from('contact_messages')
         .insert({
-          name: formData.name,
-          email: formData.email,
-          subject: formData.subject || 'Portfolio Contact',
-          message: formData.message,
+          name: formData.name.trim(),
+          email: formData.email.trim(),
+          subject: formData.subject.trim() || 'Portfolio Contact',
+          message: formData.message.trim(),
           status: 'unread'
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Contact form submission error:', error);
+        throw error;
+      }
 
-      // Track analytics event (using async/await properly)
+      console.log('Contact message submitted successfully');
+
+      // Track analytics event
       try {
         await supabase
           .from('analytics_data')
@@ -66,33 +103,39 @@ const Contact = () => {
             event_type: 'contact_form',
             event_data: { 
               form_type: 'contact',
-              has_subject: !!formData.subject 
+              has_subject: !!formData.subject.trim(),
+              message_length: formData.message.trim().length
             },
             page_url: window.location.href,
-            referrer: document.referrer
+            referrer: document.referrer || null
           });
       } catch (analyticsError) {
         console.error('Failed to track analytics:', analyticsError);
+        // Don't fail the form submission if analytics fails
       }
 
       toast({
-        title: "Message Sent!",
+        title: "Message Sent Successfully!",
         description: "Thank you for your message. I'll get back to you soon!",
       });
 
-      // Reset form
+      // Reset form and show success state
       setFormData({
         name: "",
         email: "",
         subject: "",
         message: ""
       });
+      setSubmitted(true);
+      
+      // Reset success state after 5 seconds
+      setTimeout(() => setSubmitted(false), 5000);
 
     } catch (error: any) {
       console.error('Error sending message:', error);
       toast({
-        title: "Error",
-        description: "Failed to send message. Please try again.",
+        title: "Failed to Send Message",
+        description: error.message || "Please try again later.",
         variant: "destructive",
       });
     } finally {
@@ -102,47 +145,81 @@ const Contact = () => {
 
   // Generate and download vCard
   const downloadVCard = async () => {
-    const vCardData = `BEGIN:VCARD
+    if (!data?.user) {
+      toast({
+        title: "Data Not Available",
+        description: "Contact data is still loading. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const vCardData = `BEGIN:VCARD
 VERSION:3.0
 FN:${data.user.name}
 ORG:${data.user.title}
 EMAIL:${data.user.email}
 TEL:${data.user.phone || 'Not provided'}
 ADR:;;${data.user.location || 'Remote'};;;;
-URL:${data.user.social.linkedin}
-URL:${data.user.social.github}
+URL:${data.user.social?.linkedin || ''}
+URL:${data.user.social?.github || ''}
 NOTE:Portfolio: ${window.location.origin}
 END:VCARD`;
 
-    const blob = new Blob([vCardData], { type: 'text/vcard' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${data.user.name.replace(/\s+/g, '_')}_contact.vcf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
+      const blob = new Blob([vCardData], { type: 'text/vcard' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${data.user.name.replace(/\s+/g, '_')}_contact.vcf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
 
-    // Track download event (using async/await properly)
-    try {
-      await supabase
-        .from('analytics_data')
-        .insert({
-          event_type: 'download',
-          event_data: { type: 'vcard', name: data.user.name },
-          page_url: window.location.href
-        });
-      console.log('Download tracked successfully');
-    } catch (error) {
-      console.error('Failed to track download:', error);
+      // Track download event
+      try {
+        await supabase
+          .from('analytics_data')
+          .insert({
+            event_type: 'download',
+            event_data: { type: 'vcard', name: data.user.name },
+            page_url: window.location.href,
+            referrer: document.referrer || null
+          });
+      } catch (error) {
+        console.error('Failed to track download:', error);
+      }
+
+      toast({
+        title: "Contact Card Downloaded",
+        description: "VCard has been saved to your downloads folder.",
+      });
+    } catch (error: any) {
+      console.error('Error downloading vCard:', error);
+      toast({
+        title: "Download Failed",
+        description: "Failed to generate contact card. Please try again.",
+        variant: "destructive",
+      });
     }
-
-    toast({
-      title: "Contact Card Downloaded",
-      description: "VCard has been saved to your downloads folder.",
-    });
   };
+
+  if (!data?.user) {
+    return (
+      <section id="contact" className="py-24 md:py-32 relative overflow-hidden">
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+              {[...Array(2)].map((_, i) => (
+                <div key={i} className="loading-skeleton h-96 w-full rounded-xl"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section id="contact" className="py-24 md:py-32 relative overflow-hidden">
@@ -244,101 +321,133 @@ END:VCARD`;
           <Card className="glass-card-enhanced p-8">
             <CardHeader className="pb-6">
               <CardTitle className="text-2xl font-bold gradient-text flex items-center gap-3">
-                <Send className="w-6 h-6" />
-                Send Message
+                {submitted ? <CheckCircle className="w-6 h-6" /> : <Send className="w-6 h-6" />}
+                {submitted ? 'Message Sent!' : 'Send Message'}
               </CardTitle>
               <CardDescription className="text-gray-300 text-lg">
-                Drop me a line and I'll get back to you promptly
+                {submitted 
+                  ? 'Thank you for your message! I\'ll get back to you soon.' 
+                  : 'Drop me a line and I\'ll get back to you promptly'
+                }
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Name Input */}
-                <div className="space-y-2">
-                  <label htmlFor="name" className="text-sm font-medium text-gray-300">
-                    Name *
-                  </label>
-                  <Input
-                    id="name"
-                    name="name"
-                    type="text"
-                    placeholder="Your full name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    required
-                    className="bg-white/5 border-white/20 text-white placeholder-gray-400 focus:border-purple-400 focus:ring-purple-400/20"
-                  />
+              {submitted ? (
+                <div className="text-center py-12">
+                  <CheckCircle className="w-16 h-16 text-green-400 mx-auto mb-4" />
+                  <h3 className="text-xl font-bold text-white mb-2">Message Delivered!</h3>
+                  <p className="text-gray-300">I'll review your message and respond as soon as possible.</p>
                 </div>
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* Name Input */}
+                  <div className="space-y-2">
+                    <label htmlFor="name" className="text-sm font-medium text-gray-300">
+                      Name *
+                    </label>
+                    <Input
+                      id="name"
+                      name="name"
+                      type="text"
+                      placeholder="Your full name"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      required
+                      className={`bg-white/5 border-white/20 text-white placeholder-gray-400 focus:border-purple-400 focus:ring-purple-400/20 ${errors.name ? 'border-red-500' : ''}`}
+                    />
+                    {errors.name && (
+                      <p className="text-red-400 text-xs flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {errors.name}
+                      </p>
+                    )}
+                  </div>
 
-                {/* Email Input */}
-                <div className="space-y-2">
-                  <label htmlFor="email" className="text-sm font-medium text-gray-300">
-                    Email *
-                  </label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="your.email@example.com"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    required
-                    className="bg-white/5 border-white/20 text-white placeholder-gray-400 focus:border-purple-400 focus:ring-purple-400/20"
-                  />
-                </div>
+                  {/* Email Input */}
+                  <div className="space-y-2">
+                    <label htmlFor="email" className="text-sm font-medium text-gray-300">
+                      Email *
+                    </label>
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      placeholder="your.email@example.com"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      required
+                      className={`bg-white/5 border-white/20 text-white placeholder-gray-400 focus:border-purple-400 focus:ring-purple-400/20 ${errors.email ? 'border-red-500' : ''}`}
+                    />
+                    {errors.email && (
+                      <p className="text-red-400 text-xs flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {errors.email}
+                      </p>
+                    )}
+                  </div>
 
-                {/* Subject Input */}
-                <div className="space-y-2">
-                  <label htmlFor="subject" className="text-sm font-medium text-gray-300">
-                    Subject
-                  </label>
-                  <Input
-                    id="subject"
-                    name="subject"
-                    type="text"
-                    placeholder="What's this about?"
-                    value={formData.subject}
-                    onChange={handleInputChange}
-                    className="bg-white/5 border-white/20 text-white placeholder-gray-400 focus:border-purple-400 focus:ring-purple-400/20"
-                  />
-                </div>
+                  {/* Subject Input */}
+                  <div className="space-y-2">
+                    <label htmlFor="subject" className="text-sm font-medium text-gray-300">
+                      Subject
+                    </label>
+                    <Input
+                      id="subject"
+                      name="subject"
+                      type="text"
+                      placeholder="What's this about?"
+                      value={formData.subject}
+                      onChange={handleInputChange}
+                      className="bg-white/5 border-white/20 text-white placeholder-gray-400 focus:border-purple-400 focus:ring-purple-400/20"
+                    />
+                  </div>
 
-                {/* Message Textarea */}
-                <div className="space-y-2">
-                  <label htmlFor="message" className="text-sm font-medium text-gray-300">
-                    Message *
-                  </label>
-                  <Textarea
-                    id="message"
-                    name="message"
-                    placeholder="Tell me about your project or just say hi!"
-                    value={formData.message}
-                    onChange={handleInputChange}
-                    required
-                    rows={5}
-                    className="bg-white/5 border-white/20 text-white placeholder-gray-400 focus:border-purple-400 focus:ring-purple-400/20 resize-none"
-                  />
-                </div>
+                  {/* Message Textarea */}
+                  <div className="space-y-2">
+                    <label htmlFor="message" className="text-sm font-medium text-gray-300">
+                      Message *
+                    </label>
+                    <Textarea
+                      id="message"
+                      name="message"
+                      placeholder="Tell me about your project or just say hi!"
+                      value={formData.message}
+                      onChange={handleInputChange}
+                      required
+                      rows={5}
+                      className={`bg-white/5 border-white/20 text-white placeholder-gray-400 focus:border-purple-400 focus:ring-purple-400/20 resize-none ${errors.message ? 'border-red-500' : ''}`}
+                    />
+                    {errors.message && (
+                      <p className="text-red-400 text-xs flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {errors.message}
+                      </p>
+                    )}
+                    <p className="text-xs text-gray-400">
+                      {formData.message.length}/500 characters
+                    </p>
+                  </div>
 
-                {/* Submit Button */}
-                <Button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full cyber-button text-lg py-4"
-                >
-                  {isSubmitting ? (
-                    <div className="flex items-center justify-center gap-2">
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                      Sending...
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center gap-2">
-                      <Send className="w-5 h-5" />
-                      Send Message
-                    </div>
-                  )}
-                </Button>
-              </form>
+                  {/* Submit Button */}
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full cyber-button text-lg py-4"
+                  >
+                    {isSubmitting ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        Sending Message...
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center gap-2">
+                        <Send className="w-5 h-5" />
+                        Send Message
+                      </div>
+                    )}
+                  </Button>
+                </form>
+              )}
             </CardContent>
           </Card>
         </div>

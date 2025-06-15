@@ -1,5 +1,6 @@
+
 import { useState, useEffect } from 'react';
-import { Mail, MessageCircle, Clock, CheckCircle, Trash2, Eye, EyeOff, Filter, Search, RefreshCw } from 'lucide-react';
+import { Mail, MessageCircle, Clock, CheckCircle, Trash2, Eye, EyeOff, Filter, Search, RefreshCw, AlertCircle, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,6 +27,7 @@ const ContactMessagesManager = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchMessages();
@@ -40,6 +42,11 @@ const ContactMessagesManager = () => {
       }, (payload) => {
         console.log('Contact message change detected:', payload);
         fetchMessages();
+        
+        // Show notification for new messages
+        if (payload.eventType === 'INSERT') {
+          toast.success('New contact message received!');
+        }
       })
       .subscribe();
 
@@ -51,6 +58,7 @@ const ContactMessagesManager = () => {
   const fetchMessages = async () => {
     try {
       setIsLoading(true);
+      setError(null);
       console.log('Fetching contact messages...');
       
       const { data, error } = await supabase
@@ -64,10 +72,10 @@ const ContactMessagesManager = () => {
       }
 
       console.log('Messages fetched:', data?.length || 0);
-      // Type assertion to ensure proper typing
       setMessages((data as ContactMessage[]) || []);
     } catch (error: any) {
       console.error('Failed to fetch messages:', error);
+      setError(`Failed to load messages: ${error.message}`);
       toast.error(`Failed to load messages: ${error.message}`);
     } finally {
       setIsLoading(false);
@@ -76,6 +84,8 @@ const ContactMessagesManager = () => {
 
   const updateMessageStatus = async (messageId: string, newStatus: 'read' | 'replied') => {
     try {
+      console.log(`Updating message ${messageId} status to ${newStatus}`);
+      
       const { error } = await supabase
         .from('contact_messages')
         .update({ 
@@ -84,14 +94,22 @@ const ContactMessagesManager = () => {
         })
         .eq('id', messageId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating message status:', error);
+        throw error;
+      }
 
       // Update local state
       setMessages(prev => prev.map(msg => 
         msg.id === messageId 
-          ? { ...msg, status: newStatus }
+          ? { ...msg, status: newStatus, updated_at: new Date().toISOString() }
           : msg
       ));
+
+      // Update selected message if it's the one being updated
+      if (selectedMessage?.id === messageId) {
+        setSelectedMessage(prev => prev ? { ...prev, status: newStatus } : null);
+      }
 
       toast.success(`Message marked as ${newStatus}`);
     } catch (error: any) {
@@ -101,20 +119,30 @@ const ContactMessagesManager = () => {
   };
 
   const deleteMessage = async (messageId: string) => {
-    if (!confirm('Are you sure you want to delete this message?')) {
+    if (!confirm('Are you sure you want to delete this message? This action cannot be undone.')) {
       return;
     }
 
     try {
+      console.log(`Deleting message ${messageId}`);
+      
       const { error } = await supabase
         .from('contact_messages')
         .delete()
         .eq('id', messageId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error deleting message:', error);
+        throw error;
+      }
 
       setMessages(prev => prev.filter(msg => msg.id !== messageId));
-      setSelectedMessage(null);
+      
+      // Clear selected message if it's the one being deleted
+      if (selectedMessage?.id === messageId) {
+        setSelectedMessage(null);
+      }
+      
       toast.success('Message deleted successfully');
     } catch (error: any) {
       console.error('Error deleting message:', error);
@@ -150,12 +178,14 @@ const ContactMessagesManager = () => {
     const matchesSearch = searchTerm === '' || 
       message.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       message.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      message.subject.toLowerCase().includes(searchTerm.toLowerCase());
+      message.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      message.message.toLowerCase().includes(searchTerm.toLowerCase());
     
     return matchesStatus && matchesSearch;
   });
 
   const unreadCount = messages.filter(msg => msg.status === 'unread').length;
+  const totalCount = messages.length;
 
   if (isLoading) {
     return (
@@ -173,17 +203,43 @@ const ContactMessagesManager = () => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-3 mb-6">
+          <MessageCircle className="w-6 h-6 text-purple-400" />
+          <h2 className="text-2xl font-bold text-white">Contact Messages</h2>
+        </div>
+        <Card className="glass-card border-red-500/50">
+          <CardContent className="p-8 text-center">
+            <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+            <h3 className="text-xl font-bold text-white mb-2">Error Loading Messages</h3>
+            <p className="text-gray-300 mb-4">{error}</p>
+            <Button onClick={() => window.location.reload()} className="cyber-button">
+              Reload Page
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <MessageCircle className="w-6 h-6 text-purple-400" />
           <h2 className="text-2xl font-bold text-white">Contact Messages</h2>
-          {unreadCount > 0 && (
-            <Badge className="bg-red-500/20 text-red-400">
-              {unreadCount} unread
+          <div className="flex gap-2">
+            {unreadCount > 0 && (
+              <Badge className="bg-red-500/20 text-red-400">
+                {unreadCount} unread
+              </Badge>
+            )}
+            <Badge className="bg-blue-500/20 text-blue-400">
+              {totalCount} total
             </Badge>
-          )}
+          </div>
         </div>
         <Button 
           onClick={refreshMessages}
@@ -201,21 +257,21 @@ const ContactMessagesManager = () => {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <Input
-            placeholder="Search messages..."
+            placeholder="Search messages by name, email, subject, or content..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="pl-10 bg-white/5 border-white/20 text-white placeholder-gray-400"
           />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-48">
+          <SelectTrigger className="w-full sm:w-48 bg-white/5 border-white/20">
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Messages</SelectItem>
-            <SelectItem value="unread">Unread</SelectItem>
-            <SelectItem value="read">Read</SelectItem>
-            <SelectItem value="replied">Replied</SelectItem>
+            <SelectItem value="all">All Messages ({totalCount})</SelectItem>
+            <SelectItem value="unread">Unread ({messages.filter(m => m.status === 'unread').length})</SelectItem>
+            <SelectItem value="read">Read ({messages.filter(m => m.status === 'read').length})</SelectItem>
+            <SelectItem value="replied">Replied ({messages.filter(m => m.status === 'replied').length})</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -233,17 +289,31 @@ const ContactMessagesManager = () => {
                     : 'No messages yet'
                   }
                 </p>
+                {(searchTerm || statusFilter !== 'all') && (
+                  <Button 
+                    onClick={() => {
+                      setSearchTerm('');
+                      setStatusFilter('all');
+                    }}
+                    variant="outline"
+                    className="mt-4"
+                  >
+                    Clear Filters
+                  </Button>
+                )}
               </CardContent>
             </Card>
           ) : (
             filteredMessages.map((message) => {
               const StatusIcon = getStatusIcon(message.status);
+              const isSelected = selectedMessage?.id === message.id;
+              
               return (
                 <Card 
                   key={message.id} 
                   className={`glass-card cursor-pointer transition-all duration-200 hover:scale-[1.02] ${
-                    selectedMessage?.id === message.id ? 'ring-2 ring-purple-500/50' : ''
-                  }`}
+                    isSelected ? 'ring-2 ring-purple-500/50 bg-purple-500/10' : ''
+                  } ${message.status === 'unread' ? 'border-l-4 border-l-red-500' : ''}`}
                   onClick={() => setSelectedMessage(message)}
                 >
                   <CardContent className="p-4">
@@ -251,7 +321,10 @@ const ContactMessagesManager = () => {
                       <div className="flex items-center gap-3">
                         <StatusIcon className="w-5 h-5 text-purple-400" />
                         <div>
-                          <h3 className="font-semibold text-white">{message.name}</h3>
+                          <h3 className="font-semibold text-white flex items-center gap-2">
+                            {message.name}
+                            {message.status === 'unread' && <div className="w-2 h-2 bg-red-500 rounded-full"></div>}
+                          </h3>
                           <p className="text-sm text-gray-400">{message.email}</p>
                         </div>
                       </div>
@@ -268,6 +341,14 @@ const ContactMessagesManager = () => {
                     <p className="text-gray-400 text-sm line-clamp-2">
                       {message.message}
                     </p>
+                    <div className="flex items-center justify-between mt-3 text-xs text-gray-500">
+                      <span>
+                        {new Date(message.created_at).toLocaleString()}
+                      </span>
+                      {message.status === 'unread' && (
+                        <span className="text-red-400 font-medium">New</span>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               );
@@ -289,31 +370,45 @@ const ContactMessagesManager = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label className="text-sm font-medium text-gray-400">From</Label>
-                  <p className="text-white">{selectedMessage.name}</p>
-                  <p className="text-sm text-gray-400">{selectedMessage.email}</p>
+                  <label className="text-sm font-medium text-gray-400">From</label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <User className="w-4 h-4 text-gray-400" />
+                    <div>
+                      <p className="text-white">{selectedMessage.name}</p>
+                      <p className="text-sm text-gray-400">{selectedMessage.email}</p>
+                    </div>
+                  </div>
                 </div>
                 
                 <div>
-                  <Label className="text-sm font-medium text-gray-400">Subject</Label>
-                  <p className="text-white">{selectedMessage.subject}</p>
+                  <label className="text-sm font-medium text-gray-400">Subject</label>
+                  <p className="text-white mt-1">{selectedMessage.subject}</p>
                 </div>
                 
                 <div>
-                  <Label className="text-sm font-medium text-gray-400">Message</Label>
-                  <div className="bg-gray-800/50 p-3 rounded-lg">
+                  <label className="text-sm font-medium text-gray-400">Message</label>
+                  <div className="bg-gray-800/50 p-3 rounded-lg mt-1">
                     <p className="text-gray-300 whitespace-pre-wrap">{selectedMessage.message}</p>
                   </div>
                 </div>
                 
                 <div>
-                  <Label className="text-sm font-medium text-gray-400">Received</Label>
-                  <p className="text-gray-300">
+                  <label className="text-sm font-medium text-gray-400">Received</label>
+                  <p className="text-gray-300 mt-1">
                     {new Date(selectedMessage.created_at).toLocaleString()}
                   </p>
                 </div>
 
-                <div className="flex flex-col gap-2">
+                {selectedMessage.updated_at !== selectedMessage.created_at && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-400">Last Updated</label>
+                    <p className="text-gray-300 mt-1">
+                      {new Date(selectedMessage.updated_at).toLocaleString()}
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-2 pt-4">
                   {selectedMessage.status === 'unread' && (
                     <Button 
                       onClick={() => updateMessageStatus(selectedMessage.id, 'read')}
@@ -331,6 +426,17 @@ const ContactMessagesManager = () => {
                     >
                       <CheckCircle className="w-4 h-4 mr-2" />
                       Mark as Replied
+                    </Button>
+                  )}
+
+                  {selectedMessage.status === 'replied' && (
+                    <Button 
+                      onClick={() => updateMessageStatus(selectedMessage.id, 'read')}
+                      variant="outline"
+                      className="w-full"
+                    >
+                      <EyeOff className="w-4 h-4 mr-2" />
+                      Mark as Unread
                     </Button>
                   )}
                   
@@ -358,11 +464,5 @@ const ContactMessagesManager = () => {
     </div>
   );
 };
-
-const Label = ({ className, children, ...props }: any) => (
-  <label className={`block text-sm font-medium ${className}`} {...props}>
-    {children}
-  </label>
-);
 
 export default ContactMessagesManager;
