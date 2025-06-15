@@ -3,8 +3,12 @@ import { useEffect, useState } from "react";
 import Hero from "@/components/Hero";
 import About from "@/components/About";
 import Skills from "@/components/Skills";
+import SkillsRadar from "@/components/SkillsRadar";
 import Projects from "@/components/Projects";
 import Certifications from "@/components/Certifications";
+import GitHubStats from "@/components/GitHubStats";
+import CodingAchievements from "@/components/CodingAchievements";
+import Timeline from "@/components/Timeline";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
@@ -45,7 +49,7 @@ const Index = () => {
         if (elementTop < windowHeight - elementVisible) {
           setTimeout(() => {
             element.classList.add('active');
-          }, index * 100);
+          }, index * 50);
         }
       });
     };
@@ -86,8 +90,11 @@ const Index = () => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-portfolio-purple mx-auto" />
-          <p className="mt-4 text-portfolio-purple">Loading portfolio data...</p>
+          <div className="w-16 h-16 mx-auto mb-4">
+            <div className="quantum-loader"></div>
+          </div>
+          <p className="text-xl text-purple-400 font-orbitron">Initializing Portfolio Matrix...</p>
+          <p className="text-gray-400 mt-2">Loading neural networks and data streams</p>
         </div>
       </div>
     );
@@ -101,7 +108,11 @@ const Index = () => {
         <Hero />
         <About />
         <Skills />
+        <SkillsRadar />
+        <Timeline />
         <Projects />
+        <GitHubStats />
+        <CodingAchievements />
         <Certifications />
         <Contact />
       </main>

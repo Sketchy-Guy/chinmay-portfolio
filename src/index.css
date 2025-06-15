@@ -56,7 +56,57 @@
 
 @layer components {
   .glass-morphism {
-    @apply bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl;
+    @apply bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl;
+  }
+  
+  .glass-card-enhanced {
+    @apply bg-white/8 backdrop-blur-xl border border-purple-500/30 shadow-2xl rounded-2xl;
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  
+  .glass-card-enhanced:hover {
+    @apply bg-white/12 border-purple-400/50 shadow-purple-500/25;
+    transform: translateY(-5px);
+    box-shadow: 0 25px 50px -12px rgba(139, 92, 246, 0.4);
+  }
+  
+  .btn-primary {
+    @apply relative px-8 py-4 bg-gradient-to-r from-purple-600 to-cyan-500 text-white font-semibold rounded-lg overflow-hidden;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+  }
+  
+  .btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s;
+  }
+  
+  .btn-primary:hover::before {
+    left: 100%;
+  }
+  
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(139, 92, 246, 0.6);
+    border-color: rgba(6, 182, 212, 0.5);
+  }
+  
+  .btn-secondary {
+    @apply relative px-6 py-3 bg-white/10 backdrop-blur-md text-white font-medium rounded-lg border-2 border-white/30;
+    transition: all 0.3s ease;
+  }
+  
+  .btn-secondary:hover {
+    @apply bg-white/20 border-purple-400/60 text-white;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(255, 255, 255, 0.1);
   }
   
   .neon-border {
@@ -84,9 +134,8 @@
   }
   
   .futuristic-card {
-    @apply glass-morphism rounded-2xl p-6 relative overflow-hidden;
+    @apply glass-card-enhanced p-6 relative overflow-hidden;
     transform-style: preserve-3d;
-    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
   }
   
   .futuristic-card::before {
@@ -104,94 +153,19 @@
     left: 100%;
   }
   
-  .futuristic-card:hover {
-    transform: translateY(-10px) rotateX(5deg);
-    box-shadow: 
-      0 25px 50px -12px rgba(139, 92, 246, 0.3),
-      0 0 0 1px rgba(139, 92, 246, 0.2);
-  }
-  
   .cyber-button {
-    @apply relative px-8 py-4 bg-transparent border-2 border-purple-500 text-purple-400 rounded-lg font-semibold uppercase tracking-wide overflow-hidden;
-    transition: all 0.3s ease;
+    @apply btn-primary;
   }
   
-  .cyber-button::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.4), transparent);
-    transition: left 0.5s;
-  }
-  
-  .cyber-button:hover::before {
-    left: 100%;
-  }
-  
-  .cyber-button:hover {
-    @apply text-white border-cyan-400;
-    box-shadow: 
-      0 0 20px rgba(139, 92, 246, 0.6),
-      inset 0 0 20px rgba(139, 92, 246, 0.1);
-  }
-  
-  .quantum-loader {
-    width: 50px;
-    height: 50px;
-    border: 3px solid rgba(139, 92, 246, 0.3);
-    border-top: 3px solid #8b5cf6;
-    border-radius: 50%;
-    animation: quantum-spin 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
-  }
-  
-  .neural-network {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    opacity: 0.1;
-  }
-  
-  .data-stream {
-    position: relative;
-    overflow: hidden;
-  }
-  
-  .data-stream::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: repeating-linear-gradient(
-      90deg,
-      transparent,
-      transparent 98px,
-      rgba(139, 92, 246, 0.03) 100px
-    );
-    animation: data-flow 20s linear infinite;
-  }
-  
-  .progress-ring {
-    @apply relative;
-  }
-  
-  .progress-ring circle {
-    fill: none;
-    stroke-width: 4;
-    stroke-linecap: round;
-    transform-origin: 50% 50%;
-    transform: rotate(-90deg);
-    transition: stroke-dasharray 1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  .section-title {
+    @apply text-4xl md:text-5xl font-bold mb-6 font-orbitron holographic-text;
   }
   
   .skill-badge {
     @apply futuristic-card text-center cursor-pointer;
-    min-height: 120px;
+    min-height: 140px;
+    opacity: 1 !important;
+    visibility: visible !important;
   }
   
   .skill-badge:hover .skill-icon {
@@ -202,23 +176,32 @@
     transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
     transform-style: preserve-3d;
   }
+  
+  .project-card {
+    @apply glass-card-enhanced;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+  
+  .certification-card {
+    @apply glass-card-enhanced;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+  
+  .gradient-text {
+    @apply bg-gradient-to-r from-purple-400 to-cyan-400 text-transparent bg-clip-text;
+  }
+  
+  .loading-skeleton {
+    @apply bg-white/10 animate-pulse rounded-lg;
+  }
 }
 
 /* Advanced Animations */
 @keyframes holographic {
   0%, 100% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
-}
-
-@keyframes quantum-spin {
-  0% { transform: rotate(0deg) scale(1); }
-  50% { transform: rotate(180deg) scale(1.1); }
-  100% { transform: rotate(360deg) scale(1); }
-}
-
-@keyframes data-flow {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
 }
 
 @keyframes float-3d {
@@ -231,9 +214,26 @@
   50% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.8), 0 0 30px rgba(6, 182, 212, 0.4); }
 }
 
-@keyframes matrix-rain {
-  0% { transform: translateY(-100vh); opacity: 1; }
-  100% { transform: translateY(100vh); opacity: 0; }
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .animate-float-3d {
@@ -242,6 +242,14 @@
 
 .animate-pulse-neon {
   animation: pulse-neon 2s ease-in-out infinite;
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.8s ease-out;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.6s ease-out;
 }
 
 .reveal {
@@ -299,7 +307,7 @@
 /* Responsive Design */
 @media (max-width: 768px) {
   .futuristic-card:hover {
-    transform: translateY(-5px);
+    transform: translateY(-3px);
   }
   
   .cyber-grid {

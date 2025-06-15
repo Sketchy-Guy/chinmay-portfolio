@@ -15,7 +15,7 @@ const ProjectCard = ({ project, isHovered, onHover, onLeaveHover, index }: {
 }) => {
   return (
     <Card 
-      className={`glass-card group transition-all duration-500 ease-out reveal-stagger relative overflow-hidden ${
+      className={`project-card overflow-hidden transition-all duration-500 ease-out reveal-stagger relative ${
         isHovered ? 'scale-[1.02] -translate-y-2 shadow-2xl shadow-purple-500/25' : 'shadow-xl'
       }`}
       style={{ animationDelay: `${index * 0.1}s` }}
@@ -31,14 +31,14 @@ const ProjectCard = ({ project, isHovered, onHover, onLeaveHover, index }: {
             (e.target as HTMLImageElement).src = "/placeholder.svg";
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300">
           <div className="absolute bottom-4 left-4 right-4 flex gap-3 justify-center">
             {project.github && (
               <a 
                 href={project.github} 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="bg-white/10 backdrop-blur-md text-white p-3 rounded-full hover:bg-portfolio-purple hover:scale-110 transition-all duration-300 border border-white/20"
+                className="btn-secondary p-3 rounded-full hover:scale-110 transition-all duration-300"
               >
                 <Github size={20} />
               </a>
@@ -48,23 +48,23 @@ const ProjectCard = ({ project, isHovered, onHover, onLeaveHover, index }: {
                 href={project.demo} 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="bg-white/10 backdrop-blur-md text-white p-3 rounded-full hover:bg-portfolio-teal hover:scale-110 transition-all duration-300 border border-white/20"
+                className="btn-secondary p-3 rounded-full hover:scale-110 transition-all duration-300"
               >
                 <ExternalLink size={20} />
               </a>
             )}
           </div>
         </div>
-        <div className="absolute top-4 right-4 w-8 h-8 bg-gradient-to-r from-portfolio-purple to-portfolio-teal rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
+        <div className="absolute top-4 right-4 w-8 h-8 bg-gradient-to-r from-purple-500 to-cyan-400 rounded-full flex items-center justify-center opacity-0 hover:opacity-100 transition-all duration-300">
           <Star className="w-4 h-4 text-white" />
         </div>
       </div>
       
       <CardHeader className="p-0 mb-4">
-        <CardTitle className="text-xl text-white mb-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-portfolio-purple group-hover:to-portfolio-teal transition-all duration-500">
+        <CardTitle className="text-xl text-white mb-2 hover:text-transparent hover:bg-clip-text hover:bg-gradient-to-r hover:from-purple-400 hover:to-cyan-400 transition-all duration-500">
           {project.title}
         </CardTitle>
-        <CardDescription className="text-gray-300 group-hover:text-gray-200 transition-colors duration-300">
+        <CardDescription className="text-gray-300 hover:text-gray-200 transition-colors duration-300">
           {project.description}
         </CardDescription>
       </CardHeader>
@@ -74,7 +74,7 @@ const ProjectCard = ({ project, isHovered, onHover, onLeaveHover, index }: {
           {project.technologies.map((tech, index) => (
             <span 
               key={index} 
-              className="px-3 py-1 bg-white/5 backdrop-blur-sm text-gray-300 text-xs rounded-full border border-white/10 group-hover:border-portfolio-purple/30 group-hover:bg-portfolio-purple/10 transition-all duration-300"
+              className="px-3 py-1 bg-white/10 backdrop-blur-sm text-gray-300 text-xs rounded-full border border-white/20 hover:border-purple-400/50 hover:bg-purple-500/20 transition-all duration-300"
             >
               {tech}
             </span>
@@ -84,8 +84,7 @@ const ProjectCard = ({ project, isHovered, onHover, onLeaveHover, index }: {
       
       <CardFooter className="p-0">
         <Button 
-          variant="ghost" 
-          className="w-full bg-white/5 border border-white/20 text-white hover:bg-gradient-to-r hover:from-portfolio-purple hover:to-portfolio-teal hover:border-transparent hover:scale-105 transition-all duration-500"
+          className="btn-primary w-full"
           asChild
         >
           <a href={project.github || project.demo || "#"} target="_blank" rel="noopener noreferrer">
@@ -95,7 +94,7 @@ const ProjectCard = ({ project, isHovered, onHover, onLeaveHover, index }: {
       </CardFooter>
       
       {/* Hover effect overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-portfolio-purple/5 via-transparent to-portfolio-teal/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl pointer-events-none"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-cyan-400/5 opacity-0 hover:opacity-100 transition-opacity duration-500 rounded-2xl pointer-events-none"></div>
     </Card>
   );
 };
@@ -125,9 +124,8 @@ const Projects = () => {
     <section id="projects" className="py-24 md:py-32 relative overflow-hidden">
       {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/4 left-0 w-96 h-96 bg-gradient-to-r from-portfolio-teal/10 to-transparent rounded-full blur-3xl"></div>
-        <div className="absolute bottom-1/4 right-0 w-96 h-96 bg-gradient-to-l from-portfolio-purple/10 to-transparent rounded-full blur-3xl"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-r from-cyan-500/5 to-purple-500/5 rounded-full blur-2xl"></div>
+        <div className="absolute top-1/4 left-0 w-96 h-96 bg-gradient-to-r from-cyan-500/10 to-transparent rounded-full blur-3xl"></div>
+        <div className="absolute bottom-1/4 right-0 w-96 h-96 bg-gradient-to-l from-purple-500/10 to-transparent rounded-full blur-3xl"></div>
       </div>
       
       <div className="container mx-auto px-4 relative z-10">
@@ -138,15 +136,6 @@ const Projects = () => {
             Explore my latest projects that showcase cutting-edge technologies, innovative solutions, 
             and my passion for creating exceptional digital experiences.
           </p>
-          
-          {/* Decorative elements */}
-          <div className="flex items-center justify-center mt-8 gap-4">
-            <div className="w-12 h-px bg-gradient-to-r from-transparent to-portfolio-teal"></div>
-            <div className="w-3 h-3 rounded-full bg-portfolio-teal animate-pulse"></div>
-            <div className="w-24 h-px bg-gradient-to-r from-portfolio-teal to-portfolio-purple"></div>
-            <div className="w-3 h-3 rounded-full bg-portfolio-purple animate-pulse"></div>
-            <div className="w-12 h-px bg-gradient-to-l from-transparent to-portfolio-purple"></div>
-          </div>
         </div>
         
         {/* Projects grid */}
@@ -165,12 +154,12 @@ const Projects = () => {
         
         {/* GitHub CTA */}
         <div className={`text-center mt-20 ${isVisible ? 'reveal-stagger active' : 'reveal-stagger'}`} style={{ animationDelay: '0.8s' }}>
-          <div className="glass-card p-8 max-w-2xl mx-auto">
+          <div className="glass-card-enhanced p-8 max-w-2xl mx-auto">
             <h3 className="text-2xl font-bold gradient-text mb-4">Explore More Projects</h3>
             <p className="text-gray-300 mb-6">
               Discover additional projects and contributions on my GitHub profile
             </p>
-            <Button className="btn-primary group" asChild>
+            <Button className="btn-primary" asChild>
               <a href="https://github.com/chinmaykumarpanda" target="_blank" rel="noopener noreferrer">
                 <Github className="mr-2 h-5 w-5 group-hover:rotate-12 transition-transform duration-300" /> 
                 View GitHub Profile
