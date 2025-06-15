@@ -50,13 +50,25 @@ const GitHubStats = () => {
         }
 
         if (githubData) {
+          // Safely cast the contribution_data JSON to number array
+          let contributionData: number[] = generateRealisticContributionData();
+          
+          if (githubData.contribution_data && Array.isArray(githubData.contribution_data)) {
+            // Ensure all elements are numbers
+            const dataArray = githubData.contribution_data as unknown[];
+            const isValidNumberArray = dataArray.every(item => typeof item === 'number');
+            if (isValidNumberArray) {
+              contributionData = dataArray as number[];
+            }
+          }
+
           setStats({
             totalRepos: githubData.total_repos || 0,
             totalStars: githubData.total_stars || 0,
             totalForks: githubData.total_forks || 0,
             contributions: githubData.total_contributions || 0,
             streak: githubData.current_streak || 0,
-            contributionData: githubData.contribution_data || generateRealisticContributionData()
+            contributionData
           });
         } else {
           // Fallback to realistic mock data
