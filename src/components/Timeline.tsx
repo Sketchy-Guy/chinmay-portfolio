@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Calendar, MapPin, Briefcase, GraduationCap, Trophy, ExternalLink } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -67,7 +68,7 @@ const Timeline = () => {
             end_date: item.end_date,
             description: item.description,
             event_type: item.event_type as 'work' | 'education' | 'project' | 'achievement',
-            skills: item.skills ? (Array.isArray(item.skills) ? item.skills : []) : null,
+            skills: item.skills ? (Array.isArray(item.skills) ? item.skills.map(skill => String(skill)) : []) : null,
             image_url: item.image_url,
             link_url: item.link_url,
             order_index: item.order_index || 0,

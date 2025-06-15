@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   Loader2, LogOut, User, Code, Award, Briefcase, AlertTriangle, 
   FileText, BarChart3, Settings, MessageSquare, Shield, Home,
-  Activity, Users, TrendingUp, Database, Zap
+  Activity, Users, TrendingUp, Database, Zap, Calendar, Menu, X
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
@@ -17,6 +16,9 @@ import { SkillsManager } from "@/components/admin/SkillsManager";
 import { ProjectsManager } from "@/components/admin/ProjectsManager";
 import { CertificationsManager } from "@/components/admin/CertificationsManager";
 import { AboutManager } from "@/components/admin/AboutManager";
+import { ContactMessagesManager } from "@/components/admin/ContactMessagesManager";
+import { SiteSettingsManager } from "@/components/admin/SiteSettingsManager";
+import { TimelineManager } from "@/components/admin/TimelineManager";
 import { forceAdminAccess } from '@/utils/auth';
 import { supabase } from "@/integrations/supabase/client";
 
@@ -37,6 +39,7 @@ const Admin = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [adminStats, setAdminStats] = useState<AdminStats | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -183,7 +186,7 @@ const Admin = () => {
   const AdminDashboard = () => (
     <div className="space-y-6">
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400 font-orbitron mb-2">
+        <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 font-orbitron mb-2">
           Admin Control Center
         </h2>
         <p className="text-gray-400">
@@ -191,15 +194,15 @@ const Admin = () => {
         </p>
       </div>
 
-      {/* Stats Grid */}
+      {/* Enhanced Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         {[
-          { title: "Projects", value: adminStats?.totalProjects || 0, icon: Briefcase, color: "from-blue-500 to-cyan-500" },
-          { title: "Skills", value: adminStats?.totalSkills || 0, icon: Code, color: "from-green-500 to-emerald-500" },
-          { title: "Certifications", value: adminStats?.totalCertifications || 0, icon: Award, color: "from-yellow-500 to-orange-500" },
-          { title: "Messages", value: adminStats?.contactMessages || 0, icon: MessageSquare, color: "from-purple-500 to-pink-500" },
-          { title: "Page Views", value: adminStats?.pageViews || 0, icon: TrendingUp, color: "from-indigo-500 to-purple-500" },
-          { title: "System", value: "Online", icon: Activity, color: "from-red-500 to-pink-500", isStatus: true }
+          { title: "Projects", value: adminStats?.totalProjects || 0, icon: Briefcase, color: "from-cyan-500 to-blue-500" },
+          { title: "Skills", value: adminStats?.totalSkills || 0, icon: Code, color: "from-emerald-500 to-teal-500" },
+          { title: "Certifications", value: adminStats?.totalCertifications || 0, icon: Award, color: "from-orange-500 to-yellow-500" },
+          { title: "Messages", value: adminStats?.contactMessages || 0, icon: MessageSquare, color: "from-pink-500 to-rose-500" },
+          { title: "Page Views", value: adminStats?.pageViews || 0, icon: TrendingUp, color: "from-violet-500 to-purple-500" },
+          { title: "System", value: "Online", icon: Activity, color: "from-green-500 to-emerald-500", isStatus: true }
         ].map((stat, index) => (
           <motion.div
             key={stat.title}
@@ -207,7 +210,7 @@ const Admin = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
           >
-            <Card className="glass-card-enhanced p-6 hover:scale-105 transition-all duration-300">
+            <Card className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 backdrop-blur-xl border border-gray-700/50 p-6 hover:scale-105 transition-all duration-300 hover:border-cyan-500/50">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-gray-400 text-sm">{stat.title}</p>
@@ -215,7 +218,7 @@ const Admin = () => {
                     {stat.isStatus ? stat.value : Number(stat.value).toLocaleString()}
                   </p>
                 </div>
-                <div className={`w-12 h-12 rounded-xl bg-gradient-to-r ${stat.color} flex items-center justify-center`}>
+                <div className={`w-12 h-12 rounded-xl bg-gradient-to-r ${stat.color} flex items-center justify-center shadow-lg`}>
                   <stat.icon className="w-6 h-6 text-white" />
                 </div>
               </div>
@@ -225,25 +228,25 @@ const Admin = () => {
       </div>
 
       {/* Quick Actions */}
-      <Card className="glass-card-enhanced p-6">
+      <Card className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 backdrop-blur-xl border border-gray-700/50 p-6">
         <CardHeader>
           <CardTitle className="text-xl font-bold text-white flex items-center gap-2">
-            <Zap className="w-5 h-5 text-yellow-400" />
+            <Zap className="w-5 h-5 text-cyan-400" />
             Quick Actions
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: "Add Project", tab: "projects", icon: Briefcase },
-              { label: "Manage Skills", tab: "skills", icon: Code },
-              { label: "View Messages", tab: "messages", icon: MessageSquare },
-              { label: "Site Settings", tab: "settings", icon: Settings }
+              { label: "Add Project", tab: "projects", icon: Briefcase, color: "from-cyan-500 to-blue-500" },
+              { label: "Manage Skills", tab: "skills", icon: Code, color: "from-emerald-500 to-teal-500" },
+              { label: "View Messages", tab: "messages", icon: MessageSquare, color: "from-pink-500 to-rose-500" },
+              { label: "Timeline", tab: "timeline", icon: Calendar, color: "from-purple-500 to-violet-500" }
             ].map((action) => (
               <Button
                 key={action.label}
                 onClick={() => setActiveTab(action.tab)}
-                className="h-20 flex flex-col gap-2 bg-white/5 hover:bg-white/10 border border-white/20"
+                className={`h-20 flex flex-col gap-2 bg-gradient-to-r ${action.color} hover:scale-105 transition-all duration-300 border-0 shadow-lg`}
               >
                 <action.icon className="w-6 h-6" />
                 <span className="text-sm">{action.label}</span>
@@ -255,16 +258,16 @@ const Admin = () => {
     </div>
   );
 
-  // Sidebar navigation items
+  // Enhanced sidebar navigation items
   const sidebarItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
-    { id: 'profile', label: 'Profile', icon: User },
-    { id: 'about', label: 'About', icon: FileText },
-    { id: 'skills', label: 'Skills', icon: Code },
-    { id: 'projects', label: 'Projects', icon: Briefcase },
-    { id: 'certifications', label: 'Certifications', icon: Award },
-    { id: 'messages', label: 'Messages', icon: MessageSquare },
-    { id: 'settings', label: 'Settings', icon: Settings },
+    { id: 'dashboard', label: 'Dashboard', icon: BarChart3, color: 'text-cyan-400' },
+    { id: 'profile', label: 'Profile', icon: User, color: 'text-blue-400' },
+    { id: 'skills', label: 'Skills', icon: Code, color: 'text-emerald-400' },
+    { id: 'projects', label: 'Projects', icon: Briefcase, color: 'text-purple-400' },
+    { id: 'timeline', label: 'Timeline', icon: Calendar, color: 'text-orange-400' },
+    { id: 'certifications', label: 'Certifications', icon: Award, color: 'text-yellow-400' },
+    { id: 'messages', label: 'Messages', icon: MessageSquare, color: 'text-pink-400' },
+    { id: 'settings', label: 'Settings', icon: Settings, color: 'text-gray-400' },
   ];
 
   // Main admin panel render
@@ -273,13 +276,13 @@ const Admin = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/10 to-gray-900 relative overflow-hidden"
+      className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 relative overflow-hidden"
     >
-      {/* Animated background */}
-      <div className="absolute inset-0 cyber-grid opacity-10"></div>
+      {/* Enhanced animated background */}
+      <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23ffffff" fill-opacity="0.03"%3E%3Ccircle cx="30" cy="30" r="1"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20"></div>
       
       {/* Top header */}
-      <header className="bg-gradient-to-r from-purple-900/50 to-cyan-900/50 backdrop-blur-xl border-b border-white/10 relative z-20">
+      <header className="bg-gradient-to-r from-gray-950/80 to-gray-900/80 backdrop-blur-xl border-b border-gray-800/50 relative z-20">
         <div className="container mx-auto flex justify-between items-center p-4">
           <motion.div 
             className="flex items-center gap-4"
@@ -287,9 +290,16 @@ const Admin = () => {
             animate={{ x: 0, opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <Shield className="w-8 h-8 text-purple-400" />
-            <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400 font-orbitron">
-              PORTFOLIO MATRIX
+            <Button
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              className="lg:hidden bg-transparent hover:bg-white/10 p-2"
+              size="sm"
+            >
+              <Menu className="w-5 h-5 text-gray-400" />
+            </Button>
+            <Shield className="w-8 h-8 text-cyan-400" />
+            <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 font-orbitron">
+              ADMIN MATRIX
             </h1>
           </motion.div>
           
@@ -300,12 +310,12 @@ const Admin = () => {
             className="flex items-center gap-4"
           >
             <span className="text-sm text-gray-400 hidden md:inline-block">
-              Neural Link: {user.email}
+              Neural Link: {user?.email}
             </span>
             <Button 
               variant="ghost" 
               onClick={signOut} 
-              className="text-gray-300 hover:text-white hover:bg-white/10"
+              className="text-gray-300 hover:text-white hover:bg-white/10 border border-gray-700/50 hover:border-red-500/50"
             >
               <LogOut className="mr-2 h-4 w-4" /> 
               Disconnect
@@ -320,7 +330,7 @@ const Admin = () => {
           initial={{ x: -300 }}
           animate={{ x: 0 }}
           transition={{ duration: 0.5 }}
-          className={`${sidebarCollapsed ? 'w-16' : 'w-64'} bg-black/20 backdrop-blur-xl border-r border-white/10 transition-all duration-300 relative z-10`}
+          className={`${sidebarCollapsed ? 'w-16' : 'w-64'} bg-gradient-to-b from-gray-900/80 to-gray-950/80 backdrop-blur-xl border-r border-gray-800/50 transition-all duration-300 relative z-10 ${mobileMenuOpen ? 'block' : 'hidden lg:block'}`}
         >
           <nav className="p-4 space-y-2">
             {sidebarItems.map((item, index) => (
@@ -329,16 +339,22 @@ const Admin = () => {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
-                onClick={() => setActiveTab(item.id)}
+                onClick={() => {
+                  setActiveTab(item.id);
+                  setMobileMenuOpen(false);
+                }}
                 className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-300 ${
                   activeTab === item.id 
-                    ? 'bg-gradient-to-r from-purple-600/50 to-cyan-600/50 text-white' 
-                    : 'hover:bg-white/10 text-gray-400 hover:text-white'
+                    ? 'bg-gradient-to-r from-cyan-600/50 to-purple-600/50 text-white shadow-lg border border-cyan-500/30' 
+                    : 'hover:bg-white/10 text-gray-400 hover:text-white border border-transparent hover:border-gray-700/50'
                 }`}
               >
-                <item.icon className="w-5 h-5 flex-shrink-0" />
+                <item.icon className={`w-5 h-5 flex-shrink-0 ${activeTab === item.id ? 'text-white' : item.color}`} />
                 {!sidebarCollapsed && (
                   <span className="font-medium">{item.label}</span>
+                )}
+                {!sidebarCollapsed && activeTab === item.id && (
+                  <div className="ml-auto w-2 h-2 bg-cyan-400 rounded-full"></div>
                 )}
               </motion.button>
             ))}
@@ -346,7 +362,7 @@ const Admin = () => {
         </motion.aside>
         
         {/* Main content area */}
-        <main className="flex-1 p-6 relative z-10">
+        <main className="flex-1 p-6 relative z-10 overflow-y-auto">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
@@ -357,54 +373,43 @@ const Admin = () => {
             >
               {activeTab === 'dashboard' && <AdminDashboard />}
               {activeTab === 'profile' && (
-                <Card className="glass-card-enhanced p-6">
+                <Card className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 backdrop-blur-xl border border-gray-700/50 p-6">
                   <ProfileForm />
                 </Card>
               )}
-              {activeTab === 'about' && (
-                <Card className="glass-card-enhanced p-6">
-                  <AboutManager />
-                </Card>
-              )}
               {activeTab === 'skills' && (
-                <Card className="glass-card-enhanced p-6">
+                <Card className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 backdrop-blur-xl border border-gray-700/50 p-6">
                   <SkillsManager />
                 </Card>
               )}
               {activeTab === 'projects' && (
-                <Card className="glass-card-enhanced p-6">
+                <Card className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 backdrop-blur-xl border border-gray-700/50 p-6">
                   <ProjectsManager />
                 </Card>
               )}
+              {activeTab === 'timeline' && <TimelineManager />}
               {activeTab === 'certifications' && (
-                <Card className="glass-card-enhanced p-6">
+                <Card className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 backdrop-blur-xl border border-gray-700/50 p-6">
                   <CertificationsManager />
                 </Card>
               )}
-              {activeTab === 'messages' && (
-                <Card className="glass-card-enhanced p-6">
-                  <CardHeader>
-                    <CardTitle className="text-2xl font-bold text-white">Contact Messages</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-400">Message management coming soon...</p>
-                  </CardContent>
-                </Card>
-              )}
-              {activeTab === 'settings' && (
-                <Card className="glass-card-enhanced p-6">
-                  <CardHeader>
-                    <CardTitle className="text-2xl font-bold text-white">Site Settings</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-400">Settings panel coming soon...</p>
-                  </CardContent>
-                </Card>
-              )}
+              {activeTab === 'messages' && <ContactMessagesManager />}
+              {activeTab === 'settings' && <SiteSettingsManager />}
             </motion.div>
           </AnimatePresence>
         </main>
       </div>
+
+      {/* Mobile menu overlay */}
+      {mobileMenuOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
     </motion.div>
   );
 };

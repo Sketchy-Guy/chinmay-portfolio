@@ -214,23 +214,26 @@ END:VCARD`;
                 <div className="pt-4 border-t border-white/10">
                   <Button
                     onClick={downloadVCard}
-                    className="w-full relative overflow-hidden group bg-gradient-to-r from-purple-600 via-purple-500 to-cyan-500 hover:from-purple-700 hover:via-purple-600 hover:to-cyan-600 text-white font-semibold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-purple-400/50"
+                    className="w-full relative overflow-hidden group h-14 bg-gradient-to-r from-cyan-600 via-purple-600 to-pink-600 hover:from-cyan-500 hover:via-purple-500 hover:to-pink-500 text-white font-bold text-lg shadow-2xl hover:shadow-cyan-500/25 transition-all duration-500 border-2 border-transparent hover:border-cyan-400/50 rounded-xl"
                   >
                     {/* Animated background effect */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div className="absolute inset-0 bg-gradient-to-r from-pink-400 via-purple-500 to-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl"></div>
                     
                     {/* Button content */}
-                    <div className="relative flex items-center justify-center gap-3">
-                      <Download className="w-5 h-5 group-hover:animate-bounce" />
-                      <span className="text-lg">Download Contact Card</span>
+                    <div className="relative flex items-center justify-center gap-3 z-10">
+                      <Download className="w-6 h-6 group-hover:animate-bounce" />
+                      <span className="font-bold tracking-wide">Download Contact Card</span>
                     </div>
                     
                     {/* Shine effect */}
-                    <div className="absolute inset-0 -skew-x-12 translate-x-[-100%] bg-gradient-to-r from-transparent via-white/20 to-transparent group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                    <div className="absolute inset-0 -skew-x-12 translate-x-[-100%] bg-gradient-to-r from-transparent via-white/30 to-transparent group-hover:translate-x-[150%] transition-transform duration-1000"></div>
+                    
+                    {/* Glow effect */}
+                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-cyan-600 to-purple-600 blur-md opacity-0 group-hover:opacity-50 transition-opacity duration-500 -z-10"></div>
                   </Button>
                   
                   <p className="text-gray-400 text-sm text-center mt-3">
-                    Save my contact details to your device
+                    Save my contact details to your device instantly
                   </p>
                 </div>
               </CardContent>
