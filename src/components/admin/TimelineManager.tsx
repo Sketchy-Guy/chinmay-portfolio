@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { 
-  Plus, Edit, Trash2, Save, Cancel, 
+  Plus, Edit, Trash2, Save, X, 
   Briefcase, GraduationCap, Trophy, Calendar,
   ArrowUp, ArrowDown, Star, Link
 } from "lucide-react";
@@ -258,9 +257,9 @@ export const TimelineManager = () => {
 
   if (isLoading) {
     return (
-      <Card className="glass-card-enhanced p-6">
+      <Card className="bg-gradient-to-br from-[#0f0f23]/90 to-[#1a1a2e]/90 backdrop-blur-xl border border-gray-700/50 p-6">
         <div className="flex items-center justify-center h-64">
-          <div className="quantum-loader"></div>
+          <div className="w-16 h-16 border-4 border-t-[#00d4ff] border-r-transparent border-b-[#ff006e] border-l-transparent rounded-full animate-spin"></div>
         </div>
       </Card>
     );
@@ -300,7 +299,7 @@ export const TimelineManager = () => {
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <Card className="glass-card-enhanced p-6 hover:scale-[1.02] transition-all duration-300">
+                <Card className="bg-gradient-to-br from-[#0f0f23]/90 to-[#1a1a2e]/90 backdrop-blur-xl border border-gray-700/50 p-6 hover:scale-[1.02] transition-all duration-300">
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-4 flex-1">
                       <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${colorScheme} flex items-center justify-center`}>
@@ -424,7 +423,7 @@ export const TimelineManager = () => {
                 variant="ghost"
                 size="sm"
               >
-                <Cancel className="w-4 h-4" />
+                <X className="w-4 h-4" />
               </Button>
             </div>
 

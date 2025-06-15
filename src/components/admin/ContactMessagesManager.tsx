@@ -8,8 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   MessageSquare, Mail, User, Calendar, Send, 
-  Trash2, MarkAsRead, MarkAsUnread, Search,
-  Bell, Archive, Reply, RefreshCw
+  Trash2, Eye, EyeOff, Search,
+  Bell, Archive, Reply, RefreshCw, X
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -74,7 +74,20 @@ export const ContactMessagesManager = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setMessages(data || []);
+      
+      // Type-safe conversion with proper status casting
+      const typedMessages: ContactMessage[] = (data || []).map(item => ({
+        id: item.id,
+        name: item.name,
+        email: item.email,
+        subject: item.subject,
+        message: item.message,
+        status: (item.status as 'unread' | 'read' | 'replied' | 'archived') || 'unread',
+        created_at: item.created_at,
+        updated_at: item.updated_at
+      }));
+      
+      setMessages(typedMessages);
     } catch (error: any) {
       console.error('Error fetching messages:', error);
       toast({
@@ -172,9 +185,9 @@ export const ContactMessagesManager = () => {
 
   if (isLoading) {
     return (
-      <Card className="glass-card-enhanced p-6">
+      <Card className="bg-gradient-to-br from-[#0f0f23]/90 to-[#1a1a2e]/90 backdrop-blur-xl border border-gray-700/50 p-6">
         <div className="flex items-center justify-center h-64">
-          <div className="quantum-loader"></div>
+          <div className="w-16 h-16 border-4 border-t-[#00d4ff] border-r-transparent border-b-[#ff006e] border-l-transparent rounded-full animate-spin"></div>
         </div>
       </Card>
     );
@@ -197,7 +210,7 @@ export const ContactMessagesManager = () => {
       </div>
 
       {/* Search and filters */}
-      <Card className="glass-card-enhanced p-4">
+      <Card className="bg-gradient-to-br from-[#0f0f23]/90 to-[#1a1a2e]/90 backdrop-blur-xl border border-gray-700/50 p-4">
         <div className="flex gap-4 mb-4">
           <div className="flex-1">
             <Input
@@ -233,7 +246,7 @@ export const ContactMessagesManager = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Messages list */}
-        <Card className="glass-card-enhanced">
+        <Card className="bg-gradient-to-br from-[#0f0f23]/90 to-[#1a1a2e]/90 backdrop-blur-xl border border-gray-700/50">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
               <MessageSquare className="w-5 h-5" />
@@ -282,7 +295,7 @@ export const ContactMessagesManager = () => {
         </Card>
 
         {/* Message detail */}
-        <Card className="glass-card-enhanced">
+        <Card className="bg-gradient-to-br from-[#0f0f23]/90 to-[#1a1a2e]/90 backdrop-blur-xl border border-gray-700/50">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
               <Mail className="w-5 h-5" />
@@ -320,7 +333,7 @@ export const ContactMessagesManager = () => {
                     onClick={() => updateMessageStatus(selectedMessage.id, 'read')}
                     className="bg-blue-600 hover:bg-blue-700"
                   >
-                    <MarkAsRead className="w-4 h-4 mr-1" />
+                    <Eye className="w-4 h-4 mr-1" />
                     Mark Read
                   </Button>
                   <Button
