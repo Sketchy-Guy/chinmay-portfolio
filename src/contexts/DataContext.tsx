@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -34,7 +33,7 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [data, setData] = useState<PortfolioData>(defaultData);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const { user } = useAuth();
   const { toast: uiToast } = useToast();
@@ -43,95 +42,56 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setIsLoading(true);
       setError(null);
-      console.log("Fetching portfolio data...");
+      console.log("Fetching public portfolio data...");
       
-      if (!user) {
-        console.log("No user logged in, using default data");
-        // When no user is logged in, we just use the default data
-        // But importantly, we don't stay in a loading state
-        setIsLoading(false);
-        return;
-      }
-      
-      console.log("Fetching data for user:", user.id);
-      
-      // Fetch profile data
+      // Fetch public profile data (get the first/default profile)
       const { data: profileData, error: profileError } = await supabase
         .from('user_profile')
         .select('*')
-        .eq('id', user.id)
+        .limit(1)
         .single();
       
-      if (profileError) {
+      if (profileError && profileError.code !== 'PGRST116') {
         console.error("Error fetching profile data:", profileError);
-        if (profileError.code !== 'PGRST116') { // Not found error
-          throw profileError;
-        }
-      } 
-      
-      if (profileData) {
-        console.log("Successfully fetched profile data:", profileData);
-      } else {
-        console.log("No profile data found, will create one with defaults");
-        // Create a default profile if none exists
-        const { error: insertError } = await supabase
-          .from('user_profile')
-          .insert({
-            id: user.id,
-            name: defaultData.user.name,
-            title: defaultData.user.title,
-            email: user.email || defaultData.user.email,
-            bio: defaultData.user.bio
-          });
-          
-        if (insertError) {
-          console.error("Error creating default profile:", insertError);
-          throw insertError;
-        }
       }
       
-      // Fetch social links
+      // Fetch public social links
       const { data: socialData, error: socialError } = await supabase
         .from('social_links')
-        .select('*')
-        .eq('profile_id', user.id);
+        .select('*');
       
       if (socialError) {
         console.error("Error fetching social links:", socialError);
-        throw socialError;
       }
       
-      // Fetch skills
+      // Fetch public skills
       const { data: skillsData, error: skillsError } = await supabase
         .from('skills')
         .select('*')
-        .eq('profile_id', user.id);
+        .order('level', { ascending: false });
       
       if (skillsError) {
         console.error("Error fetching skills:", skillsError);
-        throw skillsError;
       }
       
-      // Fetch projects
+      // Fetch public projects
       const { data: projectsData, error: projectsError } = await supabase
         .from('projects')
         .select('*')
-        .eq('profile_id', user.id);
+        .order('created_at', { ascending: false });
       
       if (projectsError) {
         console.error("Error fetching projects:", projectsError);
-        throw projectsError;
       }
       
-      // Fetch certifications
+      // Fetch public certifications
       const { data: certificationsData, error: certificationsError } = await supabase
         .from('certifications')
         .select('*')
-        .eq('profile_id', user.id);
+        .order('date', { ascending: false });
       
       if (certificationsError) {
         console.error("Error fetching certifications:", certificationsError);
-        throw certificationsError;
       }
       
       // Convert database data to application format
@@ -148,7 +108,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user: {
           name: profileData?.name || defaultData.user.name,
           title: profileData?.title || defaultData.user.title,
-          email: profileData?.email || user.email || defaultData.user.email,
+          email: profileData?.email || defaultData.user.email,
           phone: profileData?.phone || defaultData.user.phone,
           location: profileData?.location || defaultData.user.location,
           bio: profileData?.bio || defaultData.user.bio,
@@ -180,20 +140,72 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         })) : defaultData.certifications
       });
       
-      console.log("Portfolio data fetched and updated successfully");
+      console.log("Public portfolio data fetched successfully");
     } catch (error: any) {
       console.error("Error fetching portfolio data:", error);
       setError(error instanceof Error ? error : new Error(error.message || 'Unknown error'));
-      toast.error("Failed to load portfolio data: " + (error.message || "Unknown error"));
     } finally {
       setIsLoading(false);
     }
-  }, [user, uiToast]);
+  }, []);
+
+  // Setup real-time subscriptions for public data
+  useEffect(() => {
+    console.log("Setting up real-time subscriptions for public data");
+    
+    const channel = supabase
+      .channel('public-portfolio-changes')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'user_profile' 
+      }, () => {
+        console.log('Profile data changed, refetching...');
+        fetchPortfolioData();
+      })
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'skills' 
+      }, () => {
+        console.log('Skills data changed, refetching...');
+        fetchPortfolioData();
+      })
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'projects' 
+      }, () => {
+        console.log('Projects data changed, refetching...');
+        fetchPortfolioData();
+      })
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'certifications' 
+      }, () => {
+        console.log('Certifications data changed, refetching...');
+        fetchPortfolioData();
+      })
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'social_links' 
+      }, () => {
+        console.log('Social links changed, refetching...');
+        fetchPortfolioData();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchPortfolioData]);
   
   useEffect(() => {
-    console.log("DataProvider mounted - fetching initial data");
+    console.log("DataProvider mounted - fetching initial public data");
     fetchPortfolioData();
-  }, [user?.id, fetchPortfolioData]);
+  }, [fetchPortfolioData]);
   
   const updateUserData = async (userData: Partial<UserData>) => {
     try {
@@ -222,7 +234,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (upsertError) throw upsertError;
       
-      // Update social links
       if (userData.social) {
         await supabase
           .from('social_links')
@@ -503,20 +514,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .eq('id', existingCerts[0].id);
         
         if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('certifications')
-          .insert({
-            profile_id: user.id,
-            title: certification.title,
-            issuer: certification.issuer,
-            date: certification.date,
-            credential: certification.credential || null,
-            link: certification.link || null,
-            logo_url: certification.logo || null
-          });
-        
-        if (error) throw error;
       }
       
       await fetchPortfolioData();
@@ -567,12 +564,22 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (!user) throw new Error("You must be logged in to remove certifications");
       
-      const { error } = await supabase
+      const { data: existingCerts, error: fetchError } = await supabase
         .from('certifications')
-        .delete()
+        .select('id')
+        .eq('profile_id', user.id)
         .eq('id', certToRemove.id);
       
-      if (error) throw error;
+      if (fetchError) throw fetchError;
+      
+      if (existingCerts && existingCerts.length > 0) {
+        const { error } = await supabase
+          .from('certifications')
+          .delete()
+          .eq('id', existingCerts[0].id);
+        
+        if (error) throw error;
+      }
       
       await fetchPortfolioData();
     } catch (error: any) {
@@ -581,29 +588,31 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
   
+  const value: DataContextType = {
+    data,
+    error,
+    updateUserData,
+    updateSkill,
+    addSkill,
+    removeSkill,
+    updateProject,
+    addProject,
+    removeProject,
+    updateCertification,
+    addCertification,
+    removeCertification,
+    fetchPortfolioData,
+    isLoading,
+  };
+
   return (
-    <DataContext.Provider value={{
-      data,
-      error,
-      updateUserData,
-      updateSkill,
-      addSkill,
-      removeSkill,
-      updateProject,
-      addProject,
-      removeProject,
-      updateCertification,
-      addCertification,
-      removeCertification,
-      fetchPortfolioData,
-      isLoading
-    }}>
+    <DataContext.Provider value={value}>
       {children}
     </DataContext.Provider>
   );
 };
 
-export const usePortfolioData = () => {
+export const usePortfolioData = (): DataContextType => {
   const context = useContext(DataContext);
   if (context === undefined) {
     throw new Error('usePortfolioData must be used within a DataProvider');

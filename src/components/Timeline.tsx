@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Calendar, MapPin, Briefcase, GraduationCap, Trophy, ExternalLink } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -45,17 +44,21 @@ const Timeline = () => {
     return () => observer.disconnect();
   }, []);
 
-  // Fetch timeline events from database
+  // Fetch timeline events from database with real-time subscription
   useEffect(() => {
     const fetchTimelineEvents = async () => {
       try {
+        console.log('Fetching public timeline events...');
         const { data, error } = await supabase
           .from('timeline_events')
           .select('*')
           .order('order_index', { ascending: false })
           .order('start_date', { ascending: false });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error fetching timeline events:', error);
+          throw error;
+        }
 
         if (data && data.length > 0) {
           // Type-safe conversion of database data to TimelineEvent interface
@@ -75,8 +78,10 @@ const Timeline = () => {
             is_featured: item.is_featured || false
           }));
           
+          console.log('Timeline events fetched:', typedEvents.length);
           setEvents(typedEvents);
         } else {
+          console.log('No timeline events found in database, using fallback data');
           // Fallback to default timeline data if no database entries
           setEvents([
             {
@@ -143,14 +148,30 @@ const Timeline = () => {
         }
       } catch (error) {
         console.error('Error fetching timeline events:', error);
-        // Set fallback data in case of error
         setEvents([]);
       } finally {
         setIsLoading(false);
       }
     };
 
+    // Setup real-time subscription for timeline events
+    const channel = supabase
+      .channel('timeline-changes')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'timeline_events' 
+      }, () => {
+        console.log('Timeline events changed, refetching...');
+        fetchTimelineEvents();
+      })
+      .subscribe();
+
     fetchTimelineEvents();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   // Get icon component based on event type

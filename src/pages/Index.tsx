@@ -21,7 +21,6 @@ import { supabase } from "@/integrations/supabase/client";
 const Index = () => {
   const { fetchPortfolioData, isLoading, error, data } = usePortfolioData();
   const [isInitialLoading, setIsInitialLoading] = useState(true);
-  const [pageViews, setPageViews] = useState(0);
   
   // Track page analytics and load portfolio data
   useEffect(() => {
@@ -53,7 +52,7 @@ const Index = () => {
         
       } catch (err: any) {
         console.error("Error loading portfolio data:", err);
-        toast.error('Failed to load portfolio data. Please try refreshing the page.');
+        toast.error('Failed to load some portfolio data. Displaying with defaults.');
       } finally {
         setIsInitialLoading(false);
       }
@@ -156,6 +155,11 @@ const Index = () => {
         100% { background-position: -200% 0; }
       }
       
+      /* Contribution graph grid fix */
+      .grid-cols-52 {
+        grid-template-columns: repeat(52, minmax(0, 1fr));
+      }
+      
       /* Quantum loader enhancement */
       .quantum-loader {
         width: 64px;
@@ -209,7 +213,7 @@ const Index = () => {
     };
   }, [fetchPortfolioData]);
 
-  // Show enhanced loading state while data is being fetched initially
+  // Show enhanced loading state only for initial load
   if (isInitialLoading && isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center relative overflow-hidden">

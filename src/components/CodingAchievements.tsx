@@ -40,66 +40,94 @@ const CodingAchievements = () => {
     return () => observer.disconnect();
   }, []);
 
-  // Fetch achievements from database
+  // Fetch achievements from database with real-time subscription
   useEffect(() => {
     const fetchAchievements = async () => {
       try {
+        console.log('Fetching public achievements...');
         const { data, error } = await supabase
           .from('achievements')
           .select('*')
           .order('is_unlocked', { ascending: false })
           .order('rarity', { ascending: false });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error fetching achievements:', error);
+          throw error;
+        }
 
-        // Type-safe conversion of database data to Achievement interface
-        const typedAchievements: Achievement[] = (data || []).map(item => ({
-          id: item.id,
-          title: item.title,
-          description: item.description,
-          icon: item.icon || 'Trophy',
-          category: item.category,
-          progress: item.progress || 0,
-          max_progress: item.max_progress,
-          is_unlocked: item.is_unlocked || false,
-          rarity: (item.rarity as 'common' | 'rare' | 'epic' | 'legendary') || 'common',
-          unlock_date: item.unlock_date || undefined
-        }));
+        if (data && data.length > 0) {
+          // Type-safe conversion of database data to Achievement interface
+          const typedAchievements: Achievement[] = data.map(item => ({
+            id: item.id,
+            title: item.title,
+            description: item.description,
+            icon: item.icon || 'Trophy',
+            category: item.category,
+            progress: item.progress || 0,
+            max_progress: item.max_progress,
+            is_unlocked: item.is_unlocked || false,
+            rarity: (item.rarity as 'common' | 'rare' | 'epic' | 'legendary') || 'common',
+            unlock_date: item.unlock_date || undefined
+          }));
 
-        setAchievements(typedAchievements);
+          console.log('Achievements fetched:', typedAchievements.length);
+          setAchievements(typedAchievements);
+        } else {
+          console.log('No achievements found in database, using fallback data');
+          // Set default achievements as fallback
+          setAchievements([
+            {
+              id: '1',
+              title: 'Problem Solver',
+              description: 'Solved 500+ coding problems',
+              icon: 'Target',
+              category: 'coding',
+              progress: 523,
+              max_progress: 500,
+              is_unlocked: true,
+              rarity: 'epic'
+            },
+            {
+              id: '2',
+              title: 'Code Warrior',
+              description: 'Completed 50+ projects',
+              icon: 'Code',
+              category: 'project',
+              progress: 47,
+              max_progress: 50,
+              is_unlocked: false,
+              rarity: 'rare'
+            }
+          ]);
+        }
       } catch (error) {
         console.error('Error fetching achievements:', error);
-        // Set default achievements as fallback
-        setAchievements([
-          {
-            id: '1',
-            title: 'Problem Solver',
-            description: 'Solved 500+ coding problems',
-            icon: 'Target',
-            category: 'coding',
-            progress: 523,
-            max_progress: 500,
-            is_unlocked: true,
-            rarity: 'epic'
-          },
-          {
-            id: '2',
-            title: 'Code Warrior',
-            description: 'Completed 50+ projects',
-            icon: 'Code',
-            category: 'project',
-            progress: 47,
-            max_progress: 50,
-            is_unlocked: false,
-            rarity: 'rare'
-          }
-        ]);
+        // Set fallback data in case of error
+        setAchievements([]);
       } finally {
         setIsLoading(false);
       }
     };
 
+    // Setup real-time subscription for achievements
+    const channel = supabase
+      .channel('achievements-changes')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'achievements' 
+      }, () => {
+        console.log('Achievements changed, refetching...');
+        fetchAchievements();
+      })
+      .subscribe();
+
     fetchAchievements();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   // Map icon names to actual icon components
