@@ -58,18 +58,22 @@ const Contact = () => {
 
       if (error) throw error;
 
-      // Track analytics event
-      await supabase
-        .from('analytics_data')
-        .insert({
-          event_type: 'contact_form',
-          event_data: { 
-            form_type: 'contact',
-            has_subject: !!formData.subject 
-          },
-          page_url: window.location.href,
-          referrer: document.referrer
-        });
+      // Track analytics event (using async/await properly)
+      try {
+        await supabase
+          .from('analytics_data')
+          .insert({
+            event_type: 'contact_form',
+            event_data: { 
+              form_type: 'contact',
+              has_subject: !!formData.subject 
+            },
+            page_url: window.location.href,
+            referrer: document.referrer
+          });
+      } catch (analyticsError) {
+        console.error('Failed to track analytics:', analyticsError);
+      }
 
       toast({
         title: "Message Sent!",
@@ -97,7 +101,7 @@ const Contact = () => {
   };
 
   // Generate and download vCard
-  const downloadVCard = () => {
+  const downloadVCard = async () => {
     const vCardData = `BEGIN:VCARD
 VERSION:3.0
 FN:${data.user.name}
@@ -120,16 +124,19 @@ END:VCARD`;
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
 
-    // Track download event
-    supabase
-      .from('analytics_data')
-      .insert({
-        event_type: 'download',
-        event_data: { type: 'vcard', name: data.user.name },
-        page_url: window.location.href
-      })
-      .then(() => console.log('Download tracked'))
-      .catch(console.error);
+    // Track download event (using async/await properly)
+    try {
+      await supabase
+        .from('analytics_data')
+        .insert({
+          event_type: 'download',
+          event_data: { type: 'vcard', name: data.user.name },
+          page_url: window.location.href
+        });
+      console.log('Download tracked successfully');
+    } catch (error) {
+      console.error('Failed to track download:', error);
+    }
 
     toast({
       title: "Contact Card Downloaded",

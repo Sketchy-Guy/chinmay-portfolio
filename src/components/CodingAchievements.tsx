@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Trophy, Target, Zap, Star, Award, Code, Medal, Crown } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -53,7 +52,21 @@ const CodingAchievements = () => {
 
         if (error) throw error;
 
-        setAchievements(data || []);
+        // Type-safe conversion of database data to Achievement interface
+        const typedAchievements: Achievement[] = (data || []).map(item => ({
+          id: item.id,
+          title: item.title,
+          description: item.description,
+          icon: item.icon || 'Trophy',
+          category: item.category,
+          progress: item.progress || 0,
+          max_progress: item.max_progress,
+          is_unlocked: item.is_unlocked || false,
+          rarity: (item.rarity as 'common' | 'rare' | 'epic' | 'legendary') || 'common',
+          unlock_date: item.unlock_date || undefined
+        }));
+
+        setAchievements(typedAchievements);
       } catch (error) {
         console.error('Error fetching achievements:', error);
         // Set default achievements as fallback

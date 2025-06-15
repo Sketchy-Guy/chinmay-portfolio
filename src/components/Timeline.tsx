@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Calendar, MapPin, Briefcase, GraduationCap, Trophy, ExternalLink } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -58,7 +57,24 @@ const Timeline = () => {
         if (error) throw error;
 
         if (data && data.length > 0) {
-          setEvents(data);
+          // Type-safe conversion of database data to TimelineEvent interface
+          const typedEvents: TimelineEvent[] = data.map(item => ({
+            id: item.id,
+            title: item.title,
+            organization: item.organization,
+            location: item.location,
+            start_date: item.start_date,
+            end_date: item.end_date,
+            description: item.description,
+            event_type: item.event_type as 'work' | 'education' | 'project' | 'achievement',
+            skills: item.skills ? (Array.isArray(item.skills) ? item.skills : []) : null,
+            image_url: item.image_url,
+            link_url: item.link_url,
+            order_index: item.order_index || 0,
+            is_featured: item.is_featured || false
+          }));
+          
+          setEvents(typedEvents);
         } else {
           // Fallback to default timeline data if no database entries
           setEvents([
