@@ -50,10 +50,13 @@ function AppContent() {
     }
     favicon.href = faviconUrl;
     favicon.type = "image/png";
-    // Ideally could handle apple-touch-icon, etc.
-    return () => {
-      // Optionally cleanup or reset favicon if needed
-    };
+    // Optionally, update apple-touch-icon here if needed
+    // Remove additional old favicon links, keep only this
+    document.querySelectorAll("link[rel='icon']").forEach((el, i) => {
+      if (el !== favicon) el.parentNode?.removeChild(el);
+    });
+    // Remove apple-touch-icon links (optional)
+    document.querySelectorAll("link[rel='apple-touch-icon']").forEach(el => el.parentNode?.removeChild(el));
   }, [settings.site_favicon, settings.site_logo]);
 
   // Run initialization once at the app level

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,12 +22,27 @@ interface SettingFormData {
   [key: string]: any;
 }
 
+// Helper for uploading images to supabase storage (public bucket: 'site-assets')
+async function uploadSiteAsset(file: File, key: string): Promise<string | null> {
+  if (!file) return null;
+  const filename = `${key}_${Date.now()}_${file.name.replace(/[^\w.]/g, '')}`;
+  const { data, error } = await supabase.storage.from("site-assets").upload(filename, file, { upsert: true });
+  if (error) throw error;
+  // Public URL:
+  const { data: urlData } = supabase
+    .storage
+    .from("site-assets")
+    .getPublicUrl(filename);
+  return urlData?.publicUrl ?? null;
+}
+
 const SiteSettingsManagerEnhanced = () => {
   const [settings, setSettings] = useState<SiteSetting[]>([]);
   const [formData, setFormData] = useState<SettingFormData>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [uploadingKey, setUploadingKey] = useState<string | null>(null);
 
   // Fetch site settings
   const fetchSettings = async () => {
@@ -108,6 +122,23 @@ const SiteSettingsManagerEnhanced = () => {
     }));
     setHasChanges(true);
   };
+
+  // Helper for handling uploads
+  async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>, key: string) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setUploadingKey(key);
+    try {
+      const url = await uploadSiteAsset(file, key);
+      if (url) {
+        handleChange(key, url);
+        toast.success(`Uploaded ${key} successfully`);
+      }
+    } catch (err: any) {
+      toast.error(`Upload failed: ${err.message}`);
+    }
+    setUploadingKey(null);
+  }
 
   // Setup real-time subscription
   useEffect(() => {
@@ -267,16 +298,42 @@ const SiteSettingsManagerEnhanced = () => {
             <Card key={setting.id} className="glass-card-enhanced">
               <CardHeader>
                 <CardTitle className="text-lg font-semibold text-white flex items-center justify-between">
-                  <span className="capitalize">{setting.key.replace(/_/g, ' ')}</span>
-                  <CheckCircle className="w-5 h-5 text-green-400" />
+                  <span className="capitalize">{setting.key.replace(/_/g, " ")}</span>
+                  {/* For logo and favicon, show preview if set */}
+                  {(setting.key === "site_logo" || setting.key === "site_favicon") && formData[setting.key] && (
+                    <img
+                      src={formData[setting.key]}
+                      alt={setting.key}
+                      className="h-10 w-10 rounded-full border border-purple-500 bg-white object-cover ml-2"
+                    />
+                  )}
                 </CardTitle>
-                {setting.description && (
-                  <p className="text-gray-400 text-sm">{setting.description}</p>
-                )}
+                {setting.description && <p className="text-gray-400 text-sm">{setting.description}</p>}
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {renderSettingInput(setting)}
+                  {/* Special input for site_logo and site_favicon */}
+                  {(setting.key === "site_logo" || setting.key === "site_favicon") ? (
+                    <div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={uploadingKey === setting.key}
+                        onChange={e => handleFileChange(e, setting.key)}
+                        className="mb-2"
+                      />
+                      {formData[setting.key] && (
+                        <img
+                          src={formData[setting.key]}
+                          alt={setting.key}
+                          className="h-12 w-12 rounded-full border border-purple-400 object-cover"
+                        />
+                      )}
+                      {uploadingKey === setting.key && <span className="text-xs text-purple-400 ml-2">Uploading...</span>}
+                    </div>
+                  ) : (
+                    renderSettingInput(setting)
+                  )}
                   <div className="text-xs text-gray-500">
                     Last updated: {new Date(setting.updated_at).toLocaleString()}
                   </div>

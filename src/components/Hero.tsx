@@ -5,19 +5,16 @@ import { Download, Github, Linkedin, Mail, Twitter, Instagram, Facebook } from "
 import { useToast } from "@/hooks/use-toast";
 import { usePortfolioData } from "@/contexts/DataContext";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 
 const Hero = () => {
   const [typedText, setTypedText] = useState("");
-  const { data, isLoading } = usePortfolioData();
+  const { data } = usePortfolioData();
   const [imageTimestamp, setImageTimestamp] = useState(Date.now());
   const [imageLoaded, setImageLoaded] = useState(false);
   const fullText = data?.user?.title || "";
   const { toast: uiToast } = useToast();
   const { settings } = useSiteSettings();
 
-  // Refresh image when profile image changes
   useEffect(() => {
     setImageTimestamp(Date.now());
     setImageLoaded(false);
@@ -49,18 +46,17 @@ const Hero = () => {
   }
 
   const socialLinks = [
-    { icon: Github, href: data.user.social.github || "#", label: "GitHub" },
-    { icon: Linkedin, href: data.user.social.linkedin || "#", label: "LinkedIn" },
-    { icon: Twitter, href: data.user.social.twitter || "#", label: "Twitter" },
-    { icon: Instagram, href: data.user.social.instagram || "#", label: "Instagram" },
-    { icon: Facebook, href: data.user.social.facebook || "#", label: "Facebook" },
-    { icon: Mail, href: `mailto:${data.user.email}`, label: "Email" },
+    { icon: Github, href: data.user.social.github || "#", label: "GitHub", color: "#171515" },
+    { icon: Linkedin, href: data.user.social.linkedin || "#", label: "LinkedIn", color: "#2867B2" },
+    { icon: Twitter, href: data.user.social.twitter || "#", label: "Twitter", color: "#1DA1F2" },
+    { icon: Instagram, href: data.user.social.instagram || "#", label: "Instagram", color: "#E4405F" },
+    { icon: Facebook, href: data.user.social.facebook || "#", label: "Facebook", color: "#1877F3" },
+    { icon: Mail, href: `mailto:${data.user.email}`, label: "Email", color: "#EA4335" },
   ];
 
-  // Always use the latest uploaded profile image
   const profileImage = data.user.profileImage
     ? `${data.user.profileImage}?t=${imageTimestamp}`
-    : ""; // Empty string if not set
+    : "";
 
   return (
     <section className="min-h-screen flex flex-col justify-center pt-20">
@@ -83,28 +79,33 @@ const Hero = () => {
             <div className="flex flex-wrap gap-4 mb-8">
               {socialLinks.map((link, index) => (
                 link.href !== "#" && (
-                  <a 
+                  <a
                     key={index}
                     href={link.href}
                     aria-label={link.label}
-                    className="social-icon"
+                    className="social-icon rounded-full p-2 hover:scale-110 transition-all shadow-lg"
                     rel="noopener noreferrer"
                     target="_blank"
+                    style={{
+                      backgroundColor: "white",
+                      border: `2px solid ${link.color}`,
+                      color: link.color,
+                    }}
                   >
-                    <link.icon size={20} />
+                    <link.icon size={22} strokeWidth={2} />
                   </a>
                 )
               ))}
             </div>
             <div className="flex gap-4">
-              <Button 
+              <Button
                 className="bg-portfolio-purple hover:bg-portfolio-purple/90"
                 onClick={handleDownloadCV}
               >
                 <Download className="mr-2 h-4 w-4" /> Download CV
               </Button>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="border-portfolio-teal text-portfolio-teal hover:bg-portfolio-teal hover:text-white"
                 asChild
               >
@@ -115,11 +116,9 @@ const Hero = () => {
             </div>
           </div>
           <div className="lg:w-1/2 relative z-10">
-            {/* Update the background gradient to go behind the image */}
             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-md max-h-md z-10">
               <div className="w-full h-full rounded-full bg-portfolio-purple opacity-5 animate-spin-slow blur-3xl"></div>
             </div>
-            {/* Move the image to the front with a higher z-index */}
             <div className="w-64 h-64 md:w-80 md:h-80 mx-auto relative z-20 animate-float">
               {!imageLoaded && profileImage && (
                 <div className="absolute inset-0 flex items-center justify-center rounded-full bg-gray-100">
@@ -132,7 +131,7 @@ const Hero = () => {
                   alt={data.user.name}
                   className={`rounded-full object-cover border-4 border-white shadow-xl w-full h-full transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
                   onLoad={() => setImageLoaded(true)}
-                  onError={() => setImageLoaded(true)} // Hide loader even if error
+                  onError={() => setImageLoaded(true)}
                 />
               )}
             </div>

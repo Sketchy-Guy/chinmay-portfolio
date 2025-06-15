@@ -3,10 +3,10 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface SiteSettings {
+  [key: string]: string | null | undefined;
   site_logo?: string | null;
   site_favicon?: string | null;
   site_name?: string | null;
-  // add other settings as needed
 }
 
 export function useSiteSettings() {
@@ -16,30 +16,42 @@ export function useSiteSettings() {
   useEffect(() => {
     let mounted = true;
     async function fetchSettings() {
+      setLoading(true);
       const { data, error } = await supabase
         .from("site_settings")
         .select("key, value")
         .in("key", ["site_logo", "site_favicon", "site_name"])
-        .maybeSingle();
+        .order("key");
 
-      if (!data || error) {
+      if (error || !data) {
         setSettings({});
-      } else if (data) {
-        // Try to fetch as many as possible (multi row select)
-        let settings: SiteSettings = {};
-        if (Array.isArray(data)) {
-          data.forEach((row) => {
-            settings[row.key] = typeof row.value === "string" ? row.value : row.value;
-          });
-        } else if (data.key) {
-          settings[data.key] = typeof data.value === "string" ? data.value : data.value;
+      } else {
+        let siteSettings: SiteSettings = {};
+        for (const row of data) {
+          // Try to parse stringified values—could be string or json.
+          let valueStr = typeof row.value === "string" ? row.value : JSON.stringify(row.value);
+          try {
+            // Try JSON parse, fallback to string
+            siteSettings[row.key] = JSON.parse(valueStr);
+          } catch {
+            siteSettings[row.key] = valueStr ?? null;
+          }
         }
-        if (mounted) setSettings(settings);
+        if (mounted) setSettings(siteSettings);
       }
       setLoading(false);
     }
     fetchSettings();
-    return () => { mounted = false; };
+    // Listen for realtime changes on site_settings table
+    const channel = supabase
+      .channel("site_settings_realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "site_settings" }, fetchSettings)
+      .subscribe();
+
+    return () => {
+      mounted = false;
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   return { settings, loading };
