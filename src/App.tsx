@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,7 +8,7 @@ import { DataProvider } from "@/contexts/DataContext";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import Admin from "./pages/Admin";
+import AdminEnhanced from "./pages/AdminEnhanced";
 import HireMe from "./pages/HireMe";
 import Login from "./pages/Login";
 import { useEffect, useState } from "react";
@@ -129,7 +128,7 @@ function AppContent() {
               path="/admin" 
               element={
                 <AuthGuard requireAdmin={true}>
-                  <Admin />
+                  <AdminEnhanced />
                 </AuthGuard>
               } 
             />
