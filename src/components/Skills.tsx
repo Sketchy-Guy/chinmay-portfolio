@@ -1,6 +1,5 @@
-
 import { useState, useEffect, useRef } from "react";
-import { Code, Database, Globe, Tool, Brain, Users } from "lucide-react";
+import { Code, Database, Globe, Wrench, Brain, Users } from "lucide-react";
 
 interface Skill {
   name: string;
@@ -39,7 +38,7 @@ const categoryIcons = {
   "Programming Languages": Code,
   "Databases": Database,
   "Web Development": Globe,
-  "Tools & Platforms": Tool,
+  "Tools & Platforms": Wrench,
   "AI & ML": Brain,
   "Technical Skills": Code,
   "Soft Skills": Users,
