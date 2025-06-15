@@ -60,12 +60,12 @@
   }
   
   .glass-card-enhanced {
-    @apply bg-white/8 backdrop-blur-xl border border-purple-500/30 shadow-2xl rounded-2xl;
+    @apply bg-white/5 backdrop-blur-xl border border-purple-500/30 shadow-2xl rounded-2xl;
     transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
   }
   
   .glass-card-enhanced:hover {
-    @apply bg-white/12 border-purple-400/50 shadow-purple-500/25;
+    @apply bg-white/10 border-purple-400/50 shadow-purple-500/25;
     transform: translateY(-5px);
     box-shadow: 0 25px 50px -12px rgba(139, 92, 246, 0.4);
   }
