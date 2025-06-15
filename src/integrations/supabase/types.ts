@@ -53,6 +53,84 @@ export type Database = {
           },
         ]
       }
+      achievements: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          icon: string | null
+          id: string
+          is_unlocked: boolean | null
+          max_progress: number
+          progress: number | null
+          rarity: string | null
+          title: string
+          unlock_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description: string
+          icon?: string | null
+          id?: string
+          is_unlocked?: boolean | null
+          max_progress: number
+          progress?: number | null
+          rarity?: string | null
+          title: string
+          unlock_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          icon?: string | null
+          id?: string
+          is_unlocked?: boolean | null
+          max_progress?: number
+          progress?: number | null
+          rarity?: string | null
+          title?: string
+          unlock_date?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      analytics_data: {
+        Row: {
+          created_at: string
+          event_data: Json | null
+          event_type: string
+          id: string
+          ip_address: unknown | null
+          page_url: string | null
+          referrer: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_data?: Json | null
+          event_type: string
+          id?: string
+          ip_address?: unknown | null
+          page_url?: string | null
+          referrer?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_data?: Json | null
+          event_type?: string
+          id?: string
+          ip_address?: unknown | null
+          page_url?: string | null
+          referrer?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       auth_users: {
         Row: {
           created_at: string | null
@@ -117,6 +195,81 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      contact_messages: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          message: string
+          name: string
+          status: string | null
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          message: string
+          name: string
+          status?: string | null
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          status?: string | null
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      github_stats: {
+        Row: {
+          contribution_data: Json | null
+          created_at: string
+          current_streak: number | null
+          id: string
+          languages: Json | null
+          last_updated: string | null
+          total_contributions: number | null
+          total_forks: number | null
+          total_repos: number | null
+          total_stars: number | null
+          username: string
+        }
+        Insert: {
+          contribution_data?: Json | null
+          created_at?: string
+          current_streak?: number | null
+          id?: string
+          languages?: Json | null
+          last_updated?: string | null
+          total_contributions?: number | null
+          total_forks?: number | null
+          total_repos?: number | null
+          total_stars?: number | null
+          username: string
+        }
+        Update: {
+          contribution_data?: Json | null
+          created_at?: string
+          current_streak?: number | null
+          id?: string
+          languages?: Json | null
+          last_updated?: string | null
+          total_contributions?: number | null
+          total_forks?: number | null
+          total_repos?: number | null
+          total_stars?: number | null
+          username?: string
+        }
+        Relationships: []
       }
       projects: {
         Row: {
@@ -183,6 +336,33 @@ export type Database = {
           created_at?: string
           id?: number
           visits?: number | null
+        }
+        Relationships: []
+      }
+      site_settings: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          key: string
+          updated_at?: string
+          value: Json
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          key?: string
+          updated_at?: string
+          value?: Json
         }
         Relationships: []
       }
@@ -258,6 +438,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      timeline_events: {
+        Row: {
+          created_at: string
+          description: string
+          end_date: string | null
+          event_type: string
+          id: string
+          image_url: string | null
+          is_featured: boolean | null
+          link_url: string | null
+          location: string | null
+          order_index: number | null
+          organization: string
+          skills: Json | null
+          start_date: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          end_date?: string | null
+          event_type: string
+          id?: string
+          image_url?: string | null
+          is_featured?: boolean | null
+          link_url?: string | null
+          location?: string | null
+          order_index?: number | null
+          organization: string
+          skills?: Json | null
+          start_date: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          end_date?: string | null
+          event_type?: string
+          id?: string
+          image_url?: string | null
+          is_featured?: boolean | null
+          link_url?: string | null
+          location?: string | null
+          order_index?: number | null
+          organization?: string
+          skills?: Json | null
+          start_date?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       user_profile: {
         Row: {

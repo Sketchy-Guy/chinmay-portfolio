@@ -55,6 +55,7 @@
 }
 
 @layer components {
+  /* Enhanced glass morphism effects */
   .glass-morphism {
     @apply bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl;
   }
@@ -62,14 +63,24 @@
   .glass-card-enhanced {
     @apply bg-white/5 backdrop-blur-xl border border-purple-500/30 shadow-2xl rounded-2xl;
     transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    /* Force visibility and positioning */
+    opacity: 1 !important;
+    visibility: visible !important;
+    position: relative;
+    z-index: 1;
   }
   
   .glass-card-enhanced:hover {
     @apply bg-white/10 border-purple-400/50 shadow-purple-500/25;
     transform: translateY(-5px);
     box-shadow: 0 25px 50px -12px rgba(139, 92, 246, 0.4);
+    /* Ensure hover state maintains visibility */
+    opacity: 1 !important;
+    visibility: visible !important;
+    z-index: 2;
   }
   
+  /* Enhanced button styles */
   .btn-primary {
     @apply relative px-8 py-4 bg-gradient-to-r from-purple-600 to-cyan-500 text-white font-semibold rounded-lg overflow-hidden;
     border: 2px solid transparent;
@@ -109,6 +120,7 @@
     box-shadow: 0 8px 25px rgba(255, 255, 255, 0.1);
   }
   
+  /* Enhanced neon effects */
   .neon-border {
     box-shadow: 
       0 0 5px rgb(139 92 246 / 0.5),
@@ -133,9 +145,14 @@
     animation: holographic 3s ease-in-out infinite;
   }
   
+  /* Enhanced card styles with forced visibility */
   .futuristic-card {
     @apply glass-card-enhanced p-6 relative overflow-hidden;
     transform-style: preserve-3d;
+    /* Critical visibility fixes */
+    opacity: 1 !important;
+    visibility: visible !important;
+    display: block !important;
   }
   
   .futuristic-card::before {
@@ -161,11 +178,15 @@
     @apply text-4xl md:text-5xl font-bold mb-6 font-orbitron holographic-text;
   }
   
+  /* Enhanced component-specific styles with visibility fixes */
   .skill-badge {
     @apply futuristic-card text-center cursor-pointer;
     min-height: 140px;
+    /* Force visibility */
     opacity: 1 !important;
     visibility: visible !important;
+    transform: none !important;
+    display: block !important;
   }
   
   .skill-badge:hover .skill-icon {
@@ -179,26 +200,98 @@
   
   .project-card {
     @apply glass-card-enhanced;
+    /* Critical fixes for project cards */
     opacity: 1 !important;
     visibility: visible !important;
+    transform: none !important;
+    display: block !important;
+    position: relative !important;
+    z-index: 1 !important;
+  }
+  
+  .project-card:hover {
+    opacity: 1 !important;
+    visibility: visible !important;
+    z-index: 2 !important;
   }
   
   .certification-card {
     @apply glass-card-enhanced;
+    /* Critical fixes for certification cards */
     opacity: 1 !important;
     visibility: visible !important;
+    transform: none !important;
+    display: block !important;
+    position: relative !important;
+    z-index: 1 !important;
+  }
+  
+  .certification-card:hover {
+    opacity: 1 !important;
+    visibility: visible !important;
+    z-index: 2 !important;
   }
   
   .gradient-text {
     @apply bg-gradient-to-r from-purple-400 to-cyan-400 text-transparent bg-clip-text;
   }
   
+  /* Enhanced loading skeleton */
   .loading-skeleton {
-    @apply bg-white/10 animate-pulse rounded-lg;
+    background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+    border-radius: 0.5rem;
+  }
+  
+  /* Quantum loader for futuristic loading animation */
+  .quantum-loader {
+    width: 64px;
+    height: 64px;
+    border: 3px solid rgba(139, 92, 246, 0.3);
+    border-radius: 50%;
+    border-top-color: #8b5cf6;
+    animation: quantum-spin 1s ease-in-out infinite;
+    position: relative;
+  }
+  
+  .quantum-loader::before,
+  .quantum-loader::after {
+    content: '';
+    position: absolute;
+    border: 3px solid transparent;
+    border-radius: 50%;
+  }
+  
+  .quantum-loader::before {
+    top: 5px;
+    left: 5px;
+    right: 5px;
+    bottom: 5px;
+    border-top-color: #06b6d4;
+    animation: quantum-spin 2s ease-in-out infinite reverse;
+  }
+  
+  .quantum-loader::after {
+    top: 15px;
+    left: 15px;
+    right: 15px;
+    bottom: 15px;
+    border-top-color: #ec4899;
+    animation: quantum-spin 1.5s ease-in-out infinite;
   }
 }
 
 /* Advanced Animations */
+@keyframes loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes quantum-spin {
+  to { transform: rotate(360deg); }
+}
+
 @keyframes holographic {
   0%, 100% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
@@ -236,6 +329,7 @@
   }
 }
 
+/* Animation utility classes */
 .animate-float-3d {
   animation: float-3d 6s ease-in-out infinite;
 }
@@ -252,6 +346,7 @@
   animation: slideInRight 0.6s ease-out;
 }
 
+/* Enhanced reveal animations with forced visibility */
 .reveal {
   opacity: 0;
   transform: translateY(50px) rotateX(10deg);
@@ -259,8 +354,9 @@
 }
 
 .reveal.active {
-  opacity: 1;
-  transform: translateY(0) rotateX(0deg);
+  opacity: 1 !important;
+  transform: translateY(0) rotateX(0deg) !important;
+  visibility: visible !important;
 }
 
 .reveal-stagger {
@@ -270,8 +366,40 @@
 }
 
 .reveal-stagger.active {
-  opacity: 1;
-  transform: translateY(0) scale(1);
+  opacity: 1 !important;
+  transform: translateY(0) scale(1) !important;
+  visibility: visible !important;
+}
+
+/* Global visibility fixes - preventing any component from becoming invisible */
+.skill-badge,
+.project-card,
+.certification-card,
+.glass-card-enhanced,
+.futuristic-card {
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: block !important;
+}
+
+/* Hover state fixes */
+section:hover *,
+div:hover *,
+.grid:hover *,
+.container:hover * {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Ensure grid containers don't hide their children */
+.grid {
+  overflow: visible !important;
+}
+
+.grid > * {
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: block !important;
 }
 
 /* Scrollbar Styling */
@@ -313,6 +441,15 @@
   .cyber-grid {
     background-size: 30px 30px;
   }
+  
+  /* Ensure mobile cards remain visible */
+  .skill-badge,
+  .project-card,
+  .certification-card {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: none !important;
+  }
 }
 
 /* Accessibility */
@@ -322,6 +459,13 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+  
+  /* Still maintain visibility for reduced motion */
+  .reveal,
+  .reveal-stagger {
+    opacity: 1 !important;
+    transform: none !important;
+  }
 }
 
 /* Focus States */
@@ -330,4 +474,19 @@ a:focus-visible {
   outline: 2px solid rgb(139 92 246);
   outline-offset: 2px;
   border-radius: 8px;
+}
+
+/* Final override to ensure no cards ever disappear */
+* {
+  backface-visibility: visible !important;
+}
+
+.grid > .skill-badge,
+.grid > .project-card,
+.grid > .certification-card,
+.grid > .glass-card-enhanced {
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: block !important;
+  position: relative !important;
 }

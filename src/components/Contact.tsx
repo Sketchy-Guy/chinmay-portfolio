@@ -1,263 +1,283 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Mail, Phone, MapPin, Send, Download, MessageCircle, User, Clock } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Mail, Phone, MapPin, Download, Send, MessageSquare } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-const ContactInfo = ({ icon: Icon, title, content, link, delay }: {
-  icon: any,
-  title: string,
-  content: string,
-  link: string,
-  delay: number
-}) => (
-  <div 
-    className={`glass-card p-6 group hover:scale-105 transition-all duration-500 reveal-stagger`}
-    style={{ animationDelay: `${delay}s` }}
-  >
-    <a 
-      href={link}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="flex items-center gap-4 h-full"
-    >
-      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-portfolio-purple to-portfolio-teal flex items-center justify-center shadow-lg group-hover:shadow-xl group-hover:shadow-purple-500/25 transition-all duration-500">
-        <Icon className="w-6 h-6 text-white" />
-      </div>
-      <div className="flex-1">
-        <h4 className="font-semibold text-white mb-1 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-portfolio-purple group-hover:to-portfolio-teal transition-all duration-500">
-          {title}
-        </h4>
-        <p className="text-gray-300 group-hover:text-gray-200 transition-colors duration-300 text-sm">
-          {content}
-        </p>
-      </div>
-    </a>
-  </div>
-);
+import { supabase } from "@/integrations/supabase/client";
+import { usePortfolioData } from "@/contexts/DataContext";
 
 const Contact = () => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     subject: "",
-    message: "",
+    message: ""
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
   const { toast } = useToast();
+  const { data } = usePortfolioData();
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    const section = document.getElementById('contact');
-    if (section) observer.observe(section);
-
-    return () => observer.disconnect();
-  }, []);
-  
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  // Handle form input changes
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
-  
-  const handleSubmit = (e: React.FormEvent) => {
+
+  // Submit contact form to database
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
     
-    // Simulate form submission
-    setTimeout(() => {
+    if (!formData.name || !formData.email || !formData.message) {
       toast({
-        title: "Message Sent Successfully! 🎉",
-        description: "Thank you for reaching out! I'll get back to you within 24 hours.",
+        title: "Error",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
       });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Insert contact message into database
+      const { error } = await supabase
+        .from('contact_messages')
+        .insert({
+          name: formData.name,
+          email: formData.email,
+          subject: formData.subject || 'Portfolio Contact',
+          message: formData.message,
+          status: 'unread'
+        });
+
+      if (error) throw error;
+
+      // Track analytics event
+      await supabase
+        .from('analytics_data')
+        .insert({
+          event_type: 'contact_form',
+          event_data: { 
+            form_type: 'contact',
+            has_subject: !!formData.subject 
+          },
+          page_url: window.location.href,
+          referrer: document.referrer
+        });
+
+      toast({
+        title: "Message Sent!",
+        description: "Thank you for your message. I'll get back to you soon!",
+      });
+
+      // Reset form
       setFormData({
         name: "",
         email: "",
         subject: "",
-        message: "",
+        message: ""
       });
-      setIsSubmitting(false);
-    }, 1500);
-  };
-  
-  const contactInfo = [
-    {
-      icon: Mail,
-      title: "Email",
-      content: "chinmaykumarpanda004@gmail.com",
-      link: "mailto:chinmaykumarpanda004@gmail.com",
-    },
-    {
-      icon: Phone,
-      title: "Phone",
-      content: "+91 7815014638",
-      link: "tel:+917815014638",
-    },
-    {
-      icon: MapPin,
-      title: "Location",
-      content: "Bhubaneswar, Odisha, India",
-      link: "https://maps.google.com/?q=Bhubaneswar,Odisha,India",
-    },
-  ];
 
+    } catch (error: any) {
+      console.error('Error sending message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Generate and download vCard
   const downloadVCard = () => {
-    const vcardData = `BEGIN:VCARD
+    const vCardData = `BEGIN:VCARD
 VERSION:3.0
-FN:Chinmay Kumar Panda
-TEL;TYPE=CELL:+917815014638
-EMAIL:chinmaykumarpanda004@gmail.com
-URL:https://github.com/chinmaykumarpanda
-URL:https://linkedin.com/in/chinmay-kumar-panda
-ADR;TYPE=HOME:;;Bhubaneswar;Odisha;;India
+FN:${data.user.name}
+ORG:${data.user.title}
+EMAIL:${data.user.email}
+TEL:${data.user.phone || 'Not provided'}
+ADR:;;${data.user.location || 'Remote'};;;;
+URL:${data.user.social.linkedin}
+URL:${data.user.social.github}
+NOTE:Portfolio: ${window.location.origin}
 END:VCARD`;
-    
-    const blob = new Blob([vcardData], { type: 'text/vcard' });
+
+    const blob = new Blob([vCardData], { type: 'text/vcard' });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', 'chinmay_kumar_panda.vcf');
+    link.download = `${data.user.name.replace(/\s+/g, '_')}_contact.vcf`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
+    window.URL.revokeObjectURL(url);
+
+    // Track download event
+    supabase
+      .from('analytics_data')
+      .insert({
+        event_type: 'download',
+        event_data: { type: 'vcard', name: data.user.name },
+        page_url: window.location.href
+      })
+      .then(() => console.log('Download tracked'))
+      .catch(console.error);
+
     toast({
-      title: "Contact Downloaded! 📱",
-      description: "Contact details saved to your device successfully!",
+      title: "Contact Card Downloaded",
+      description: "VCard has been saved to your downloads folder.",
     });
   };
 
   return (
     <section id="contact" className="py-24 md:py-32 relative overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/4 right-0 w-96 h-96 bg-gradient-to-l from-portfolio-purple/10 to-transparent rounded-full blur-3xl"></div>
-        <div className="absolute bottom-1/4 left-0 w-96 h-96 bg-gradient-to-r from-portfolio-teal/10 to-transparent rounded-full blur-3xl"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-r from-pink-500/5 to-blue-500/5 rounded-full blur-2xl"></div>
-      </div>
+      {/* Animated background elements */}
+      <div className="absolute inset-0 cyber-grid opacity-20"></div>
+      <div className="absolute top-20 left-10 w-72 h-72 bg-purple-500/10 rounded-full blur-3xl animate-pulse"></div>
+      <div className="absolute bottom-20 right-10 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-pulse"></div>
       
       <div className="container mx-auto px-4 relative z-10">
-        {/* Section header */}
-        <div className={`max-w-4xl mx-auto text-center mb-20 ${isVisible ? 'reveal active' : 'reveal'}`}>
-          <h2 className="section-title">Let's Connect</h2>
+        <div className="max-w-4xl mx-auto text-center mb-16 reveal">
+          <h2 className="section-title">Get In Touch</h2>
           <p className="text-xl text-gray-300 leading-relaxed max-w-3xl mx-auto mt-6">
-            Ready to bring your ideas to life? Let's discuss your project and create something amazing together. 
-            I'm always excited to collaborate on innovative solutions.
+            Ready to collaborate on your next project? Let's discuss how we can bring your ideas to life.
           </p>
-          
-          {/* Decorative elements */}
-          <div className="flex items-center justify-center mt-8 gap-4">
-            <div className="w-12 h-px bg-gradient-to-r from-transparent to-portfolio-purple"></div>
-            <div className="w-3 h-3 rounded-full bg-portfolio-purple animate-pulse"></div>
-            <div className="w-24 h-px bg-gradient-to-r from-portfolio-purple to-portfolio-teal"></div>
-            <div className="w-3 h-3 rounded-full bg-portfolio-teal animate-pulse"></div>
-            <div className="w-12 h-px bg-gradient-to-l from-transparent to-portfolio-teal"></div>
-          </div>
         </div>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-12 max-w-7xl mx-auto">
-          {/* Contact Information */}
-          <div className="lg:col-span-2 space-y-8">
-            <div className={`glass-card p-8 ${isVisible ? 'reveal-stagger active' : 'reveal-stagger'}`} style={{ animationDelay: '0.2s' }}>
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-portfolio-purple to-portfolio-teal flex items-center justify-center">
-                  <MessageCircle className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="text-2xl font-bold gradient-text">Get In Touch</h3>
-              </div>
-              
-              <p className="text-gray-300 mb-8 leading-relaxed">
-                I'm always open to discussing new opportunities, interesting projects, 
-                or potential collaborations. Feel free to reach out through any of the channels below.
-              </p>
-              
-              <div className="space-y-4">
-                {contactInfo.map((item, index) => (
-                  <ContactInfo 
-                    key={index}
-                    icon={item.icon}
-                    title={item.title}
-                    content={item.content}
-                    link={item.link}
-                    delay={0.3 + (index * 0.1)}
-                  />
-                ))}
-              </div>
-              
-              <div className="mt-8 pt-6 border-t border-white/10">
-                <div className="flex items-center gap-3 mb-4">
-                  <Clock className="w-5 h-5 text-portfolio-teal" />
-                  <span className="text-gray-300 text-sm">
-                    Typical response time: Within 24 hours
-                  </span>
-                </div>
-                <Button 
-                  onClick={downloadVCard}
-                  className="btn-secondary w-full group"
-                >
-                  <Download className="mr-2 h-4 w-4 group-hover:animate-bounce" />
-                  Download Contact Card
-                </Button>
-              </div>
-            </div>
-          </div>
-          
-          {/* Contact Form */}
-          <div className="lg:col-span-3">
-            <div className={`glass-card p-8 ${isVisible ? 'reveal-stagger active' : 'reveal-stagger'}`} style={{ animationDelay: '0.4s' }}>
-              <div className="flex items-center gap-3 mb-8">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-portfolio-teal to-portfolio-purple flex items-center justify-center">
-                  <Send className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="text-2xl font-bold gradient-text">Send a Message</h3>
-              </div>
-              
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label htmlFor="name" className="text-sm font-medium text-gray-300 flex items-center gap-2">
-                      <User className="w-4 h-4" />
-                      Your Name
-                    </label>
-                    <Input
-                      id="name"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      placeholder="John Doe"
-                      required
-                      className="contact-input"
-                    />
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
+          {/* Contact Information Card */}
+          <div className="space-y-8">
+            <Card className="glass-card-enhanced p-8 hover:scale-105 transition-all duration-300">
+              <CardHeader className="pb-6">
+                <CardTitle className="text-2xl font-bold gradient-text flex items-center gap-3">
+                  <MessageSquare className="w-6 h-6" />
+                  Contact Information
+                </CardTitle>
+                <CardDescription className="text-gray-300 text-lg">
+                  Multiple ways to reach out and connect
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Email */}
+                <div className="flex items-center gap-4 p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-colors">
+                  <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-xl flex items-center justify-center">
+                    <Mail className="w-6 h-6 text-white" />
                   </div>
+                  <div>
+                    <p className="text-gray-400 text-sm">Email</p>
+                    <p className="text-white font-medium">{data.user.email}</p>
+                  </div>
+                </div>
+
+                {/* Phone */}
+                {data.user.phone && (
+                  <div className="flex items-center gap-4 p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-colors">
+                    <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
+                      <Phone className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-gray-400 text-sm">Phone</p>
+                      <p className="text-white font-medium">{data.user.phone}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Location */}
+                {data.user.location && (
+                  <div className="flex items-center gap-4 p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-colors">
+                    <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl flex items-center justify-center">
+                      <MapPin className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-gray-400 text-sm">Location</p>
+                      <p className="text-white font-medium">{data.user.location}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Enhanced Download Contact Card Button */}
+                <div className="pt-4 border-t border-white/10">
+                  <Button
+                    onClick={downloadVCard}
+                    className="w-full relative overflow-hidden group bg-gradient-to-r from-purple-600 via-purple-500 to-cyan-500 hover:from-purple-700 hover:via-purple-600 hover:to-cyan-600 text-white font-semibold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-purple-400/50"
+                  >
+                    {/* Animated background effect */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    
+                    {/* Button content */}
+                    <div className="relative flex items-center justify-center gap-3">
+                      <Download className="w-5 h-5 group-hover:animate-bounce" />
+                      <span className="text-lg">Download Contact Card</span>
+                    </div>
+                    
+                    {/* Shine effect */}
+                    <div className="absolute inset-0 -skew-x-12 translate-x-[-100%] bg-gradient-to-r from-transparent via-white/20 to-transparent group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                  </Button>
                   
-                  <div className="space-y-2">
-                    <label htmlFor="email" className="text-sm font-medium text-gray-300 flex items-center gap-2">
-                      <Mail className="w-4 h-4" />
-                      Your Email
-                    </label>
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      placeholder="john.doe@example.com"
-                      required
-                      className="contact-input"
-                    />
-                  </div>
+                  <p className="text-gray-400 text-sm text-center mt-3">
+                    Save my contact details to your device
+                  </p>
                 </div>
-                
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Contact Form */}
+          <Card className="glass-card-enhanced p-8">
+            <CardHeader className="pb-6">
+              <CardTitle className="text-2xl font-bold gradient-text flex items-center gap-3">
+                <Send className="w-6 h-6" />
+                Send Message
+              </CardTitle>
+              <CardDescription className="text-gray-300 text-lg">
+                Drop me a line and I'll get back to you promptly
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Name Input */}
+                <div className="space-y-2">
+                  <label htmlFor="name" className="text-sm font-medium text-gray-300">
+                    Name *
+                  </label>
+                  <Input
+                    id="name"
+                    name="name"
+                    type="text"
+                    placeholder="Your full name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    required
+                    className="bg-white/5 border-white/20 text-white placeholder-gray-400 focus:border-purple-400 focus:ring-purple-400/20"
+                  />
+                </div>
+
+                {/* Email Input */}
+                <div className="space-y-2">
+                  <label htmlFor="email" className="text-sm font-medium text-gray-300">
+                    Email *
+                  </label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    placeholder="your.email@example.com"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    required
+                    className="bg-white/5 border-white/20 text-white placeholder-gray-400 focus:border-purple-400 focus:ring-purple-400/20"
+                  />
+                </div>
+
+                {/* Subject Input */}
                 <div className="space-y-2">
                   <label htmlFor="subject" className="text-sm font-medium text-gray-300">
                     Subject
@@ -265,50 +285,52 @@ END:VCARD`;
                   <Input
                     id="subject"
                     name="subject"
+                    type="text"
+                    placeholder="What's this about?"
                     value={formData.subject}
-                    onChange={handleChange}
-                    placeholder="Project Collaboration Opportunity"
-                    required
-                    className="contact-input"
+                    onChange={handleInputChange}
+                    className="bg-white/5 border-white/20 text-white placeholder-gray-400 focus:border-purple-400 focus:ring-purple-400/20"
                   />
                 </div>
-                
+
+                {/* Message Textarea */}
                 <div className="space-y-2">
                   <label htmlFor="message" className="text-sm font-medium text-gray-300">
-                    Message
+                    Message *
                   </label>
                   <Textarea
                     id="message"
                     name="message"
+                    placeholder="Tell me about your project or just say hi!"
                     value={formData.message}
-                    onChange={handleChange}
-                    placeholder="Tell me about your project, ideas, or how we can work together..."
-                    rows={6}
+                    onChange={handleInputChange}
                     required
-                    className="contact-input resize-none"
+                    rows={5}
+                    className="bg-white/5 border-white/20 text-white placeholder-gray-400 focus:border-purple-400 focus:ring-purple-400/20 resize-none"
                   />
                 </div>
-                
-                <Button 
-                  type="submit" 
-                  className="btn-primary w-full group"
+
+                {/* Submit Button */}
+                <Button
+                  type="submit"
                   disabled={isSubmitting}
+                  className="w-full cyber-button text-lg py-4"
                 >
                   {isSubmitting ? (
-                    <div className="flex items-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Sending Message...
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      Sending...
                     </div>
                   ) : (
-                    <>
-                      <Send className="mr-2 h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" /> 
+                    <div className="flex items-center justify-center gap-2">
+                      <Send className="w-5 h-5" />
                       Send Message
-                    </>
+                    </div>
                   )}
                 </Button>
               </form>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </section>
