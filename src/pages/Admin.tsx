@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -106,7 +107,7 @@ const Admin = () => {
   // Loading state
   if (isLoading || isInitializing) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0f0f23] via-[#1a1a2e] to-[#0f0f23]">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -114,9 +115,9 @@ const Admin = () => {
           className="text-center"
         >
           <div className="w-16 h-16 mx-auto mb-4">
-            <div className="quantum-loader"></div>
+            <div className="w-16 h-16 border-4 border-t-[#00d4ff] border-r-transparent border-b-[#ff006e] border-l-transparent rounded-full animate-spin"></div>
           </div>
-          <p className="text-xl text-purple-400 font-orbitron">Loading admin matrix...</p>
+          <p className="text-xl text-[#00d4ff] font-mono">Loading admin matrix...</p>
           <p className="text-gray-400 mt-2">Accessing neural networks</p>
         </motion.div>
       </div>
@@ -134,9 +135,11 @@ const Admin = () => {
   if (adminCheckComplete && !isAdmin) {
     console.log("User is not admin, showing access denied page");
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-red-900/20 to-gray-900 relative overflow-hidden">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-[#0f0f23] via-red-900/20 to-[#0f0f23] relative overflow-hidden">
         {/* Animated background */}
-        <div className="absolute inset-0 cyber-grid opacity-20"></div>
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-500/10 to-transparent"></div>
+        </div>
         
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -147,7 +150,7 @@ const Admin = () => {
           <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-r from-red-500 to-orange-500 rounded-full flex items-center justify-center">
             <AlertTriangle className="h-12 w-12 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-orange-400 font-orbitron mb-4">
+          <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-orange-400 font-mono mb-4">
             ACCESS DENIED
           </h1>
           <p className="text-gray-300 mt-2 max-w-md mx-auto text-lg">
@@ -186,7 +189,7 @@ const Admin = () => {
   const AdminDashboard = () => (
     <div className="space-y-6">
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 font-orbitron mb-2">
+        <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#00d4ff] to-[#ff006e] font-mono mb-2">
           Admin Control Center
         </h2>
         <p className="text-gray-400">
@@ -197,10 +200,10 @@ const Admin = () => {
       {/* Enhanced Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         {[
-          { title: "Projects", value: adminStats?.totalProjects || 0, icon: Briefcase, color: "from-cyan-500 to-blue-500" },
+          { title: "Projects", value: adminStats?.totalProjects || 0, icon: Briefcase, color: "from-[#00d4ff] to-blue-500" },
           { title: "Skills", value: adminStats?.totalSkills || 0, icon: Code, color: "from-emerald-500 to-teal-500" },
           { title: "Certifications", value: adminStats?.totalCertifications || 0, icon: Award, color: "from-orange-500 to-yellow-500" },
-          { title: "Messages", value: adminStats?.contactMessages || 0, icon: MessageSquare, color: "from-pink-500 to-rose-500" },
+          { title: "Messages", value: adminStats?.contactMessages || 0, icon: MessageSquare, color: "from-[#ff006e] to-rose-500" },
           { title: "Page Views", value: adminStats?.pageViews || 0, icon: TrendingUp, color: "from-violet-500 to-purple-500" },
           { title: "System", value: "Online", icon: Activity, color: "from-green-500 to-emerald-500", isStatus: true }
         ].map((stat, index) => (
@@ -210,7 +213,7 @@ const Admin = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
           >
-            <Card className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 backdrop-blur-xl border border-gray-700/50 p-6 hover:scale-105 transition-all duration-300 hover:border-cyan-500/50">
+            <Card className="bg-gradient-to-br from-[#0f0f23]/90 to-[#1a1a2e]/90 backdrop-blur-xl border border-gray-700/50 p-6 hover:scale-105 transition-all duration-300 hover:border-[#00d4ff]/50">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-gray-400 text-sm">{stat.title}</p>
@@ -228,19 +231,19 @@ const Admin = () => {
       </div>
 
       {/* Quick Actions */}
-      <Card className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 backdrop-blur-xl border border-gray-700/50 p-6">
+      <Card className="bg-gradient-to-br from-[#0f0f23]/90 to-[#1a1a2e]/90 backdrop-blur-xl border border-gray-700/50 p-6">
         <CardHeader>
           <CardTitle className="text-xl font-bold text-white flex items-center gap-2">
-            <Zap className="w-5 h-5 text-cyan-400" />
+            <Zap className="w-5 h-5 text-[#00d4ff]" />
             Quick Actions
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: "Add Project", tab: "projects", icon: Briefcase, color: "from-cyan-500 to-blue-500" },
+              { label: "Add Project", tab: "projects", icon: Briefcase, color: "from-[#00d4ff] to-blue-500" },
               { label: "Manage Skills", tab: "skills", icon: Code, color: "from-emerald-500 to-teal-500" },
-              { label: "View Messages", tab: "messages", icon: MessageSquare, color: "from-pink-500 to-rose-500" },
+              { label: "View Messages", tab: "messages", icon: MessageSquare, color: "from-[#ff006e] to-rose-500" },
               { label: "Timeline", tab: "timeline", icon: Calendar, color: "from-purple-500 to-violet-500" }
             ].map((action) => (
               <Button
@@ -260,13 +263,13 @@ const Admin = () => {
 
   // Enhanced sidebar navigation items
   const sidebarItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: BarChart3, color: 'text-cyan-400' },
+    { id: 'dashboard', label: 'Dashboard', icon: BarChart3, color: 'text-[#00d4ff]' },
     { id: 'profile', label: 'Profile', icon: User, color: 'text-blue-400' },
     { id: 'skills', label: 'Skills', icon: Code, color: 'text-emerald-400' },
     { id: 'projects', label: 'Projects', icon: Briefcase, color: 'text-purple-400' },
     { id: 'timeline', label: 'Timeline', icon: Calendar, color: 'text-orange-400' },
     { id: 'certifications', label: 'Certifications', icon: Award, color: 'text-yellow-400' },
-    { id: 'messages', label: 'Messages', icon: MessageSquare, color: 'text-pink-400' },
+    { id: 'messages', label: 'Messages', icon: MessageSquare, color: 'text-[#ff006e]' },
     { id: 'settings', label: 'Settings', icon: Settings, color: 'text-gray-400' },
   ];
 
@@ -276,13 +279,15 @@ const Admin = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 relative overflow-hidden"
+      className="min-h-screen bg-gradient-to-br from-[#0f0f23] via-[#1a1a2e] to-[#0f0f23] relative overflow-hidden"
     >
       {/* Enhanced animated background */}
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23ffffff" fill-opacity="0.03"%3E%3Ccircle cx="30" cy="30" r="1"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20"></div>
+      <div className="absolute inset-0 opacity-20">
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-500/10 to-transparent"></div>
+      </div>
       
       {/* Top header */}
-      <header className="bg-gradient-to-r from-gray-950/80 to-gray-900/80 backdrop-blur-xl border-b border-gray-800/50 relative z-20">
+      <header className="bg-gradient-to-r from-[#0f0f23]/80 to-[#1a1a2e]/80 backdrop-blur-xl border-b border-gray-800/50 relative z-20">
         <div className="container mx-auto flex justify-between items-center p-4">
           <motion.div 
             className="flex items-center gap-4"
@@ -291,14 +296,14 @@ const Admin = () => {
             transition={{ duration: 0.5, delay: 0.2 }}
           >
             <Button
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="lg:hidden bg-transparent hover:bg-white/10 p-2"
               size="sm"
             >
               <Menu className="w-5 h-5 text-gray-400" />
             </Button>
-            <Shield className="w-8 h-8 text-cyan-400" />
-            <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 font-orbitron">
+            <Shield className="w-8 h-8 text-[#00d4ff]" />
+            <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#00d4ff] to-[#ff006e] font-mono">
               ADMIN MATRIX
             </h1>
           </motion.div>
@@ -330,7 +335,7 @@ const Admin = () => {
           initial={{ x: -300 }}
           animate={{ x: 0 }}
           transition={{ duration: 0.5 }}
-          className={`${sidebarCollapsed ? 'w-16' : 'w-64'} bg-gradient-to-b from-gray-900/80 to-gray-950/80 backdrop-blur-xl border-r border-gray-800/50 transition-all duration-300 relative z-10 ${mobileMenuOpen ? 'block' : 'hidden lg:block'}`}
+          className={`${sidebarCollapsed ? 'w-16' : 'w-64'} bg-gradient-to-b from-[#0f0f23]/80 to-[#1a1a2e]/80 backdrop-blur-xl border-r border-gray-800/50 transition-all duration-300 relative z-10 ${mobileMenuOpen ? 'block' : 'hidden lg:block'}`}
         >
           <nav className="p-4 space-y-2">
             {sidebarItems.map((item, index) => (
@@ -345,7 +350,7 @@ const Admin = () => {
                 }}
                 className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-300 ${
                   activeTab === item.id 
-                    ? 'bg-gradient-to-r from-cyan-600/50 to-purple-600/50 text-white shadow-lg border border-cyan-500/30' 
+                    ? 'bg-gradient-to-r from-[#00d4ff]/20 to-[#ff006e]/20 text-white shadow-lg border border-[#00d4ff]/30' 
                     : 'hover:bg-white/10 text-gray-400 hover:text-white border border-transparent hover:border-gray-700/50'
                 }`}
               >
@@ -354,7 +359,7 @@ const Admin = () => {
                   <span className="font-medium">{item.label}</span>
                 )}
                 {!sidebarCollapsed && activeTab === item.id && (
-                  <div className="ml-auto w-2 h-2 bg-cyan-400 rounded-full"></div>
+                  <div className="ml-auto w-2 h-2 bg-[#00d4ff] rounded-full"></div>
                 )}
               </motion.button>
             ))}
@@ -373,23 +378,23 @@ const Admin = () => {
             >
               {activeTab === 'dashboard' && <AdminDashboard />}
               {activeTab === 'profile' && (
-                <Card className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 backdrop-blur-xl border border-gray-700/50 p-6">
+                <Card className="bg-gradient-to-br from-[#0f0f23]/90 to-[#1a1a2e]/90 backdrop-blur-xl border border-gray-700/50 p-6">
                   <ProfileForm />
                 </Card>
               )}
               {activeTab === 'skills' && (
-                <Card className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 backdrop-blur-xl border border-gray-700/50 p-6">
+                <Card className="bg-gradient-to-br from-[#0f0f23]/90 to-[#1a1a2e]/90 backdrop-blur-xl border border-gray-700/50 p-6">
                   <SkillsManager />
                 </Card>
               )}
               {activeTab === 'projects' && (
-                <Card className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 backdrop-blur-xl border border-gray-700/50 p-6">
+                <Card className="bg-gradient-to-br from-[#0f0f23]/90 to-[#1a1a2e]/90 backdrop-blur-xl border border-gray-700/50 p-6">
                   <ProjectsManager />
                 </Card>
               )}
               {activeTab === 'timeline' && <TimelineManager />}
               {activeTab === 'certifications' && (
-                <Card className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 backdrop-blur-xl border border-gray-700/50 p-6">
+                <Card className="bg-gradient-to-br from-[#0f0f23]/90 to-[#1a1a2e]/90 backdrop-blur-xl border border-gray-700/50 p-6">
                   <CertificationsManager />
                 </Card>
               )}
