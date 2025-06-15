@@ -18,7 +18,7 @@ import { CertificationsManager } from "@/components/admin/CertificationsManager"
 import { AboutManager } from "@/components/admin/AboutManager";
 import ContactMessagesManager from "@/components/admin/ContactMessagesManager";
 import SiteSettingsManager from "@/components/admin/SiteSettingsManager";
-import { TimelineManager } from "@/components/admin/TimelineManager";
+import TimelineManager from "@/components/admin/TimelineManager";
 import { forceAdminAccess } from '@/utils/auth';
 import { supabase } from "@/integrations/supabase/client";
 

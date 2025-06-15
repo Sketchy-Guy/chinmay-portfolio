@@ -18,13 +18,13 @@ interface TimelineEvent {
   description: string;
   event_type: string;
   start_date: string;
-  end_date?: string;
-  location?: string;
-  link_url?: string;
-  image_url?: string;
+  end_date?: string | null;
+  location?: string | null;
+  link_url?: string | null;
+  image_url?: string | null;
   is_featured: boolean;
   order_index: number;
-  skills?: string[];
+  skills?: string[] | null;
   created_at: string;
   updated_at: string;
 }
@@ -106,7 +106,20 @@ const TimelineManager = () => {
       }
 
       console.log('Timeline events fetched:', data?.length || 0);
-      setEvents(data || []);
+      
+      // Transform the data to handle the skills type properly
+      const transformedEvents: TimelineEvent[] = (data || []).map(event => ({
+        ...event,
+        skills: Array.isArray(event.skills) ? event.skills : 
+                typeof event.skills === 'string' ? event.skills.split(',').map(s => s.trim()) :
+                null,
+        end_date: event.end_date || null,
+        location: event.location || null,
+        link_url: event.link_url || null,
+        image_url: event.image_url || null
+      }));
+      
+      setEvents(transformedEvents);
     } catch (error: any) {
       console.error('Failed to fetch timeline events:', error);
       toast.error(`Failed to load timeline events: ${error.message}`);
