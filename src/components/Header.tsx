@@ -2,50 +2,26 @@
 import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { supabase } from "@/integrations/supabase/client";
-import { useState as useReactState } from "react";
 
-// Helper hook to get site logo from settings table
+// Helper to get logo from settings
 function useSiteLogo() {
-  const [logoUrl, setLogoUrl] = useReactState<string | null>(null);
-
-  useEffect(() => {
-    let mounted = true;
-    async function fetchLogo() {
-      const { data, error } = await supabase
-        .from("site_settings")
-        .select("key, value")
-        .eq("key", "site_logo")
-        .maybeSingle();
-
-      if (data?.value && typeof data.value === "string" && data.value.startsWith("/lovable-uploads/")) {
-        if (mounted) setLogoUrl(data.value);
-      } else {
-        // fallback to default uploaded logo
-        if (mounted) setLogoUrl("/lovable-uploads/a5f88509-5d42-4d11-8b7c-6abe9e64cfd0.png");
-      }
-    }
-    fetchLogo();
-    return () => {
-      mounted = false;
-    };
-  }, []);
-  return logoUrl;
+  const { settings } = useSiteSettings();
+  return settings.site_logo ?? "/lovable-uploads/a5f88509-5d42-4d11-8b7c-6abe9e64cfd0.png";
 }
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrollPosition, setScrollPosition] = useState(0);
   const logoUrl = useSiteLogo();
-  
+
   useEffect(() => {
     const handleScroll = () => {
       setScrollPosition(window.scrollY);
     };
     window.addEventListener("scroll", handleScroll);
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const navLinks = [
@@ -55,7 +31,7 @@ const Header = () => {
     { title: "Projects", href: "#projects" },
     { title: "Contact", href: "#contact" },
   ];
-  
+
   return (
     <header 
       className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ${
@@ -71,21 +47,14 @@ const Header = () => {
             className="flex items-center gap-2 text-2xl md:text-3xl font-bold font-orbitron transition-all duration-300 hover:scale-105"
             aria-label="Homepage"
           >
-            {logoUrl ? (
-              <img
-                src={logoUrl}
-                alt="Site Logo"
-                className="h-10 w-10 object-contain rounded-full border-2 border-purple-500 shadow-md bg-white"
-                loading="lazy"
-              />
-            ) : (
-              <>
-                <span className="holographic-text">CK</span>
-                <span className="text-cyan-400">Panda</span>
-              </>
-            )}
+            <img
+              src={logoUrl}
+              alt="Site Logo"
+              className="h-10 w-10 object-contain rounded-full border-2 border-purple-500 shadow-md bg-white"
+              loading="lazy"
+            />
+            {/* Removed name display in header */}
           </a>
-          
           <nav className="hidden md:flex items-center space-x-8">
             {navLinks.map((link, index) => (
               <a
@@ -101,7 +70,6 @@ const Header = () => {
               <span className="relative z-10">Hire Me</span>
             </Button>
           </nav>
-          
           <button 
             className="md:hidden text-purple-400 hover:text-white transition-colors p-2 rounded-lg border border-purple-500/30 hover:border-purple-400"
             onClick={() => setIsMenuOpen(true)}
@@ -109,8 +77,7 @@ const Header = () => {
           >
             <Menu size={24} />
           </button>
-          
-          {/* Enhanced Mobile Menu */}
+          {/* Mobile Menu */}
           <div 
             className={`fixed inset-0 glass-morphism backdrop-blur-xl z-50 flex flex-col p-8 md:hidden transition-all duration-500 ease-out ${
               isMenuOpen ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"
@@ -118,18 +85,11 @@ const Header = () => {
           >
             <div className="flex justify-between items-center mb-12">
               <a href="#" className="flex items-center gap-2 text-2xl font-bold font-orbitron">
-                {logoUrl ? (
-                  <img
-                    src={logoUrl}
-                    alt="Site Logo"
-                    className="h-10 w-10 object-contain rounded-full border-2 border-purple-500 bg-white shadow"
-                  />
-                ) : (
-                  <>
-                    <span className="holographic-text">CK</span>
-                    <span className="text-cyan-400">Panda</span>
-                  </>
-                )}
+                <img
+                  src={logoUrl}
+                  alt="Site Logo"
+                  className="h-10 w-10 object-contain rounded-full border-2 border-purple-500 bg-white shadow"
+                />
               </a>
               <button 
                 className="text-purple-400 hover:text-white transition-colors p-2 rounded-lg border border-purple-500/30 hover:border-purple-400"

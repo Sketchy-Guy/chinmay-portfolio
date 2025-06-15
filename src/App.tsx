@@ -16,6 +16,7 @@ import { ensureStorageBucket } from "@/utils/storage";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 // Create a query client instance with aggressive refetching
 const queryClient = new QueryClient({
@@ -33,6 +34,27 @@ const queryClient = new QueryClient({
 // Create a function component to properly wrap the TooltipProvider
 function AppContent() {
   const [initializing, setInitializing] = useState(true);
+  const { settings } = useSiteSettings();
+
+  // Dynamic favicon update effect
+  useEffect(() => {
+    if (!settings.site_favicon && !settings.site_logo) return;
+    const faviconUrl = settings.site_favicon || settings.site_logo;
+    if (!faviconUrl) return;
+
+    let favicon: HTMLLinkElement | null = document.querySelector("link[rel~='icon']");
+    if (!favicon) {
+      favicon = document.createElement("link");
+      favicon.rel = "icon";
+      document.head.appendChild(favicon);
+    }
+    favicon.href = faviconUrl;
+    favicon.type = "image/png";
+    // Ideally could handle apple-touch-icon, etc.
+    return () => {
+      // Optionally cleanup or reset favicon if needed
+    };
+  }, [settings.site_favicon, settings.site_logo]);
 
   // Run initialization once at the app level
   useEffect(() => {
