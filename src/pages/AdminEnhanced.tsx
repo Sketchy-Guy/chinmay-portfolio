@@ -1,8 +1,6 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
@@ -22,6 +20,7 @@ import SiteSettingsManagerEnhanced from "@/components/admin/SiteSettingsManagerE
 import TimelineManager from "@/components/admin/TimelineManager";
 import { forceAdminAccess } from '@/utils/auth';
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from 'sonner';
 
 // Interface for admin stats
 interface AdminStats {
@@ -45,7 +44,6 @@ const AdminEnhanced = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isRefreshingStats, setIsRefreshingStats] = useState(false);
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   // Force check admin status on load
   useEffect(() => {

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -58,7 +57,13 @@ const ContactMessagesManagerEnhanced = () => {
 
       if (error) throw error;
 
-      setMessages(data || []);
+      // Type cast the data to ensure status is the correct union type
+      const typedMessages = (data || []).map(msg => ({
+        ...msg,
+        status: msg.status as 'unread' | 'read' | 'replied'
+      }));
+
+      setMessages(typedMessages);
       setTotalMessages(count || 0);
       console.log('Contact messages fetched:', data?.length || 0);
     } catch (error: any) {
