@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import Hero from "@/components/Hero";
 import About from "@/components/About";
@@ -6,7 +5,7 @@ import Skills from "@/components/Skills";
 import SkillsRadar from "@/components/SkillsRadar";
 import Projects from "@/components/Projects";
 import Certifications from "@/components/Certifications";
-import GitHubStats from "@/components/GitHubStats";
+import GitHubStatsEnhanced from "@/components/GitHubStatsEnhanced";
 import CodingAchievements from "@/components/CodingAchievements";
 import Timeline from "@/components/Timeline";
 import Contact from "@/components/Contact";
@@ -261,7 +260,7 @@ const Index = () => {
         <SkillsRadar />
         <Timeline />
         <Projects />
-        <GitHubStats />
+        <GitHubStatsEnhanced />
         <CodingAchievements />
         <Certifications />
         <Contact />
