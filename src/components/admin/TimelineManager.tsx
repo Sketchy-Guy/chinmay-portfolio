@@ -108,16 +108,28 @@ const TimelineManager = () => {
       console.log('Timeline events fetched:', data?.length || 0);
       
       // Transform the data to handle the skills type properly
-      const transformedEvents: TimelineEvent[] = (data || []).map(event => ({
-        ...event,
-        skills: Array.isArray(event.skills) ? event.skills : 
-                typeof event.skills === 'string' ? event.skills.split(',').map(s => s.trim()) :
-                null,
-        end_date: event.end_date || null,
-        location: event.location || null,
-        link_url: event.link_url || null,
-        image_url: event.image_url || null
-      }));
+      const transformedEvents: TimelineEvent[] = (data || []).map(event => {
+        // Helper function to safely convert skills from Json to string array
+        const convertSkills = (skills: any): string[] | null => {
+          if (!skills) return null;
+          if (Array.isArray(skills)) {
+            return skills.map(skill => String(skill)).filter(skill => skill.trim().length > 0);
+          }
+          if (typeof skills === 'string') {
+            return skills.split(',').map(s => s.trim()).filter(s => s.length > 0);
+          }
+          return null;
+        };
+
+        return {
+          ...event,
+          skills: convertSkills(event.skills),
+          end_date: event.end_date || null,
+          location: event.location || null,
+          link_url: event.link_url || null,
+          image_url: event.image_url || null
+        };
+      });
       
       setEvents(transformedEvents);
     } catch (error: any) {
