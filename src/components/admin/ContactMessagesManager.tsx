@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Mail, MessageCircle, Clock, CheckCircle, Trash2, Eye, EyeOff, Filter, Search, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -65,7 +64,8 @@ const ContactMessagesManager = () => {
       }
 
       console.log('Messages fetched:', data?.length || 0);
-      setMessages(data || []);
+      // Type assertion to ensure proper typing
+      setMessages((data as ContactMessage[]) || []);
     } catch (error: any) {
       console.error('Failed to fetch messages:', error);
       toast.error(`Failed to load messages: ${error.message}`);

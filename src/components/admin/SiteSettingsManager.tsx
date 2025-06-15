@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Save, Settings, Upload, Database, Monitor, Download, Trash, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -124,8 +123,8 @@ const SiteSettingsManager = () => {
     try {
       setIsRefreshing(true);
       
-      // Clear tables in correct order (respecting foreign keys)
-      const tables = [
+      // Define tables explicitly to avoid TypeScript errors
+      const tablesToClear = [
         'contact_messages',
         'analytics_data',
         'achievements',
@@ -137,9 +136,9 @@ const SiteSettingsManager = () => {
         'social_links',
         'about_me',
         'site_settings'
-      ];
+      ] as const;
 
-      for (const table of tables) {
+      for (const table of tablesToClear) {
         const { error } = await supabase
           .from(table)
           .delete()
@@ -162,10 +161,14 @@ const SiteSettingsManager = () => {
 
   const exportData = async () => {
     try {
-      const tables = ['user_profile', 'about_me', 'skills', 'projects', 'certifications', 'social_links', 'timeline_events', 'achievements', 'github_stats', 'site_settings'];
+      const tablesToExport = [
+        'user_profile', 'about_me', 'skills', 'projects', 'certifications', 
+        'social_links', 'timeline_events', 'achievements', 'github_stats', 'site_settings'
+      ] as const;
+      
       const exportData: any = {};
 
-      for (const table of tables) {
+      for (const table of tablesToExport) {
         const { data, error } = await supabase
           .from(table)
           .select('*');

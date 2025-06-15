@@ -12,17 +12,21 @@ const Hero = () => {
     setIsVisible(true);
   }, []);
 
-  const profile = data?.profile || {
+  const profile = data?.user || {
     name: "Your Name",
     title: "Full Stack Developer",
     bio: "Passionate about creating amazing web experiences",
     location: "San Francisco, CA",
     email: "hello@example.com",
     phone: "+1 (555) 123-4567",
-    profile_image: null
+    profileImage: null
   };
 
-  const socialLinks = data?.socialLinks || [];
+  const socialLinks = data?.user?.social ? [
+    { platform: 'github', url: data.user.social.github },
+    { platform: 'linkedin', url: data.user.social.linkedin },
+    { platform: 'twitter', url: data.user.social.twitter }
+  ].filter(link => link.url && link.url !== '#') : [];
 
   const getSocialIcon = (platform: string) => {
     switch (platform.toLowerCase()) {
@@ -66,15 +70,11 @@ const Hero = () => {
               <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-purple-500/30 shadow-2xl">
                 {isLoading ? (
                   <div className="w-full h-full bg-gradient-to-br from-purple-500/20 to-cyan-500/20 animate-pulse"></div>
-                ) : profile.profile_image ? (
+                ) : profile.profileImage ? (
                   <img 
-                    src={profile.profile_image} 
+                    src={profile.profileImage} 
                     alt={profile.name}
                     className="w-full h-full object-cover"
-                    style={{ 
-                      transition: 'none',
-                      opacity: 1
-                    }}
                   />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-white text-2xl font-bold">
@@ -82,7 +82,6 @@ const Hero = () => {
                   </div>
                 )}
               </div>
-              {/* Remove problematic glow effect */}
               <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-500/20 to-cyan-500/20 blur-xl -z-10"></div>
             </div>
           </div>

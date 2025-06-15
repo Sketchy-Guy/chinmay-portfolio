@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -17,8 +16,8 @@ import { SkillsManager } from "@/components/admin/SkillsManager";
 import { ProjectsManager } from "@/components/admin/ProjectsManager";
 import { CertificationsManager } from "@/components/admin/CertificationsManager";
 import { AboutManager } from "@/components/admin/AboutManager";
-import { ContactMessagesManager } from "@/components/admin/ContactMessagesManager";
-import { SiteSettingsManager } from "@/components/admin/SiteSettingsManager";
+import ContactMessagesManager from "@/components/admin/ContactMessagesManager";
+import SiteSettingsManager from "@/components/admin/SiteSettingsManager";
 import { TimelineManager } from "@/components/admin/TimelineManager";
 import { forceAdminAccess } from '@/utils/auth';
 import { supabase } from "@/integrations/supabase/client";
