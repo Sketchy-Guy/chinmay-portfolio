@@ -15,7 +15,12 @@ export function useSiteSettings() {
 
   useEffect(() => {
     let mounted = true;
+    let channel: any = null;
+    let isFetching = false;
+
     async function fetchSettings() {
+      if (isFetching) return; // Prevent double-fetching
+      isFetching = true;
       setLoading(true);
       const { data, error } = await supabase
         .from("site_settings")
@@ -28,10 +33,8 @@ export function useSiteSettings() {
       } else {
         let siteSettings: SiteSettings = {};
         for (const row of data) {
-          // Try to parse stringified values—could be string or json.
           let valueStr = typeof row.value === "string" ? row.value : JSON.stringify(row.value);
           try {
-            // Try JSON parse, fallback to string
             siteSettings[row.key] = JSON.parse(valueStr);
           } catch {
             siteSettings[row.key] = valueStr ?? null;
@@ -40,17 +43,27 @@ export function useSiteSettings() {
         if (mounted) setSettings(siteSettings);
       }
       setLoading(false);
+      isFetching = false;
     }
+
     fetchSettings();
-    // Listen for realtime changes on site_settings table
-    const channel = supabase
+
+    // Always create a new channel instance for every effect mount
+    channel = supabase
       .channel("site_settings_realtime")
-      .on("postgres_changes", { event: "*", schema: "public", table: "site_settings" }, fetchSettings)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "site_settings" },
+        fetchSettings
+      )
       .subscribe();
 
+    // Cleanup: always remove the channel on unmount/effect tear-down
     return () => {
       mounted = false;
-      supabase.removeChannel(channel);
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
     };
   }, []);
 
