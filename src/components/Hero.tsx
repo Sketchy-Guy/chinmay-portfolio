@@ -50,7 +50,7 @@ const Hero = () => {
   };
 
   return (
-    <section id="hero" className="min-h-screen flex items-center justify-center relative overflow-hidden">
+    <section id="hero" className="min-h-screen flex items-center justify-center relative overflow-hidden pt-20">
       {/* Animated background */}
       <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900"></div>
       <div className="absolute inset-0 cyber-grid opacity-20"></div>
@@ -64,9 +64,9 @@ const Hero = () => {
           isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
         }`}>
           
-          {/* Profile Image - Fixed hover issues */}
+          {/* Profile Image - Fixed positioning */}
           <div className="mb-8 flex justify-center">
-            <div className="relative">
+            <div className="relative z-10">
               <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-purple-500/30 shadow-2xl">
                 {isLoading ? (
                   <div className="w-full h-full bg-gradient-to-br from-purple-500/20 to-cyan-500/20 animate-pulse"></div>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Github, Star, GitFork, Calendar, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,6 +18,7 @@ const GitHubStats = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const [hasAttemptedAutoSync, setHasAttemptedAutoSync] = useState(false);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -35,6 +35,45 @@ const GitHubStats = () => {
 
     return () => observer.disconnect();
   }, []);
+
+  // Auto-sync GitHub data if no data exists
+  const attemptAutoSync = async () => {
+    if (hasAttemptedAutoSync) return;
+    setHasAttemptedAutoSync(true);
+
+    try {
+      console.log('Attempting auto-sync of GitHub data...');
+      
+      // Check if GitHub URL exists in social links
+      const { data: socialLinks } = await supabase
+        .from('social_links')
+        .select('url')
+        .eq('platform', 'github')
+        .single();
+
+      if (!socialLinks?.url) {
+        console.log('No GitHub URL found in social links');
+        return;
+      }
+
+      console.log('Found GitHub URL, calling sync function:', socialLinks.url);
+      
+      // Call the edge function to sync GitHub data
+      const { data: syncResult, error } = await supabase.functions.invoke('github-sync', {
+        body: { githubUrl: socialLinks.url }
+      });
+
+      if (error) {
+        console.error('GitHub auto-sync error:', error);
+        return;
+      }
+
+      console.log('GitHub auto-sync successful:', syncResult);
+      toast.success('GitHub stats synced automatically!');
+    } catch (error) {
+      console.error('Error in auto-sync:', error);
+    }
+  };
 
   // Fetch GitHub stats from database with real-time subscription
   useEffect(() => {
@@ -74,7 +113,11 @@ const GitHubStats = () => {
             contributionData
           });
         } else {
-          // Fallback to realistic mock data
+          // No data found, attempt auto-sync
+          console.log('No GitHub stats found, attempting auto-sync...');
+          await attemptAutoSync();
+          
+          // Set fallback data
           setStats({
             totalRepos: 25,
             totalStars: 150,
@@ -120,7 +163,7 @@ const GitHubStats = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [isVisible]);
+  }, [isVisible, hasAttemptedAutoSync]);
 
   // Manual refresh function
   const refreshGitHubStats = async () => {
