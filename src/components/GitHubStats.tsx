@@ -1,7 +1,9 @@
 
 import { useState, useEffect } from "react";
-import { Github, Star, GitFork, Calendar } from "lucide-react";
+import { Github, Star, GitFork, Calendar, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface GitHubStats {
   totalRepos: number;
@@ -15,6 +17,7 @@ interface GitHubStats {
 const GitHubStats = () => {
   const [stats, setStats] = useState<GitHubStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -119,6 +122,42 @@ const GitHubStats = () => {
     };
   }, [isVisible]);
 
+  // Manual refresh function
+  const refreshGitHubStats = async () => {
+    setIsRefreshing(true);
+    try {
+      // Get GitHub URL from social links
+      const { data: socialLinks } = await supabase
+        .from('social_links')
+        .select('url')
+        .eq('platform', 'github')
+        .single();
+
+      if (!socialLinks?.url) {
+        toast.error('GitHub profile URL not found in admin settings');
+        return;
+      }
+
+      // Call the edge function to sync GitHub data
+      const { data, error } = await supabase.functions.invoke('github-sync', {
+        body: { githubUrl: socialLinks.url }
+      });
+
+      if (error) {
+        console.error('GitHub sync error:', error);
+        toast.error('Failed to sync GitHub data');
+        return;
+      }
+
+      toast.success('GitHub stats refreshed successfully!');
+    } catch (error) {
+      console.error('Error refreshing GitHub stats:', error);
+      toast.error('Failed to refresh GitHub stats');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   // Generate realistic contribution data for a year (365 days)
   const generateRealisticContributionData = (): number[] => {
     const data: number[] = [];
@@ -187,8 +226,20 @@ const GitHubStats = () => {
     <section id="github-stats" className="py-24 md:py-32 relative overflow-hidden">
       <div className="container mx-auto px-4 relative z-10">
         <div className={`max-w-4xl mx-auto text-center mb-16 ${isVisible ? 'reveal active' : 'reveal'}`}>
-          <h2 className="section-title">GitHub Activity</h2>
-          <p className="text-xl text-gray-300 leading-relaxed max-w-3xl mx-auto mt-6">
+          <div className="flex items-center justify-center gap-4 mb-6">
+            <h2 className="section-title">GitHub Activity</h2>
+            <Button
+              onClick={refreshGitHubStats}
+              disabled={isRefreshing}
+              variant="outline"
+              size="sm"
+              className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10"
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+              {isRefreshing ? 'Syncing...' : 'Refresh'}
+            </Button>
+          </div>
+          <p className="text-xl text-gray-300 leading-relaxed max-w-3xl mx-auto">
             My open source contributions and development activity on GitHub
           </p>
         </div>
@@ -229,12 +280,12 @@ const GitHubStats = () => {
         <div className="glass-card-enhanced p-4 md:p-8 max-w-6xl mx-auto text-center">
           <h3 className="text-2xl font-bold gradient-text mb-6">Contribution Graph</h3>
           
-          {/* Improved contribution graph with proper 52-week structure */}
+          {/* Fixed contribution graph with proper 52-week structure */}
           <div className="overflow-x-auto">
             <div className="inline-block min-w-full">
               {/* Month labels */}
               <div className="flex justify-between text-xs text-gray-400 mb-2 px-4">
-                {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((month, i) => (
+                {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((month) => (
                   <span key={month} className="flex-1 text-center">{month}</span>
                 ))}
               </div>
@@ -242,17 +293,17 @@ const GitHubStats = () => {
               {/* Days of week labels */}
               <div className="flex items-start gap-1">
                 <div className="flex flex-col gap-1 text-xs text-gray-400 mr-2 mt-2">
-                  <div className="h-3"></div> {/* Empty space for Sunday */}
+                  <div className="h-3"></div>
                   <div className="h-3 flex items-center">Mon</div>
-                  <div className="h-3"></div> {/* Empty space for Tuesday */}
+                  <div className="h-3"></div>
                   <div className="h-3 flex items-center">Wed</div>
-                  <div className="h-3"></div> {/* Empty space for Thursday */}
+                  <div className="h-3"></div>
                   <div className="h-3 flex items-center">Fri</div>
-                  <div className="h-3"></div> {/* Empty space for Saturday */}
+                  <div className="h-3"></div>
                 </div>
                 
-                {/* Contribution grid - 52 weeks x 7 days */}
-                <div className="grid grid-cols-52 gap-1 flex-1">
+                {/* Contribution grid - Fixed CSS Grid with proper 52 columns */}
+                <div className="grid grid-flow-col grid-rows-7 gap-1 flex-1" style={{ gridTemplateColumns: 'repeat(52, minmax(0, 1fr))' }}>
                   {isLoading ? (
                     Array.from({ length: 364 }, (_, i) => (
                       <div
