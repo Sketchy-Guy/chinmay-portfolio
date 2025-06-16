@@ -1,8 +1,10 @@
+
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { 
   Loader2, LogOut, User, Code, Award, Briefcase, AlertTriangle, 
   FileText, BarChart3, Settings, MessageSquare, Shield, Home,
@@ -15,14 +17,13 @@ import { SkillsManager } from "@/components/admin/SkillsManager";
 import { ProjectsManager } from "@/components/admin/ProjectsManager";
 import { CertificationsManager } from "@/components/admin/CertificationsManager";
 import { AboutManager } from "@/components/admin/AboutManager";
-import ContactMessagesManagerEnhanced from "@/components/admin/ContactMessagesManagerEnhanced";
+import ContactMessagesOptimized from "@/components/admin/ContactMessagesOptimized";
 import SiteSettingsManagerEnhanced from "@/components/admin/SiteSettingsManagerEnhanced";
-import TimelineManager from "@/components/admin/TimelineManager";
+import TimelineManagerOptimized from "@/components/admin/TimelineManagerOptimized";
 import { forceAdminAccess } from '@/utils/auth';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from 'sonner';
 
-// Interface for admin stats
 interface AdminStats {
   totalProjects: number;
   totalSkills: number;
@@ -45,14 +46,12 @@ const AdminEnhanced = () => {
   const [isRefreshingStats, setIsRefreshingStats] = useState(false);
   const navigate = useNavigate();
 
-  // Force check admin status on load
   useEffect(() => {
     const checkAccess = async () => {
       if (!isLoading && user) {
         console.log("Admin page loaded. User:", user.email);
         console.log("Current admin status:", isAdmin);
         
-        // For our special admin email, force admin access
         if (user.email === 'chinmaykumarpanda004@gmail.com') {
           console.log("Admin page: Detected admin email, forcing access");
           try {
@@ -74,7 +73,6 @@ const AdminEnhanced = () => {
     checkAccess();
   }, [isLoading, user, isAdmin, checkAdminStatus]);
 
-  // Fetch admin dashboard statistics with enhanced data
   const fetchAdminStats = async () => {
     if (!isAdmin || !user) return;
 
@@ -82,7 +80,6 @@ const AdminEnhanced = () => {
       setIsRefreshingStats(true);
       console.log('Fetching enhanced admin statistics...');
 
-      // Fetch various statistics in parallel for better performance
       const [
         projectsRes, 
         skillsRes, 
@@ -126,22 +123,26 @@ const AdminEnhanced = () => {
     if (isAdmin && user) {
       fetchAdminStats();
       
-      // Set up real-time subscriptions for dashboard updates
+      // Create unique channel names to prevent conflicts
+      const projectsChannelId = `admin_projects_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const messagesChannelId = `admin_messages_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const timelineChannelId = `admin_timeline_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
       const channels = [
-        supabase.channel('dashboard-projects').on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, fetchAdminStats),
-        supabase.channel('dashboard-messages').on('postgres_changes', { event: '*', schema: 'public', table: 'contact_messages' }, fetchAdminStats),
-        supabase.channel('dashboard-timeline').on('postgres_changes', { event: '*', schema: 'public', table: 'timeline_events' }, fetchAdminStats)
+        supabase.channel(projectsChannelId).on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, fetchAdminStats),
+        supabase.channel(messagesChannelId).on('postgres_changes', { event: '*', schema: 'public', table: 'contact_messages' }, fetchAdminStats),
+        supabase.channel(timelineChannelId).on('postgres_changes', { event: '*', schema: 'public', table: 'timeline_events' }, fetchAdminStats)
       ];
 
       channels.forEach(channel => channel.subscribe());
 
       return () => {
+        console.log('Cleaning up admin dashboard channels');
         channels.forEach(channel => supabase.removeChannel(channel));
       };
     }
   }, [isAdmin, user]);
 
-  // Loading state with enhanced styling
   if (isLoading || isInitializing) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0f0f23] via-[#1a1a2e] to-[#0f0f23]">
@@ -152,332 +153,256 @@ const AdminEnhanced = () => {
           className="text-center"
         >
           <div className="w-16 h-16 mx-auto mb-4">
-            <div className="w-16 h-16 border-4 border-t-[#00d4ff] border-r-transparent border-b-[#ff006e] border-l-transparent rounded-full animate-spin"></div>
+            <div className="w-16 h-16 border-4 border-t-purple-500 border-r-transparent border-b-cyan-500 border-l-transparent rounded-full animate-spin"></div>
           </div>
-          <p className="text-xl text-[#00d4ff] font-mono">Initializing admin matrix...</p>
+          <p className="text-xl text-purple-400 font-mono">Initializing admin matrix...</p>
           <p className="text-gray-400 mt-2">Accessing neural networks</p>
         </motion.div>
       </div>
     );
   }
 
-  // Redirect to login if no user
   if (!user) {
     console.log("No user found, redirecting to login");
     navigate('/login');
     return null;
   }
 
-  // Access denied screen with enhanced styling
   if (adminCheckComplete && !isAdmin) {
     console.log("User is not admin, showing access denied page");
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-[#0f0f23] via-red-900/20 to-[#0f0f23] relative overflow-hidden">
-        {/* Animated background */}
         <div className="absolute inset-0 opacity-20">
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-500/10 to-transparent"></div>
+          <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-red-500 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-48 h-48 bg-red-600 rounded-full blur-3xl animate-pulse delay-1000"></div>
         </div>
         
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="text-center mb-6 relative z-10"
+          transition={{ duration: 0.6 }}
+          className="text-center relative z-10 max-w-md mx-auto p-8"
         >
-          <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-r from-red-500 to-orange-500 rounded-full flex items-center justify-center">
-            <AlertTriangle className="h-12 w-12 text-white" />
+          <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center">
+            <Shield className="w-12 h-12 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-orange-400 font-mono mb-4">
-            ACCESS DENIED
-          </h1>
-          <p className="text-gray-300 mt-2 max-w-md mx-auto text-lg">
-            You are not authorized to access the admin neural network. 
-            Administrative privileges required.
+          
+          <h1 className="text-3xl font-bold text-red-400 mb-4 font-orbitron">Access Denied</h1>
+          <p className="text-gray-300 mb-6 leading-relaxed">
+            You don't have permission to access the admin panel. Please contact the administrator if you believe this is an error.
           </p>
-          {user && (
-            <p className="text-sm text-gray-500 mt-4">
-              Identity: {user.email}
-            </p>
-          )}
+          
+          <div className="space-y-4">
+            <Button
+              onClick={() => navigate('/')}
+              className="w-full bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 text-white border-0"
+            >
+              <Home className="w-4 h-4 mr-2" />
+              Return to Home
+            </Button>
+            
+            <Button
+              onClick={() => signOut()}
+              variant="outline"
+              className="w-full border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-400"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Sign Out
+            </Button>
+          </div>
         </motion.div>
-        
-        <div className="flex gap-4 relative z-10">
-          <Button 
-            onClick={() => navigate('/')}
-            className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 text-white px-8 py-3"
-          >
-            <Home className="mr-2 h-4 w-4" />
-            Return to Home
-          </Button>
-          <Button 
-            onClick={signOut}
-            variant="outline"
-            className="border-gray-600 text-gray-300 hover:bg-gray-800 px-8 py-3"
-          >
-            <LogOut className="mr-2 h-4 w-4" />
-            Sign Out
-          </Button>
-        </div>
       </div>
     );
   }
 
-  // Enhanced admin dashboard component
-  const AdminDashboard = () => (
-    <div className="space-y-6">
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#00d4ff] to-[#ff006e] font-mono mb-2">
-          Admin Control Center
-        </h2>
-        <p className="text-gray-400">
-          Welcome back, {user?.email}. System status: All networks operational.
-        </p>
-      </div>
+  // Dashboard stats cards component
+  const StatsCards = () => {
+    if (!adminStats) {
+      return (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {[...Array(8)].map((_, i) => (
+            <Skeleton key={i} className="h-32 w-full" />
+          ))}
+        </div>
+      );
+    }
 
-      {/* Enhanced Stats Grid with more detailed information */}
+    const statsData = [
+      { title: 'Total Projects', value: adminStats.totalProjects, icon: Code, color: 'from-blue-500 to-blue-600', change: '+2.5%' },
+      { title: 'Skills', value: adminStats.totalSkills, icon: Zap, color: 'from-purple-500 to-purple-600', change: '+1.2%' },
+      { title: 'Certifications', value: adminStats.totalCertifications, icon: Award, color: 'from-green-500 to-green-600', change: '+0.8%' },
+      { title: 'Contact Messages', value: adminStats.contactMessages, icon: MessageSquare, color: 'from-yellow-500 to-yellow-600', change: '+5.2%' },
+      { title: 'Unread Messages', value: adminStats.unreadMessages, icon: AlertTriangle, color: 'from-red-500 to-red-600', change: adminStats.unreadMessages > 0 ? '+new' : 'none' },
+      { title: 'Timeline Events', value: adminStats.timelineEvents, icon: Calendar, color: 'from-cyan-500 to-cyan-600', change: '+0.3%' },
+      { title: 'Page Views', value: adminStats.pageViews, icon: TrendingUp, color: 'from-indigo-500 to-indigo-600', change: '+12.3%' },
+      { title: 'Database Status', value: 'Online', icon: Database, color: 'from-emerald-500 to-emerald-600', change: '99.9%' }
+    ];
+
+    return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {[
-          { title: "Projects", value: adminStats?.totalProjects || 0, icon: Briefcase, color: "from-[#00d4ff] to-blue-500", trend: "+2 this month" },
-          { title: "Skills", value: adminStats?.totalSkills || 0, icon: Code, color: "from-emerald-500 to-teal-500", trend: "+5 this week" },
-          { title: "Timeline Events", value: adminStats?.timelineEvents || 0, icon: Calendar, color: "from-orange-500 to-yellow-500", trend: "Recently updated" },
-          { title: "Total Messages", value: adminStats?.contactMessages || 0, icon: MessageSquare, color: "from-[#ff006e] to-rose-500", trend: `${adminStats?.unreadMessages || 0} unread` },
-          { title: "Certifications", value: adminStats?.totalCertifications || 0, icon: Award, color: "from-purple-500 to-violet-500", trend: "Up to date" },
-          { title: "Page Views", value: adminStats?.pageViews || 0, icon: TrendingUp, color: "from-green-500 to-emerald-500", trend: "Analytics enabled" },
-          { title: "System Status", value: "Online", icon: Activity, color: "from-green-500 to-emerald-500", isStatus: true, trend: "All systems go" },
-          { title: "Data Sync", value: "Active", icon: Database, color: "from-cyan-500 to-blue-500", isStatus: true, trend: "Real-time updates" }
-        ].map((stat, index) => (
+        {statsData.map((stat, index) => (
           <motion.div
             key={stat.title}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
+            transition={{ duration: 0.5, delay: index * 0.1 }}
           >
-            <Card className="bg-gradient-to-br from-[#0f0f23]/90 to-[#1a1a2e]/90 backdrop-blur-xl border border-gray-700/50 p-6 hover:scale-105 transition-all duration-300 hover:border-[#00d4ff]/50">
-              <div className="flex items-center justify-between mb-2">
-                <div>
-                  <p className="text-gray-400 text-sm">{stat.title}</p>
-                  <p className="text-2xl font-bold text-white">
-                    {stat.isStatus ? stat.value : Number(stat.value).toLocaleString()}
-                  </p>
+            <Card className="bg-gradient-to-br from-gray-900/95 to-purple-900/20 border border-purple-500/20 hover:border-purple-400/40 transition-all duration-300 hover:scale-105">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-400 text-sm font-medium">{stat.title}</p>
+                    <p className="text-2xl font-bold text-white mt-1">{stat.value}</p>
+                  </div>
+                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center`}>
+                    <stat.icon className="w-6 h-6 text-white" />
+                  </div>
                 </div>
-                <div className={`w-12 h-12 rounded-xl bg-gradient-to-r ${stat.color} flex items-center justify-center shadow-lg`}>
-                  <stat.icon className="w-6 h-6 text-white" />
+                <div className="mt-4 flex items-center text-sm">
+                  <span className="text-green-400">{stat.change}</span>
+                  <span className="text-gray-400 ml-1">from last month</span>
                 </div>
-              </div>
-              <p className="text-xs text-gray-500">{stat.trend}</p>
+              </CardContent>
             </Card>
           </motion.div>
         ))}
       </div>
+    );
+  };
 
-      {/* Quick Actions with enhanced layout */}
-      <Card className="bg-gradient-to-br from-[#0f0f23]/90 to-[#1a1a2e]/90 backdrop-blur-xl border border-gray-700/50 p-6">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-xl font-bold text-white flex items-center gap-2">
-              <Zap className="w-5 h-5 text-[#00d4ff]" />
-              Quick Actions
-            </CardTitle>
-            <Button
-              onClick={fetchAdminStats}
-              disabled={isRefreshingStats}
-              variant="outline"
-              size="sm"
-              className="text-purple-400 border-purple-400/30 hover:bg-purple-400/10"
-            >
-              <Activity className={`w-4 h-4 mr-2 ${isRefreshingStats ? 'animate-spin' : ''}`} />
-              Refresh Stats
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { label: "Add Project", tab: "projects", icon: Briefcase, color: "from-[#00d4ff] to-blue-500" },
-              { label: "Manage Skills", tab: "skills", icon: Code, color: "from-emerald-500 to-teal-500" },
-              { label: "View Messages", tab: "messages", icon: MessageSquare, color: "from-[#ff006e] to-rose-500", badge: adminStats?.unreadMessages || 0 },
-              { label: "Timeline", tab: "timeline", icon: Calendar, color: "from-purple-500 to-violet-500" }
-            ].map((action) => (
-              <Button
-                key={action.label}
-                onClick={() => setActiveTab(action.tab)}
-                className={`h-20 flex flex-col gap-2 bg-gradient-to-r ${action.color} hover:scale-105 transition-all duration-300 border-0 shadow-lg relative`}
-              >
-                <action.icon className="w-6 h-6" />
-                <span className="text-sm">{action.label}</span>
-                {action.badge && action.badge > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {action.badge}
-                  </span>
-                )}
-              </Button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-
-  // Enhanced sidebar navigation items
-  const sidebarItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: BarChart3, color: 'text-[#00d4ff]' },
-    { id: 'profile', label: 'Profile', icon: User, color: 'text-blue-400' },
-    { id: 'skills', label: 'Skills', icon: Code, color: 'text-emerald-400' },
-    { id: 'projects', label: 'Projects', icon: Briefcase, color: 'text-purple-400' },
-    { id: 'timeline', label: 'Timeline', icon: Calendar, color: 'text-orange-400' },
-    { id: 'certifications', label: 'Certifications', icon: Award, color: 'text-yellow-400' },
-    { id: 'messages', label: 'Messages', icon: MessageSquare, color: 'text-[#ff006e]', badge: adminStats?.unreadMessages || 0 },
-    { id: 'settings', label: 'Settings', icon: Settings, color: 'text-gray-400' },
-  ];
-
-  // Main admin panel render
   return (
-    <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-      className="min-h-screen bg-gradient-to-br from-[#0f0f23] via-[#1a1a2e] to-[#0f0f23] relative overflow-hidden"
-    >
-      {/* Enhanced animated background */}
-      <div className="absolute inset-0 opacity-20">
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-500/10 to-transparent"></div>
-      </div>
-      
-      {/* Top header */}
-      <header className="bg-gradient-to-r from-[#0f0f23]/80 to-[#1a1a2e]/80 backdrop-blur-xl border-b border-gray-800/50 relative z-20">
-        <div className="container mx-auto flex justify-between items-center p-4">
-          <motion.div 
-            className="flex items-center gap-4"
-            initial={{ x: -20, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            <Button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden bg-transparent hover:bg-white/10 p-2"
-              size="sm"
-            >
-              <Menu className="w-5 h-5 text-gray-400" />
-            </Button>
-            <Shield className="w-8 h-8 text-[#00d4ff]" />
-            <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#00d4ff] to-[#ff006e] font-mono">
-              ADMIN MATRIX
-            </h1>
-          </motion.div>
-          
-          <motion.div
-            initial={{ x: 20, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="flex items-center gap-4"
-          >
-            <span className="text-sm text-gray-400 hidden md:inline-block">
-              Neural Link: {user?.email}
-            </span>
-            <Button 
-              variant="ghost" 
-              onClick={signOut} 
-              className="text-gray-300 hover:text-white hover:bg-white/10 border border-gray-700/50 hover:border-red-500/50"
-            >
-              <LogOut className="mr-2 h-4 w-4" /> 
-              Disconnect
-            </Button>
-          </motion.div>
+    <div className="min-h-screen bg-gradient-to-br from-[#0f0f23] via-[#1a1a2e] to-[#0f0f23]">
+      {/* Enhanced Header */}
+      <header className="bg-gradient-to-r from-gray-900/95 to-purple-900/95 backdrop-blur-xl border-b border-purple-500/20 sticky top-0 z-50">
+        <div className="px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                className="text-purple-400 hover:bg-purple-500/10 lg:hidden"
+              >
+                <Menu className="w-5 h-5" />
+              </Button>
+              
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center">
+                  <Shield className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-white font-orbitron">Admin Panel</h1>
+                  <p className="text-purple-400 text-sm">Neural Command Center</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <Button
+                onClick={fetchAdminStats}
+                variant="outline"
+                size="sm"
+                disabled={isRefreshingStats}
+                className="text-purple-400 border-purple-500/30 hover:bg-purple-500/10 hover:border-purple-400"
+              >
+                <Activity className={`w-4 h-4 mr-2 ${isRefreshingStats ? 'animate-spin' : ''}`} />
+                {isRefreshingStats ? 'Syncing...' : 'Refresh'}
+              </Button>
+              
+              <Button
+                onClick={() => navigate('/')}
+                variant="outline"
+                size="sm"
+                className="text-cyan-400 border-cyan-500/30 hover:bg-cyan-500/10 hover:border-cyan-400"
+              >
+                <Home className="w-4 h-4 mr-2" />
+                View Site
+              </Button>
+              
+              <Button
+                onClick={() => signOut()}
+                variant="outline"
+                size="sm"
+                className="text-red-400 border-red-500/30 hover:bg-red-500/10 hover:border-red-400"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Sign Out
+              </Button>
+            </div>
+          </div>
         </div>
       </header>
-      
-      <div className="flex min-h-[calc(100vh-80px)]">
+
+      <div className="flex">
         {/* Enhanced Sidebar */}
-        <motion.aside 
-          initial={{ x: -300 }}
-          animate={{ x: 0 }}
-          transition={{ duration: 0.5 }}
-          className={`${sidebarCollapsed ? 'w-16' : 'w-64'} bg-gradient-to-b from-[#0f0f23]/80 to-[#1a1a2e]/80 backdrop-blur-xl border-r border-gray-800/50 transition-all duration-300 relative z-10 ${mobileMenuOpen ? 'block' : 'hidden lg:block'}`}
-        >
-          <nav className="p-4 space-y-2">
-            {sidebarItems.map((item, index) => (
-              <motion.button
-                key={item.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.1 }}
-                onClick={() => {
-                  setActiveTab(item.id);
-                  setMobileMenuOpen(false);
-                }}
-                className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-300 relative ${
-                  activeTab === item.id 
-                    ? 'bg-gradient-to-r from-[#00d4ff]/20 to-[#ff006e]/20 text-white shadow-lg border border-[#00d4ff]/30' 
-                    : 'hover:bg-white/10 text-gray-400 hover:text-white border border-transparent hover:border-gray-700/50'
-                }`}
-              >
-                <item.icon className={`w-5 h-5 flex-shrink-0 ${activeTab === item.id ? 'text-white' : item.color}`} />
-                {!sidebarCollapsed && (
-                  <span className="font-medium">{item.label}</span>
-                )}
-                {!sidebarCollapsed && activeTab === item.id && (
-                  <div className="ml-auto w-2 h-2 bg-[#00d4ff] rounded-full"></div>
-                )}
-                {item.badge && item.badge > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {item.badge}
-                  </span>
-                )}
-              </motion.button>
-            ))}
+        <aside className={`${sidebarCollapsed ? 'w-20' : 'w-64'} lg:w-64 bg-gray-900/50 border-r border-purple-500/20 transition-all duration-300 ${mobileMenuOpen ? 'block' : 'hidden lg:block'}`}>
+          <nav className="p-4">
+            <div className="space-y-2">
+              {[
+                { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
+                { id: 'profile', label: 'Profile', icon: User },
+                { id: 'projects', label: 'Projects', icon: Code },
+                { id: 'skills', label: 'Skills', icon: Zap },
+                { id: 'timeline', label: 'Timeline', icon: Calendar },
+                { id: 'certifications', label: 'Certifications', icon: Award },
+                { id: 'about', label: 'About', icon: FileText },
+                { id: 'messages', label: 'Messages', icon: MessageSquare },
+                { id: 'settings', label: 'Settings', icon: Settings }
+              ].map((item) => (
+                <Button
+                  key={item.id}
+                  variant={activeTab === item.id ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setActiveTab(item.id)}
+                  className={`w-full justify-start transition-all duration-200 ${
+                    activeTab === item.id
+                      ? 'bg-gradient-to-r from-purple-600 to-cyan-600 text-white shadow-lg shadow-purple-500/25'
+                      : 'text-gray-400 hover:text-white hover:bg-purple-500/10'
+                  }`}
+                >
+                  <item.icon className="w-4 h-4 mr-3" />
+                  <span className={sidebarCollapsed ? 'lg:inline hidden' : ''}>{item.label}</span>
+                </Button>
+              ))}
+            </div>
           </nav>
-        </motion.aside>
-        
-        {/* Main content area */}
-        <main className="flex-1 p-6 relative z-10 overflow-y-auto">
+        </aside>
+
+        {/* Main Content */}
+        <main className="flex-1 p-6 lg:p-8 overflow-auto">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3 }}
             >
-              {activeTab === 'dashboard' && <AdminDashboard />}
-              {activeTab === 'profile' && (
-                <Card className="bg-gradient-to-br from-[#0f0f23]/90 to-[#1a1a2e]/90 backdrop-blur-xl border border-gray-700/50 p-6">
-                  <ProfileForm />
-                </Card>
-              )}
-              {activeTab === 'skills' && (
-                <Card className="bg-gradient-to-br from-[#0f0f23]/90 to-[#1a1a2e]/90 backdrop-blur-xl border border-gray-700/50 p-6">
-                  <SkillsManager />
-                </Card>
-              )}
-              {activeTab === 'projects' && (
-                <Card className="bg-gradient-to-br from-[#0f0f23]/90 to-[#1a1a2e]/90 backdrop-blur-xl border border-gray-700/50 p-6">
-                  <ProjectsManager />
-                </Card>
-              )}
-              {activeTab === 'timeline' && <TimelineManager />}
-              {activeTab === 'certifications' && (
-                <Card className="bg-gradient-to-br from-[#0f0f23]/90 to-[#1a1a2e]/90 backdrop-blur-xl border border-gray-700/50 p-6">
-                  <CertificationsManager />
-                </Card>
-              )}
-              {activeTab === 'messages' && <ContactMessagesManagerEnhanced />}
-              {activeTab === 'settings' && <SiteSettingsManagerEnhanced />}
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+                <TabsContent value="dashboard" className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-3xl font-bold text-white font-orbitron">Dashboard Overview</h2>
+                      <p className="text-gray-400 mt-1">Monitor your portfolio performance and analytics</p>
+                    </div>
+                  </div>
+                  <StatsCards />
+                </TabsContent>
+
+                <TabsContent value="profile"><ProfileForm /></TabsContent>
+                <TabsContent value="projects"><ProjectsManager /></TabsContent>
+                <TabsContent value="skills"><SkillsManager /></TabsContent>
+                <TabsContent value="timeline"><TimelineManagerOptimized /></TabsContent>
+                <TabsContent value="certifications"><CertificationsManager /></TabsContent>
+                <TabsContent value="about"><AboutManager /></TabsContent>
+                <TabsContent value="messages"><ContactMessagesOptimized /></TabsContent>
+                <TabsContent value="settings"><SiteSettingsManagerEnhanced /></TabsContent>
+              </Tabs>
             </motion.div>
           </AnimatePresence>
         </main>
       </div>
-
-      {/* Mobile menu overlay */}
-      {mobileMenuOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
-          onClick={() => setMobileMenuOpen(false)}
-        />
-      )}
-    </motion.div>
+    </div>
   );
 };
 

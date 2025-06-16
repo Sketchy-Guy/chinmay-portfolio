@@ -3,6 +3,7 @@ import { Calendar, MapPin, Briefcase, GraduationCap, Trophy, ExternalLink } from
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 
 // Interface for timeline event data structure  
@@ -154,22 +155,27 @@ const Timeline = () => {
       }
     };
 
-    // Setup real-time subscription for timeline events
+    // Create unique channel name to prevent subscription conflicts
+    const channelId = `timeline_public_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
     const channel = supabase
-      .channel('timeline-changes')
+      .channel(channelId)
       .on('postgres_changes', { 
         event: '*', 
         schema: 'public', 
         table: 'timeline_events' 
-      }, () => {
-        console.log('Timeline events changed, refetching...');
+      }, (payload) => {
+        console.log(`Timeline events changed (${channelId}):`, payload);
         fetchTimelineEvents();
       })
-      .subscribe();
+      .subscribe((status) => {
+        console.log(`Timeline public channel ${channelId} status:`, status);
+      });
 
     fetchTimelineEvents();
 
     return () => {
+      console.log(`Cleaning up timeline public channel: ${channelId}`);
       supabase.removeChannel(channel);
     };
   }, []);
@@ -209,7 +215,7 @@ const Timeline = () => {
       <div className={`flex items-center w-full ${isLeft ? 'md:flex-row-reverse' : ''}`}>
         <div className={`w-full md:w-5/12 ${isLeft ? 'md:text-right md:pr-8' : 'md:pl-8'}`}>
           <Card
-            className={`glass-card-enhanced p-6 group hover:scale-105 transition-all duration-300 ${
+            className={`bg-gradient-to-br from-gray-900/95 to-purple-900/20 border border-purple-500/20 hover:border-purple-400/40 transition-all duration-300 hover:scale-105 p-6 group ${
               event.is_featured ? 'ring-2 ring-purple-500/30' : ''
             } ${isVisible ? 'reveal-stagger active' : 'reveal-stagger'}`}
             style={{ animationDelay: `${index * 200}ms` }}
@@ -306,12 +312,12 @@ const Timeline = () => {
       <section id="timeline" className="py-24 md:py-32 relative overflow-hidden">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <div className="loading-skeleton h-12 w-64 mx-auto mb-4"></div>
-            <div className="loading-skeleton h-6 w-96 mx-auto"></div>
+            <Skeleton className="h-12 w-64 mx-auto mb-4" />
+            <Skeleton className="h-6 w-96 mx-auto" />
           </div>
           <div className="max-w-6xl mx-auto space-y-8">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="loading-skeleton h-32 w-full rounded-xl"></div>
+              <Skeleton key={i} className="h-32 w-full" />
             ))}
           </div>
         </div>
@@ -362,7 +368,7 @@ const Timeline = () => {
           </p>
           <Button 
             onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
-            className="cyber-button"
+            className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 text-white border-0 px-8 py-3 font-medium transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-purple-500/25"
           >
             Let's Connect
           </Button>

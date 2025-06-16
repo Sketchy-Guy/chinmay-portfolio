@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Github, Star, GitFork, Activity, Calendar, RefreshCw, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -27,7 +28,6 @@ const GitHubStatsEnhanced = () => {
   const [error, setError] = useState<string | null>(null);
   const [username, setUsername] = useState<string>('Sketchy-Guy');
 
-  // Fetch GitHub stats from database
   const fetchStoredStats = async () => {
     try {
       const { data, error } = await supabase
@@ -49,19 +49,16 @@ const GitHubStatsEnhanced = () => {
     }
   };
 
-  // Fetch fresh data from GitHub API with improved error handling
   const fetchFreshGitHubData = async () => {
     setIsRefreshing(true);
     setError(null);
 
     try {
-      // Check authentication first
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         throw new Error('You must be logged in to refresh GitHub stats');
       }
 
-      // Check rate limit first
       const rateLimitResponse = await fetch('https://api.github.com/rate_limit');
       if (!rateLimitResponse.ok) {
         throw new Error('Failed to check GitHub API rate limit');
@@ -73,7 +70,6 @@ const GitHubStatsEnhanced = () => {
         throw new Error(`GitHub API rate limit exceeded. Resets at ${new Date(rateLimit.rate.reset * 1000).toLocaleTimeString()}`);
       }
 
-      // Fetch user data
       const userResponse = await fetch(`https://api.github.com/users/${username}`);
       if (!userResponse.ok) {
         if (userResponse.status === 404) {
@@ -83,12 +79,11 @@ const GitHubStatsEnhanced = () => {
       }
       const userData = await userResponse.json();
 
-      // Fetch repositories with pagination
       let allRepos = [];
       let page = 1;
       const perPage = 100;
       
-      while (page <= 3) { // Limit to 3 pages to avoid rate limits
+      while (page <= 3) {
         const reposResponse = await fetch(
           `https://api.github.com/users/${username}/repos?page=${page}&per_page=${perPage}&sort=updated`
         );
@@ -103,11 +98,9 @@ const GitHubStatsEnhanced = () => {
         page++;
       }
 
-      // Calculate statistics
       const totalStars = allRepos.reduce((sum, repo) => sum + repo.stargazers_count, 0);
       const totalForks = allRepos.reduce((sum, repo) => sum + repo.forks_count, 0);
 
-      // Get language statistics
       const languageStats: Record<string, number> = {};
       for (const repo of allRepos.slice(0, 20)) {
         if (repo.language) {
@@ -131,7 +124,6 @@ const GitHubStatsEnhanced = () => {
         last_updated: new Date().toISOString()
       };
 
-      // Store in database with proper upsert
       const { data, error } = await supabase
         .from('github_stats')
         .upsert(statsData, { 
@@ -190,7 +182,7 @@ const GitHubStatsEnhanced = () => {
 
   if (isLoading) {
     return (
-      <Card className="glass-card-enhanced">
+      <Card className="bg-gradient-to-br from-gray-900/95 to-purple-900/20 border border-purple-500/20">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-white">
             <Github className="w-5 h-5 text-purple-400" />
@@ -200,7 +192,7 @@ const GitHubStatsEnhanced = () => {
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="animate-pulse bg-gray-700/30 h-16 rounded-lg"></div>
+              <Skeleton key={i} className="h-16" />
             ))}
           </div>
         </CardContent>
@@ -209,7 +201,7 @@ const GitHubStatsEnhanced = () => {
   }
 
   return (
-    <Card className="glass-card-enhanced border border-purple-500/20 bg-gradient-to-br from-gray-900/95 to-purple-900/20">
+    <Card className="bg-gradient-to-br from-gray-900/95 to-purple-900/20 border border-purple-500/20 hover:border-purple-400/40 transition-all duration-300">
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-white">
@@ -228,12 +220,7 @@ const GitHubStatsEnhanced = () => {
             size="sm"
             className="text-purple-400 border-purple-400/30 hover:bg-purple-400/10 hover:border-purple-400"
           >
-            {isRefreshing ? (
-              <RefreshCw className="w-4 h-4 animate-spin" />
-            ) : (
-              <RefreshCw className="w-4 h-4" />
-            )}
-            Refresh
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
           </Button>
         </div>
       </CardHeader>
@@ -293,7 +280,7 @@ const GitHubStatsEnhanced = () => {
             <p className="text-gray-400 mb-4">No GitHub statistics available</p>
             <Button
               onClick={fetchFreshGitHubData}
-              className="cyber-button bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700"
+              className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 text-white border-0"
               disabled={isRefreshing}
             >
               {isRefreshing ? (
