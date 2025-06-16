@@ -48,9 +48,11 @@ export function useSiteSettings() {
 
     fetchSettings();
 
-    // Always create a new channel instance for every effect mount
+    // Create a unique channel name to avoid conflicts when multiple components use this hook
+    const uniqueChannelName = `site_settings_realtime_${Math.random().toString(36).substr(2, 9)}`;
+    
     channel = supabase
-      .channel("site_settings_realtime")
+      .channel(uniqueChannelName)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "site_settings" },
