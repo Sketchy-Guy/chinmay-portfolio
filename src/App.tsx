@@ -34,97 +34,92 @@ const queryClient = new QueryClient({
 // Create a function component to properly wrap the TooltipProvider
 function AppContent() {
   const [initializing, setInitializing] = useState(true);
-  const { settings } = useSiteSettings();
+  const [initError, setInitError] = useState<string | null>(null);
+  const { settings, loading: settingsLoading } = useSiteSettings();
 
-  // Dynamic favicon update effect
+  // Dynamic favicon update effect with better error handling
   useEffect(() => {
-    if (!settings.site_favicon && !settings.site_logo) return;
+    if (settingsLoading || (!settings.site_favicon && !settings.site_logo)) return;
+    
     const faviconUrl = settings.site_favicon || settings.site_logo;
     if (!faviconUrl) return;
 
-    let favicon: HTMLLinkElement | null = document.querySelector("link[rel~='icon']");
-    if (!favicon) {
-      favicon = document.createElement("link");
+    try {
+      // Remove existing favicon links
+      document.querySelectorAll("link[rel*='icon']").forEach(el => el.remove());
+      
+      // Create new favicon link
+      const favicon = document.createElement("link");
       favicon.rel = "icon";
+      favicon.type = "image/png";
+      favicon.href = faviconUrl;
       document.head.appendChild(favicon);
+      
+      console.log('Favicon updated successfully:', faviconUrl);
+    } catch (error) {
+      console.warn('Failed to update favicon:', error);
     }
-    favicon.href = faviconUrl;
-    favicon.type = "image/png";
-    // Optionally, update apple-touch-icon here if needed
-    // Remove additional old favicon links, keep only this
-    document.querySelectorAll("link[rel='icon']").forEach((el, i) => {
-      if (el !== favicon) el.parentNode?.removeChild(el);
-    });
-    // Remove apple-touch-icon links (optional)
-    document.querySelectorAll("link[rel='apple-touch-icon']").forEach(el => el.parentNode?.removeChild(el));
-  }, [settings.site_favicon, settings.site_logo]);
+  }, [settings.site_favicon, settings.site_logo, settingsLoading]);
 
-  // Run initialization once at the app level
+  // Optimized initialization
   useEffect(() => {
     console.log("Initializing application...");
     
     const init = async () => {
       try {
-        // Check authentication status
+        // Quick auth check
         const { data: { session } } = await supabase.auth.getSession();
-        console.log("Auth session check:", session ? "User is authenticated" : "No authenticated user");
+        console.log("Auth session check:", session ? "User authenticated" : "No authenticated user");
         
-        // Listen for auth changes
+        // Set up auth listener for future changes
         const { data: authListener } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-          console.log(`Auth state changed: ${event}`, newSession?.user?.email);
+          console.log(`Auth state changed: ${event}`);
           
-          // When user logs in, set up storage
           if (event === 'SIGNED_IN' && newSession) {
             try {
               console.log('User signed in, initializing storage...');
               const result = await ensureStorageBucket();
-              console.log('Storage initialization after login:', result);
+              console.log('Storage initialization result:', result);
               
               if (!result.success) {
-                toast.warning('Storage initialization: ' + result.message);
-              } else {
-                toast.success('Storage ready for use');
+                console.warn('Storage warning:', result.message);
               }
             } catch (err: any) {
-              console.error('Error initializing storage after login:', err);
-              toast.error('Storage error: ' + (err.message || "Unknown error"));
+              console.error('Storage error after login:', err);
             }
           }
         });
         
-        // Try to initialize storage anyway, even without authentication
-        // This is important for public access to images
+        // Initialize storage without blocking the UI
         try {
           console.log('Initializing storage...');
           const result = await ensureStorageBucket();
           
           if (!result.success) {
             console.warn('Storage initialization warning:', result.message);
-            // Only show warning to authenticated users
             if (session) {
-              toast.warning('Storage initialization: ' + result.message);
+              // Only show warnings to authenticated users
+              console.warn('Storage warning for authenticated user:', result.message);
             }
           } else {
             console.log('Storage initialized successfully');
           }
         } catch (error: any) {
-          console.error('Error during storage initialization:', error);
-          // Only show error to authenticated users
-          if (session) {
-            toast.error('Storage initialization error: ' + (error.message || "Unknown error"));
-          }
+          console.error('Storage initialization error:', error);
+          setInitError(`Storage error: ${error.message}`);
         }
+        
       } catch (error: any) {
-        console.error('Error during application initialization:', error);
-        toast.error('Error during initialization: ' + (error.message || "Unknown error"));
+        console.error('Application initialization error:', error);
+        setInitError(`Initialization error: ${error.message}`);
       } finally {
-        setInitializing(false);
+        // Add minimum delay to prevent flash
+        setTimeout(() => setInitializing(false), 500);
       }
     };
     
     init();
     
-    // Return cleanup function
     return () => {
       console.log('App unmounting, cleaning up...');
     };
@@ -132,10 +127,19 @@ function AppContent() {
 
   if (initializing) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-portfolio-purple mx-auto" />
-          <p className="mt-4 text-portfolio-purple">Initializing application...</p>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-purple-900/20 to-cyan-900/20">
+        <div className="text-center space-y-6">
+          <div className="relative">
+            <div className="w-16 h-16 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin mx-auto"></div>
+            <div className="absolute inset-0 w-16 h-16 border-4 border-cyan-500/20 border-r-cyan-500 rounded-full animate-spin mx-auto" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
+          </div>
+          <div className="space-y-2">
+            <p className="text-xl text-purple-400 font-medium animate-pulse">Initializing Portfolio</p>
+            <p className="text-sm text-gray-400">Setting up your experience...</p>
+            {initError && (
+              <p className="text-sm text-red-400 mt-2">{initError}</p>
+            )}
+          </div>
         </div>
       </div>
     );

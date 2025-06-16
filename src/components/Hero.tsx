@@ -8,16 +8,18 @@ import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 const Hero = () => {
   const [typedText, setTypedText] = useState("");
-  const { data } = usePortfolioData();
+  const { data, isLoading } = usePortfolioData();
   const [imageTimestamp, setImageTimestamp] = useState(Date.now());
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const fullText = data?.user?.title || "";
   const { toast: uiToast } = useToast();
-  const { settings } = useSiteSettings();
+  const { settings, loading: settingsLoading } = useSiteSettings();
 
   useEffect(() => {
     setImageTimestamp(Date.now());
     setImageLoaded(false);
+    setImageError(false);
   }, [data?.user?.profileImage]);
 
   useEffect(() => {
@@ -41,13 +43,30 @@ const Hero = () => {
     });
   };
 
+  if (isLoading || settingsLoading) {
+    return (
+      <section className="min-h-screen flex items-center justify-center pt-20">
+        <div className="text-center space-y-4">
+          <div className="animate-spin h-12 w-12 border-4 border-purple-500/30 border-t-purple-500 rounded-full mx-auto"></div>
+          <p className="text-purple-400 animate-pulse">Loading portfolio...</p>
+        </div>
+      </section>
+    );
+  }
+
   if (!data || !data.user) {
-    return null;
+    return (
+      <section className="min-h-screen flex items-center justify-center pt-20">
+        <div className="text-center space-y-4">
+          <p className="text-gray-400">No portfolio data available</p>
+        </div>
+      </section>
+    );
   }
 
   const socialLinks = [
-    { icon: Github, href: data.user.social.github || "#", label: "GitHub", color: "#171515" },
-    { icon: Linkedin, href: data.user.social.linkedin || "#", label: "LinkedIn", color: "#2867B2" },
+    { icon: Github, href: data.user.social.github || "#", label: "GitHub", color: "#333" },
+    { icon: Linkedin, href: data.user.social.linkedin || "#", label: "LinkedIn", color: "#0077B5" },
     { icon: Twitter, href: data.user.social.twitter || "#", label: "Twitter", color: "#1DA1F2" },
     { icon: Instagram, href: data.user.social.instagram || "#", label: "Instagram", color: "#E4405F" },
     { icon: Facebook, href: data.user.social.facebook || "#", label: "Facebook", color: "#1877F3" },
@@ -59,80 +78,126 @@ const Hero = () => {
     : "";
 
   return (
-    <section className="min-h-screen flex flex-col justify-center pt-20">
-      <div className="container mx-auto px-4">
-        <div className="flex flex-col-reverse lg:flex-row items-center gap-12">
-          <div className="lg:w-1/2 animate-fade-in">
-            {/* SHOW SITE/PORTFOLIO NAME FROM SETTINGS HERE */}
+    <section className="min-h-screen flex flex-col justify-center pt-20 overflow-hidden relative">
+      {/* Background gradient effects */}
+      <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-transparent to-cyan-900/20 pointer-events-none"></div>
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse"></div>
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+      
+      <div className="container mx-auto px-4 relative z-10">
+        <div className="flex flex-col-reverse lg:flex-row items-center gap-12 lg:gap-16">
+          <div className="lg:w-1/2 animate-fade-in space-y-6">
+            {/* Site name from settings */}
             {settings.site_name && (
-              <h1 className="text-6xl md:text-7xl font-bold mb-2 gradient-text">{settings.site_name}</h1>
+              <div className="mb-4">
+                <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent animate-gradient-x">
+                  {settings.site_name}
+                </h1>
+              </div>
             )}
-            <h3 className="text-2xl font-medium text-portfolio-teal mb-2">Hello, I'm</h3>
-            <h1 className="text-5xl md:text-7xl font-bold mb-4 gradient-text">{data.user.name}</h1>
-            <h2 className="text-xl md:text-2xl font-medium text-gray-600 dark:text-gray-300 mb-6 h-6">
-              {typedText}
-              <span className="ml-1 inline-block w-2 h-full bg-portfolio-purple animate-pulse"></span>
-            </h2>
-            <p className="text-gray-700 dark:text-gray-300 mb-8 max-w-lg">
+            
+            <div className="space-y-4">
+              <h3 className="text-xl md:text-2xl font-medium text-cyan-400 animate-fade-in delay-100">
+                Hello, I'm
+              </h3>
+              <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold bg-gradient-to-r from-white via-purple-200 to-cyan-200 bg-clip-text text-transparent">
+                {data.user.name}
+              </h1>
+              <div className="h-8 md:h-10">
+                <h2 className="text-lg md:text-xl lg:text-2xl font-medium text-gray-300 flex items-center">
+                  {typedText}
+                  <span className="ml-1 inline-block w-0.5 h-6 bg-purple-400 animate-pulse"></span>
+                </h2>
+              </div>
+            </div>
+            
+            <p className="text-gray-300 text-lg leading-relaxed max-w-lg animate-fade-in delay-300">
               {data.user.bio}
             </p>
-            <div className="flex flex-wrap gap-4 mb-8">
+            
+            {/* Social Links */}
+            <div className="flex flex-wrap gap-3 animate-fade-in delay-400">
               {socialLinks.map((link, index) => (
                 link.href !== "#" && (
                   <a
                     key={index}
                     href={link.href}
                     aria-label={link.label}
-                    className="social-icon rounded-full p-2 hover:scale-110 transition-all shadow-lg"
+                    className="group relative p-3 rounded-xl bg-gray-800/50 border border-gray-700/50 hover:border-purple-500/50 transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-purple-500/25"
                     rel="noopener noreferrer"
                     target="_blank"
-                    style={{
-                      backgroundColor: "white",
-                      border: `2px solid ${link.color}`,
-                      color: link.color,
-                    }}
                   >
-                    <link.icon size={22} strokeWidth={2} />
+                    <link.icon 
+                      size={22} 
+                      className="text-gray-400 group-hover:text-purple-400 transition-colors duration-300" 
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-br from-purple-500/0 to-cyan-500/0 group-hover:from-purple-500/10 group-hover:to-cyan-500/10 rounded-xl transition-all duration-300"></div>
                   </a>
                 )
               ))}
             </div>
-            <div className="flex gap-4">
+            
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 animate-fade-in delay-500">
               <Button
-                className="bg-portfolio-purple hover:bg-portfolio-purple/90"
+                className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 text-white border-0 px-8 py-3 text-lg font-medium transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-purple-500/25"
                 onClick={handleDownloadCV}
               >
-                <Download className="mr-2 h-4 w-4" /> Download CV
+                <Download className="mr-2 h-5 w-5" /> 
+                Download CV
               </Button>
               <Button
                 variant="outline"
-                className="border-portfolio-teal text-portfolio-teal hover:bg-portfolio-teal hover:text-white"
+                className="border-2 border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-400 px-8 py-3 text-lg font-medium transition-all duration-300 hover:scale-105"
                 asChild
               >
                 <a href={`mailto:${data.user.email}`}>
-                  <Mail className="mr-2 h-4 w-4" /> Contact Me
+                  <Mail className="mr-2 h-5 w-5" /> 
+                  Contact Me
                 </a>
               </Button>
             </div>
           </div>
-          <div className="lg:w-1/2 relative z-10">
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-md max-h-md z-10">
-              <div className="w-full h-full rounded-full bg-portfolio-purple opacity-5 animate-spin-slow blur-3xl"></div>
+          
+          {/* Profile Image Section */}
+          <div className="lg:w-1/2 relative flex justify-center">
+            {/* Background effects */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-80 h-80 md:w-96 md:h-96 rounded-full bg-gradient-to-br from-purple-500/20 to-cyan-500/20 blur-2xl animate-pulse"></div>
             </div>
-            <div className="w-64 h-64 md:w-80 md:h-80 mx-auto relative z-20 animate-float">
-              {!imageLoaded && profileImage && (
-                <div className="absolute inset-0 flex items-center justify-center rounded-full bg-gray-100">
-                  <div className="animate-spin h-12 w-12 border-4 border-portfolio-purple border-t-transparent rounded-full"></div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-72 h-72 md:w-88 md:h-88 rounded-full border border-purple-500/30 animate-spin-slow"></div>
+            </div>
+            
+            {/* Profile Image */}
+            <div className="relative z-10 w-64 h-64 md:w-80 md:h-80 mx-auto animate-float">
+              {profileImage && !imageError ? (
+                <>
+                  {!imageLoaded && (
+                    <div className="absolute inset-0 flex items-center justify-center rounded-full bg-gray-800/50 border border-purple-500/30">
+                      <div className="animate-spin h-12 w-12 border-4 border-purple-500/30 border-t-purple-500 rounded-full"></div>
+                    </div>
+                  )}
+                  <img
+                    src={profileImage}
+                    alt={data.user.name}
+                    className={`rounded-full object-cover border-4 border-gradient-to-br from-purple-500 to-cyan-500 shadow-2xl shadow-purple-500/25 w-full h-full transition-all duration-500 hover:scale-105 ${
+                      imageLoaded ? 'opacity-100' : 'opacity-0'
+                    }`}
+                    onLoad={() => setImageLoaded(true)}
+                    onError={() => {
+                      setImageError(true);
+                      setImageLoaded(true);
+                    }}
+                    loading="lazy"
+                  />
+                </>
+              ) : (
+                <div className="w-full h-full rounded-full bg-gradient-to-br from-gray-800 to-gray-900 border-4 border-purple-500/30 flex items-center justify-center">
+                  <span className="text-4xl md:text-6xl font-bold text-purple-400">
+                    {data.user.name.charAt(0)}
+                  </span>
                 </div>
-              )}
-              {profileImage && (
-                <img
-                  src={profileImage}
-                  alt={data.user.name}
-                  className={`rounded-full object-cover border-4 border-white shadow-xl w-full h-full transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
-                  onLoad={() => setImageLoaded(true)}
-                  onError={() => setImageLoaded(true)}
-                />
               )}
             </div>
           </div>
