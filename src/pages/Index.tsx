@@ -1,6 +1,7 @@
+
 import { useEffect, useState } from "react";
-import Hero from "@/components/Hero";
-import About from "@/components/About";
+import HeroSection from "@/components/modern/portfolio/HeroSection";
+import AboutSection from "@/components/modern/portfolio/AboutSection";
 import Skills from "@/components/Skills";
 import SkillsRadar from "@/components/SkillsRadar";
 import Projects from "@/components/Projects";
@@ -16,20 +17,33 @@ import { usePortfolioData } from "@/contexts/DataContext";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { modernConnectionManager } from "@/utils/modern/connectionManager";
 
+/**
+ * Main Portfolio Index Page
+ * Displays all portfolio sections with optimized loading and analytics
+ * Features: Performance monitoring, error handling, real-time analytics
+ */
 const Index = () => {
   const { fetchPortfolioData, isLoading, error, data } = usePortfolioData();
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   
-  // Track page analytics and load portfolio data
+  /**
+   * Load portfolio data and track analytics
+   * Includes error handling and performance monitoring
+   */
   useEffect(() => {
     const loadData = async () => {
+      const startTime = performance.now();
+      
       try {
-        console.log("Index - loading portfolio data");
+        console.log("Loading portfolio data...");
         await fetchPortfolioData();
-        console.log("Index - portfolio data loaded successfully");
         
-        // Track page view in analytics
+        const loadTime = performance.now() - startTime;
+        console.log(`Portfolio data loaded successfully in ${loadTime.toFixed(2)}ms`);
+        
+        // Track page view analytics (non-blocking)
         try {
           await supabase
             .from('analytics_data')
@@ -37,21 +51,28 @@ const Index = () => {
               event_type: 'page_view',
               event_data: { 
                 page: 'home',
-                timestamp: new Date().toISOString()
+                load_time: loadTime,
+                timestamp: new Date().toISOString(),
+                user_agent_info: {
+                  platform: navigator.platform,
+                  language: navigator.language,
+                  screen_resolution: `${screen.width}x${screen.height}`
+                }
               },
               user_agent: navigator.userAgent,
               page_url: window.location.href,
               referrer: document.referrer || null
             });
           
-          console.log("Page view tracked successfully");
+          console.log("Analytics tracked successfully");
         } catch (analyticsError) {
-          console.error("Failed to track page view:", analyticsError);
+          // Analytics errors should not impact user experience
+          console.warn("Failed to track analytics:", analyticsError);
         }
         
       } catch (err: any) {
         console.error("Error loading portfolio data:", err);
-        toast.error('Failed to load some portfolio data. Displaying with defaults.');
+        toast.error('Some portfolio data failed to load. Displaying with defaults.');
       } finally {
         setIsInitialLoading(false);
       }
@@ -59,30 +80,40 @@ const Index = () => {
     
     loadData();
     
-    // Enhanced scroll reveal animation with stagger effect
+    /**
+     * Enhanced scroll reveal animation with performance optimization
+     * Uses requestAnimationFrame for smooth animations
+     */
     const handleRevealOnScroll = () => {
-      const revealElements = document.querySelectorAll('.reveal, .reveal-stagger');
-      
-      revealElements.forEach((element, index) => {
+      requestAnimationFrame(() => {
+        const revealElements = document.querySelectorAll('.reveal, .reveal-stagger');
         const windowHeight = window.innerHeight;
-        const elementTop = element.getBoundingClientRect().top;
-        const elementVisible = 100;
         
-        if (elementTop < windowHeight - elementVisible) {
-          setTimeout(() => {
-            element.classList.add('active');
-          }, index * 50); // Staggered animation
-        }
+        revealElements.forEach((element, index) => {
+          const elementTop = element.getBoundingClientRect().top;
+          const elementVisible = 100;
+          
+          if (elementTop < windowHeight - elementVisible && !element.classList.contains('active')) {
+            // Staggered animation for better visual effect
+            setTimeout(() => {
+              element.classList.add('active');
+            }, index * 30);
+          }
+        });
       });
     };
     
-    // Smooth scroll behavior with easing for anchor links
+    /**
+     * Enhanced smooth scroll with easing for anchor links
+     */
     const handleSmoothScroll = (e: Event) => {
       const target = e.target as HTMLAnchorElement;
-      if (target.getAttribute('href')?.startsWith('#')) {
+      const href = target.getAttribute('href');
+      
+      if (href?.startsWith('#')) {
         e.preventDefault();
-        const targetId = target.getAttribute('href')?.substring(1);
-        const targetElement = document.getElementById(targetId || '');
+        const targetId = href.substring(1);
+        const targetElement = document.getElementById(targetId);
         
         if (targetElement) {
           const headerOffset = 80;
@@ -93,48 +124,57 @@ const Index = () => {
             top: offsetPosition,
             behavior: 'smooth'
           });
+          
+          // Track navigation analytics
+          try {
+            supabase
+              .from('analytics_data')
+              .insert({
+                event_type: 'navigation',
+                event_data: { 
+                  target_section: targetId,
+                  timestamp: new Date().toISOString()
+                },
+                page_url: window.location.href
+              });
+          } catch {
+            // Silent fail for analytics
+          }
         }
       }
     };
     
-    // Add event listeners for scroll animations and smooth scrolling
-    window.addEventListener('scroll', handleRevealOnScroll, { passive: true });
+    // Add optimized event listeners
+    const throttledScrollHandler = throttle(handleRevealOnScroll, 16); // ~60fps
+    window.addEventListener('scroll', throttledScrollHandler, { passive: true });
     document.addEventListener('click', handleSmoothScroll);
     
-    // Initial reveal check on page load
+    // Initial reveal check
     handleRevealOnScroll();
     
-    // Enhanced CSS fixes for card visibility issues
+    // Enhanced CSS injection for performance and visual fixes
     const style = document.createElement('style');
     style.textContent = `
-      /* Enhanced fixes for card visibility and hover effects */
+      /* Enhanced performance and visibility fixes */
       .project-card,
       .certification-card,
       .skill-badge,
-      .glass-card-enhanced {
+      .futuristic-card {
         opacity: 1 !important;
         visibility: visible !important;
         transform: none !important;
-        z-index: 1;
-        position: relative;
+        will-change: transform, opacity;
+        contain: layout style paint;
       }
       
-      /* Prevent cards from disappearing on hover */
-      .project-card:hover,
-      .certification-card:hover,
-      .skill-badge:hover,
-      .glass-card-enhanced:hover {
+      /* Smooth hover effects with GPU acceleration */
+      .futuristic-card:hover {
+        transform: translateY(-5px) !important;
         opacity: 1 !important;
         visibility: visible !important;
-        z-index: 2;
       }
       
-      /* Ensure parent containers don't hide overflow */
-      section, .container, .grid {
-        overflow: visible !important;
-      }
-      
-      /* Fix for any transform issues */
+      /* Optimized animations */
       .reveal.active,
       .reveal-stagger.active {
         opacity: 1 !important;
@@ -142,9 +182,9 @@ const Index = () => {
         visibility: visible !important;
       }
       
-      /* Enhanced loading skeleton for better UX */
+      /* Enhanced loading states */
       .loading-skeleton {
-        background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
+        background: linear-gradient(90deg, rgba(139,92,246,0.1) 25%, rgba(139,92,246,0.2) 50%, rgba(139,92,246,0.1) 75%);
         background-size: 200% 100%;
         animation: loading 1.5s infinite;
       }
@@ -154,86 +194,72 @@ const Index = () => {
         100% { background-position: -200% 0; }
       }
       
-      /* Contribution graph grid fix */
-      .grid-cols-52 {
-        grid-template-columns: repeat(52, minmax(0, 1fr));
+      /* Performance optimization for smooth scrolling */
+      html {
+        scroll-behavior: smooth;
       }
       
-      /* Quantum loader enhancement */
-      .quantum-loader {
-        width: 64px;
-        height: 64px;
-        border: 3px solid rgba(139, 92, 246, 0.3);
-        border-radius: 50%;
-        border-top-color: #8b5cf6;
-        animation: quantum-spin 1s ease-in-out infinite;
-        position: relative;
-      }
-      
-      .quantum-loader::before,
-      .quantum-loader::after {
-        content: '';
-        position: absolute;
-        border: 3px solid transparent;
-        border-radius: 50%;
-      }
-      
-      .quantum-loader::before {
-        top: 5px;
-        left: 5px;
-        right: 5px;
-        bottom: 5px;
-        border-top-color: #06b6d4;
-        animation: quantum-spin 2s ease-in-out infinite reverse;
-      }
-      
-      .quantum-loader::after {
-        top: 15px;
-        left: 15px;
-        right: 15px;
-        bottom: 15px;
-        border-top-color: #ec4899;
-        animation: quantum-spin 1.5s ease-in-out infinite;
-      }
-      
-      @keyframes quantum-spin {
-        to { transform: rotate(360deg); }
+      /* Prevent layout shift */
+      section {
+        min-height: fit-content;
       }
     `;
     document.head.appendChild(style);
     
-    // Cleanup function
+    // Cleanup function with connection management
     return () => {
-      window.removeEventListener('scroll', handleRevealOnScroll);
+      window.removeEventListener('scroll', throttledScrollHandler);
       document.removeEventListener('click', handleSmoothScroll);
       if (document.head.contains(style)) {
         document.head.removeChild(style);
       }
+      
+      // Clean up any remaining connections
+      console.log("Cleaning up page connections...");
+      modernConnectionManager.cleanup();
     };
   }, [fetchPortfolioData]);
 
-  // Show enhanced loading state only for initial load
+  /**
+   * Throttle function for performance optimization
+   * @param func - Function to throttle
+   * @param limit - Time limit in ms
+   */
+  function throttle(func: Function, limit: number) {
+    let inThrottle: boolean;
+    return function() {
+      const args = arguments;
+      const context = this;
+      if (!inThrottle) {
+        func.apply(context, args);
+        inThrottle = true;
+        setTimeout(() => inThrottle = false, limit);
+      }
+    };
+  }
+
+  // Enhanced loading screen with better UX
   if (isInitialLoading && isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
-        {/* Animated background for loading */}
+        {/* Animated background */}
         <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900"></div>
         <div className="absolute inset-0 cyber-grid opacity-20"></div>
         
         {/* Loading content */}
         <div className="text-center relative z-10">
-          <div className="w-16 h-16 mx-auto mb-4">
+          <div className="w-20 h-20 mx-auto mb-6">
             <div className="quantum-loader"></div>
           </div>
-          <h2 className="text-xl text-purple-400 font-orbitron mb-2">
-            Initializing Portfolio Matrix...
+          <h2 className="text-2xl text-purple-400 font-orbitron mb-3 font-bold">
+            Loading Portfolio Experience...
           </h2>
-          <p className="text-gray-400 animate-pulse">
-            Loading neural networks and data streams
+          <p className="text-gray-400 animate-pulse mb-4">
+            Preparing neural networks and data streams
           </p>
           
-          {/* Progress indicators */}
-          <div className="flex justify-center gap-1 mt-6">
+          {/* Enhanced progress indicators */}
+          <div className="flex justify-center gap-1">
             {[...Array(5)].map((_, i) => (
               <div
                 key={i}
@@ -242,6 +268,11 @@ const Index = () => {
               />
             ))}
           </div>
+          
+          {/* Performance indicator */}
+          <div className="mt-6 text-xs text-gray-500">
+            Optimizing for best performance...
+          </div>
         </div>
       </div>
     );
@@ -249,13 +280,13 @@ const Index = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Enhanced header with analytics tracking */}
+      {/* Enhanced header with better performance */}
       <Header />
       
-      {/* Main content with all portfolio sections */}
+      {/* Main content sections */}
       <main className="flex-grow">
-        <Hero />
-        <About />
+        <HeroSection />
+        <AboutSection />
         <Skills />
         <SkillsRadar />
         <Timeline />
@@ -266,7 +297,7 @@ const Index = () => {
         <Contact />
       </main>
       
-      {/* Footer and scroll to top functionality */}
+      {/* Footer and utilities */}
       <Footer />
       <ScrollToTop />
     </div>

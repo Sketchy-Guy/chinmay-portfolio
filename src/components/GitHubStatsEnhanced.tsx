@@ -4,12 +4,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Github, Star, GitFork, Eye, RefreshCw, TrendingUp, Code, Calendar } from 'lucide-react';
+import { Github, Star, GitFork, RefreshCw, TrendingUp, Code } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 
+/**
+ * GitHub Repository Interface
+ * Defines structure for repository data
+ */
 interface GitHubRepo {
   id: number;
   name: string;
@@ -24,6 +28,10 @@ interface GitHubRepo {
   topics: string[];
 }
 
+/**
+ * GitHub Statistics Interface
+ * Matches database schema exactly to prevent TypeScript errors
+ */
 interface GitHubStats {
   total_repos: number;
   total_stars: number;
@@ -36,6 +44,11 @@ interface GitHubStats {
   username: string;
 }
 
+/**
+ * Enhanced GitHub Stats Component
+ * Displays GitHub statistics with real-time updates and optimized performance
+ * Features: Cached data, error handling, responsive design, authentication-aware
+ */
 const GitHubStatsEnhanced = () => {
   const [stats, setStats] = useState<GitHubStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -43,20 +56,25 @@ const GitHubStatsEnhanced = () => {
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
 
-  const fetchGitHubStats = async (showRefreshMessage = false) => {
+  /**
+   * Fetch GitHub statistics from database with fallback handling
+   * @param showRefreshMessage - Whether to show success/error toasts
+   */
+  const fetchGitHubStats = async (showRefreshMessage = false): Promise<void> => {
     try {
       setError(null);
       if (showRefreshMessage) setIsRefreshing(true);
 
-      // Fetch from our database first (public access)
+      // Fetch from database (public access, no auth required)
       const { data: cachedStats, error: dbError } = await supabase
         .from('github_stats')
         .select('*')
         .order('last_updated', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle(); // Use maybeSingle to handle no data gracefully
 
       if (cachedStats && !dbError) {
+        // Transform database data to match interface
         const githubStats: GitHubStats = {
           total_repos: cachedStats.total_repos || 0,
           total_stars: cachedStats.total_stars || 0,
@@ -75,7 +93,7 @@ const GitHubStatsEnhanced = () => {
           toast.success('GitHub stats refreshed successfully!');
         }
       } else {
-        // If no cached data, show default stats
+        // No cached data found, use default stats
         const defaultStats: GitHubStats = {
           total_repos: 25,
           total_stars: 150,
@@ -90,14 +108,14 @@ const GitHubStatsEnhanced = () => {
         setStats(defaultStats);
         
         if (showRefreshMessage && !user) {
-          toast.info('Showing cached GitHub stats. Sign in to refresh data.');
+          toast.info('Showing cached GitHub stats. Sign in to refresh with latest data.');
         }
       }
     } catch (err: any) {
       console.error('Error fetching GitHub stats:', err);
       setError('Failed to load GitHub stats');
       
-      // Fallback to default stats
+      // Always provide fallback stats to ensure UI doesn't break
       const fallbackStats: GitHubStats = {
         total_repos: 25,
         total_stars: 150,
@@ -120,7 +138,11 @@ const GitHubStatsEnhanced = () => {
     }
   };
 
-  const handleRefresh = async () => {
+  /**
+   * Handle manual refresh of GitHub stats
+   * Only allows refresh for authenticated users
+   */
+  const handleRefresh = async (): Promise<void> => {
     if (!user) {
       toast.warning('Sign in to refresh GitHub stats with latest data.');
       return;
@@ -128,32 +150,40 @@ const GitHubStatsEnhanced = () => {
     await fetchGitHubStats(true);
   };
 
+  /**
+   * Extract top programming language from languages object
+   * @param languages - Languages object with language names and percentages
+   * @returns Top language name or default
+   */
   const getTopLanguage = (languages: any): string => {
     if (!languages || typeof languages !== 'object') return 'TypeScript';
     
     const languageEntries = Object.entries(languages);
     if (languageEntries.length === 0) return 'TypeScript';
     
+    // Find language with highest percentage/count
     return languageEntries.reduce((a, b) => 
       (a[1] as number) > (b[1] as number) ? a : b
     )[0] as string;
   };
 
+  // Initialize component and fetch data
   useEffect(() => {
     fetchGitHubStats();
   }, []);
 
+  // Loading state with enhanced skeleton
   if (isLoading) {
     return (
       <section className="py-16 bg-gradient-to-br from-gray-900/50 via-purple-900/30 to-gray-900/50">
         <div className="container mx-auto px-6">
           <div className="text-center mb-12">
-            <Skeleton className="h-12 w-64 mx-auto mb-4" />
-            <Skeleton className="h-6 w-96 mx-auto" />
+            <Skeleton className="h-12 w-64 mx-auto mb-4 bg-gray-800/50" />
+            <Skeleton className="h-6 w-96 mx-auto bg-gray-800/50" />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[...Array(4)].map((_, i) => (
-              <Skeleton key={i} className="h-32 w-full" />
+              <Skeleton key={i} className="h-32 w-full bg-gray-800/50" />
             ))}
           </div>
         </div>
@@ -161,12 +191,20 @@ const GitHubStatsEnhanced = () => {
     );
   }
 
+  // Error state (still show fallback data)
   if (error && !stats) {
     return (
       <section className="py-16 bg-gradient-to-br from-gray-900/50 via-purple-900/30 to-gray-900/50">
         <div className="container mx-auto px-6 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">GitHub Statistics</h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 font-orbitron">GitHub Statistics</h2>
           <p className="text-red-400">{error}</p>
+          <Button
+            onClick={() => fetchGitHubStats(true)}
+            className="mt-4 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Retry
+          </Button>
         </div>
       </section>
     );
@@ -174,14 +212,14 @@ const GitHubStatsEnhanced = () => {
 
   return (
     <section id="github-stats" className="py-16 bg-gradient-to-br from-gray-900/50 via-purple-900/30 to-gray-900/50 relative overflow-hidden">
-      {/* Background effects */}
+      {/* Enhanced background effects */}
       <div className="absolute inset-0 opacity-20">
         <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-purple-500 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute bottom-1/4 right-1/4 w-48 h-48 bg-cyan-500 rounded-full blur-3xl animate-pulse delay-1000"></div>
       </div>
 
       <div className="container mx-auto px-6 relative z-10">
-        {/* Header */}
+        {/* Section Header */}
         <div className="text-center mb-12">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -189,10 +227,10 @@ const GitHubStatsEnhanced = () => {
             transition={{ duration: 0.6 }}
           >
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 font-orbitron">
-              GitHub Statistics
+              GitHub <span className="holographic-text">Statistics</span>
             </h2>
             <p className="text-gray-400 max-w-2xl mx-auto mb-6">
-              Real-time insights into my development activity and contributions
+              Real-time insights into development activity and code contributions
             </p>
             <Button
               onClick={handleRefresh}
@@ -205,7 +243,7 @@ const GitHubStatsEnhanced = () => {
           </motion.div>
         </div>
 
-        {/* Stats Grid */}
+        {/* Statistics Grid */}
         {stats && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
             {[
@@ -220,12 +258,12 @@ const GitHubStatsEnhanced = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
               >
-                <Card className="bg-gradient-to-br from-gray-900/95 to-purple-900/20 border border-purple-500/20 hover:border-purple-400/40 transition-all duration-300 hover:scale-105">
+                <Card className="futuristic-card hover:scale-105 transition-all duration-300">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-gray-400 text-sm font-medium">{stat.title}</p>
-                        <p className="text-2xl font-bold text-white mt-1">{stat.value}</p>
+                        <p className="text-2xl font-bold text-white mt-1 font-orbitron">{stat.value}</p>
                       </div>
                       <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center`}>
                         <stat.icon className="w-6 h-6 text-white" />
@@ -238,7 +276,7 @@ const GitHubStatsEnhanced = () => {
           </div>
         )}
 
-        {/* Additional Info */}
+        {/* Top Language and Additional Info */}
         {stats && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -246,19 +284,22 @@ const GitHubStatsEnhanced = () => {
             transition={{ duration: 0.6 }}
             className="text-center"
           >
-            <Card className="bg-gradient-to-br from-gray-900/95 to-purple-900/20 border border-purple-500/20 max-w-md mx-auto">
+            <Card className="futuristic-card max-w-md mx-auto">
               <CardHeader>
-                <CardTitle className="text-white flex items-center justify-center gap-2">
+                <CardTitle className="text-white flex items-center justify-center gap-2 font-orbitron">
                   <Code className="w-5 h-5 text-purple-400" />
                   Top Language
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <Badge className="bg-gradient-to-r from-purple-600 to-cyan-600 text-white text-lg px-4 py-2">
+                <Badge className="bg-gradient-to-r from-purple-600 to-cyan-600 text-white text-lg px-4 py-2 mb-3">
                   {getTopLanguage(stats.languages)}
                 </Badge>
-                <p className="text-gray-400 text-sm mt-2">
+                <p className="text-gray-400 text-sm">
                   Last updated: {new Date(stats.last_updated).toLocaleDateString()}
+                </p>
+                <p className="text-gray-500 text-xs mt-1">
+                  Profile: @{stats.username}
                 </p>
               </CardContent>
             </Card>
