@@ -1,13 +1,12 @@
-
 import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { useOptimizedSiteSettings } from "@/hooks/modern/useOptimizedSiteSettings";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrollPosition, setScrollPosition] = useState(0);
-  const { settings, loading } = useSiteSettings();
+  const { settings, loading } = useOptimizedSiteSettings();
 
   useEffect(() => {
     const handleScroll = () => setScrollPosition(window.scrollY);

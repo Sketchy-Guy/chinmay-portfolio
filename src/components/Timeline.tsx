@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, MapPin, Briefcase, GraduationCap, Trophy, ExternalLink, Sparkles } from 'lucide-react';
@@ -7,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
-import { connectionManager } from '@/utils/connectionManager';
+import { modernConnectionManager } from '@/utils/modern/connectionManager';
 
 interface TimelineEvent {
   id: string;
@@ -72,8 +71,8 @@ const Timeline = () => {
   useEffect(() => {
     fetchEvents();
 
-    // Use connection manager for realtime updates
-    const channelId = connectionManager.createUniqueChannelId('timeline_public');
+    // Use modern connection manager for realtime updates
+    const channelId = modernConnectionManager.createUniqueChannelId('timeline_public');
     
     const channel = supabase
       .channel(channelId)
@@ -83,16 +82,18 @@ const Timeline = () => {
         table: 'timeline_events' 
       }, (payload) => {
         console.log(`Timeline event changed (${channelId}):`, payload);
-        connectionManager.debounce('timeline-refresh', fetchEvents, 1000);
+        
+        // Debounce updates to prevent loops and excessive calls
+        modernConnectionManager.debounce('timeline-refresh', fetchEvents, 1000);
       })
       .subscribe((status) => {
         console.log(`Timeline public channel ${channelId} status:`, status);
       });
 
-    connectionManager.registerChannel(channelId, channel);
+    modernConnectionManager.registerChannel(channelId, channel);
 
     return () => {
-      connectionManager.unregisterChannel(channelId);
+      modernConnectionManager.unregisterChannel(channelId);
     };
   }, []);
 
@@ -240,7 +241,7 @@ const Timeline = () => {
                             <div className="flex items-center gap-4 text-sm text-gray-400 mb-4">
                               <div className="flex items-center gap-1">
                                 <Calendar className="w-4 h-4" />
-                                <span>{event.start_date}{event.end_date ? ` - ${event.end_date}` : ' - Present'}</span>
+                                <span>{event.start_date}{event.end_date ? ` - ${event.end_date}` : ' -Present'}</span>
                               </div>
                               {event.location && (
                                 <div className="flex items-center gap-1">

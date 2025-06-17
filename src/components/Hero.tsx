@@ -1,10 +1,9 @@
-
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Download, Github, Linkedin, Mail, Twitter, Instagram, Facebook } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { usePortfolioData } from "@/contexts/DataContext";
-import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { useOptimizedSiteSettings } from "@/hooks/modern/useOptimizedSiteSettings";
 
 const Hero = () => {
   const [typedText, setTypedText] = useState("");
@@ -14,7 +13,7 @@ const Hero = () => {
   const [imageError, setImageError] = useState(false);
   const fullText = data?.user?.title || "";
   const { toast: uiToast } = useToast();
-  const { settings, loading: settingsLoading } = useSiteSettings();
+  const { settings, loading: settingsLoading } = useOptimizedSiteSettings();
 
   useEffect(() => {
     setImageTimestamp(Date.now());
