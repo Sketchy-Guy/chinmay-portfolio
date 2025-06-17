@@ -28,10 +28,12 @@ interface GitHubStats {
   total_repos: number;
   total_stars: number;
   total_forks: number;
-  top_language: string;
-  recent_activity: GitHubRepo[];
-  contribution_streak: number;
+  total_contributions: number;
+  current_streak: number;
+  languages: any;
+  contribution_data: any;
   last_updated: string;
+  username: string;
 }
 
 const GitHubStatsEnhanced = () => {
@@ -59,10 +61,12 @@ const GitHubStatsEnhanced = () => {
           total_repos: cachedStats.total_repos || 0,
           total_stars: cachedStats.total_stars || 0,
           total_forks: cachedStats.total_forks || 0,
-          top_language: cachedStats.top_language || 'JavaScript',
-          recent_activity: Array.isArray(cachedStats.recent_activity) ? cachedStats.recent_activity : [],
-          contribution_streak: cachedStats.contribution_streak || 0,
-          last_updated: cachedStats.last_updated || new Date().toISOString()
+          total_contributions: cachedStats.total_contributions || 0,
+          current_streak: cachedStats.current_streak || 0,
+          languages: cachedStats.languages || {},
+          contribution_data: cachedStats.contribution_data || {},
+          last_updated: cachedStats.last_updated || new Date().toISOString(),
+          username: cachedStats.username || 'chinmaykumarpanda'
         };
         
         setStats(githubStats);
@@ -76,10 +80,12 @@ const GitHubStatsEnhanced = () => {
           total_repos: 25,
           total_stars: 150,
           total_forks: 45,
-          top_language: 'TypeScript',
-          recent_activity: [],
-          contribution_streak: 42,
-          last_updated: new Date().toISOString()
+          total_contributions: 1250,
+          current_streak: 42,
+          languages: { TypeScript: 45, JavaScript: 30, Python: 15, Java: 10 },
+          contribution_data: {},
+          last_updated: new Date().toISOString(),
+          username: 'chinmaykumarpanda'
         };
         setStats(defaultStats);
         
@@ -96,10 +102,12 @@ const GitHubStatsEnhanced = () => {
         total_repos: 25,
         total_stars: 150,
         total_forks: 45,
-        top_language: 'TypeScript',
-        recent_activity: [],
-        contribution_streak: 42,
-        last_updated: new Date().toISOString()
+        total_contributions: 1250,
+        current_streak: 42,
+        languages: { TypeScript: 45, JavaScript: 30, Python: 15, Java: 10 },
+        contribution_data: {},
+        last_updated: new Date().toISOString(),
+        username: 'chinmaykumarpanda'
       };
       setStats(fallbackStats);
       
@@ -118,6 +126,17 @@ const GitHubStatsEnhanced = () => {
       return;
     }
     await fetchGitHubStats(true);
+  };
+
+  const getTopLanguage = (languages: any): string => {
+    if (!languages || typeof languages !== 'object') return 'TypeScript';
+    
+    const languageEntries = Object.entries(languages);
+    if (languageEntries.length === 0) return 'TypeScript';
+    
+    return languageEntries.reduce((a, b) => 
+      (a[1] as number) > (b[1] as number) ? a : b
+    )[0] as string;
   };
 
   useEffect(() => {
@@ -193,7 +212,7 @@ const GitHubStatsEnhanced = () => {
               { title: 'Repositories', value: stats.total_repos, icon: Github, color: 'from-blue-500 to-blue-600' },
               { title: 'Total Stars', value: stats.total_stars, icon: Star, color: 'from-yellow-500 to-yellow-600' },
               { title: 'Forks', value: stats.total_forks, icon: GitFork, color: 'from-green-500 to-green-600' },
-              { title: 'Contribution Streak', value: `${stats.contribution_streak} days`, icon: TrendingUp, color: 'from-purple-500 to-purple-600' }
+              { title: 'Contribution Streak', value: `${stats.current_streak} days`, icon: TrendingUp, color: 'from-purple-500 to-purple-600' }
             ].map((stat, index) => (
               <motion.div
                 key={stat.title}
@@ -236,7 +255,7 @@ const GitHubStatsEnhanced = () => {
               </CardHeader>
               <CardContent>
                 <Badge className="bg-gradient-to-r from-purple-600 to-cyan-600 text-white text-lg px-4 py-2">
-                  {stats.top_language}
+                  {getTopLanguage(stats.languages)}
                 </Badge>
                 <p className="text-gray-400 text-sm mt-2">
                   Last updated: {new Date(stats.last_updated).toLocaleDateString()}
