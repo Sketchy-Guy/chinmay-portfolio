@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -17,15 +18,16 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { connectionManager } from "@/utils/connectionManager";
 
-// Create a query client instance with aggressive refetching
+// Create a query client instance with optimized settings
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 2,
-      refetchOnWindowFocus: true,
+      refetchOnWindowFocus: false, // Reduced to prevent excessive refetching
       refetchOnMount: true,
-      staleTime: 5000, // Reduced stale time for more frequent refreshes
+      staleTime: 30000, // Increased stale time for better performance
       gcTime: 1000 * 60 * 10, // 10 minutes cache time
     },
   },
@@ -61,7 +63,7 @@ function AppContent() {
     }
   }, [settings.site_favicon, settings.site_logo, settingsLoading]);
 
-  // Optimized initialization
+  // Optimized initialization with connection management
   useEffect(() => {
     console.log("Initializing application...");
     
@@ -98,7 +100,6 @@ function AppContent() {
           if (!result.success) {
             console.warn('Storage initialization warning:', result.message);
             if (session) {
-              // Only show warnings to authenticated users
               console.warn('Storage warning for authenticated user:', result.message);
             }
           } else {
@@ -120,8 +121,10 @@ function AppContent() {
     
     init();
     
+    // Cleanup function with connection manager
     return () => {
-      console.log('App unmounting, cleaning up...');
+      console.log('App unmounting, cleaning up connections...');
+      connectionManager.cleanup();
     };
   }, []);
 
@@ -134,8 +137,8 @@ function AppContent() {
             <div className="absolute inset-0 w-16 h-16 border-4 border-cyan-500/20 border-r-cyan-500 rounded-full animate-spin mx-auto" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
           </div>
           <div className="space-y-2">
-            <p className="text-xl text-purple-400 font-medium animate-pulse">Initializing Portfolio</p>
-            <p className="text-sm text-gray-400">Setting up your experience...</p>
+            <p className="text-xl text-purple-400 font-medium animate-pulse">Initializing Neural Network</p>
+            <p className="text-sm text-gray-400">Connecting to data streams...</p>
             {initError && (
               <p className="text-sm text-red-400 mt-2">{initError}</p>
             )}
