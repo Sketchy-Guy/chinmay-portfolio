@@ -19,19 +19,10 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { modernConnectionManager } from "@/utils/modern/connectionManager";
 
-/**
- * Main Portfolio Index Page
- * Displays all portfolio sections with optimized loading and analytics
- * Features: Performance monitoring, error handling, real-time analytics
- */
 const Index = () => {
   const { fetchPortfolioData, isLoading, error, data } = usePortfolioData();
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   
-  /**
-   * Load portfolio data and track analytics
-   * Includes error handling and performance monitoring
-   */
   useEffect(() => {
     const loadData = async () => {
       const startTime = performance.now();
@@ -66,7 +57,6 @@ const Index = () => {
           
           console.log("Analytics tracked successfully");
         } catch (analyticsError) {
-          // Analytics errors should not impact user experience
           console.warn("Failed to track analytics:", analyticsError);
         }
         
@@ -80,10 +70,6 @@ const Index = () => {
     
     loadData();
     
-    /**
-     * Enhanced scroll reveal animation with performance optimization
-     * Uses requestAnimationFrame for smooth animations
-     */
     const handleRevealOnScroll = () => {
       requestAnimationFrame(() => {
         const revealElements = document.querySelectorAll('.reveal, .reveal-stagger');
@@ -94,7 +80,6 @@ const Index = () => {
           const elementVisible = 100;
           
           if (elementTop < windowHeight - elementVisible && !element.classList.contains('active')) {
-            // Staggered animation for better visual effect
             setTimeout(() => {
               element.classList.add('active');
             }, index * 30);
@@ -103,9 +88,6 @@ const Index = () => {
       });
     };
     
-    /**
-     * Enhanced smooth scroll with easing for anchor links
-     */
     const handleSmoothScroll = (e: Event) => {
       const target = e.target as HTMLAnchorElement;
       const href = target.getAttribute('href');
@@ -124,107 +106,24 @@ const Index = () => {
             top: offsetPosition,
             behavior: 'smooth'
           });
-          
-          // Track navigation analytics
-          try {
-            supabase
-              .from('analytics_data')
-              .insert({
-                event_type: 'navigation',
-                event_data: { 
-                  target_section: targetId,
-                  timestamp: new Date().toISOString()
-                },
-                page_url: window.location.href
-              });
-          } catch {
-            // Silent fail for analytics
-          }
         }
       }
     };
     
-    // Add optimized event listeners
-    const throttledScrollHandler = throttle(handleRevealOnScroll, 16); // ~60fps
+    const throttledScrollHandler = throttle(handleRevealOnScroll, 16);
     window.addEventListener('scroll', throttledScrollHandler, { passive: true });
     document.addEventListener('click', handleSmoothScroll);
     
-    // Initial reveal check
     handleRevealOnScroll();
     
-    // Enhanced CSS injection for performance and visual fixes
-    const style = document.createElement('style');
-    style.textContent = `
-      /* Enhanced performance and visibility fixes */
-      .project-card,
-      .certification-card,
-      .skill-badge,
-      .futuristic-card {
-        opacity: 1 !important;
-        visibility: visible !important;
-        transform: none !important;
-        will-change: transform, opacity;
-        contain: layout style paint;
-      }
-      
-      /* Smooth hover effects with GPU acceleration */
-      .futuristic-card:hover {
-        transform: translateY(-5px) !important;
-        opacity: 1 !important;
-        visibility: visible !important;
-      }
-      
-      /* Optimized animations */
-      .reveal.active,
-      .reveal-stagger.active {
-        opacity: 1 !important;
-        transform: translateY(0) scale(1) !important;
-        visibility: visible !important;
-      }
-      
-      /* Enhanced loading states */
-      .loading-skeleton {
-        background: linear-gradient(90deg, rgba(139,92,246,0.1) 25%, rgba(139,92,246,0.2) 50%, rgba(139,92,246,0.1) 75%);
-        background-size: 200% 100%;
-        animation: loading 1.5s infinite;
-      }
-      
-      @keyframes loading {
-        0% { background-position: 200% 0; }
-        100% { background-position: -200% 0; }
-      }
-      
-      /* Performance optimization for smooth scrolling */
-      html {
-        scroll-behavior: smooth;
-      }
-      
-      /* Prevent layout shift */
-      section {
-        min-height: fit-content;
-      }
-    `;
-    document.head.appendChild(style);
-    
-    // Cleanup function with connection management
     return () => {
       window.removeEventListener('scroll', throttledScrollHandler);
       document.removeEventListener('click', handleSmoothScroll);
-      if (document.head.contains(style)) {
-        document.head.removeChild(style);
-      }
-      
-      // Clean up any remaining connections
       console.log("Cleaning up page connections...");
       modernConnectionManager.cleanup();
     };
   }, [fetchPortfolioData]);
 
-  /**
-   * Throttle function for performance optimization
-   * @param func - Function to throttle
-   * @param limit - Time limit in ms
-   */
   function throttle(func: Function, limit: number) {
     let inThrottle: boolean;
     return function() {
@@ -238,15 +137,12 @@ const Index = () => {
     };
   }
 
-  // Enhanced loading screen with better UX
   if (isInitialLoading && isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
-        {/* Animated background */}
         <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900"></div>
         <div className="absolute inset-0 cyber-grid opacity-20"></div>
         
-        {/* Loading content */}
         <div className="text-center relative z-10">
           <div className="w-20 h-20 mx-auto mb-6">
             <div className="quantum-loader"></div>
@@ -258,7 +154,6 @@ const Index = () => {
             Preparing neural networks and data streams
           </p>
           
-          {/* Enhanced progress indicators */}
           <div className="flex justify-center gap-1">
             {[...Array(5)].map((_, i) => (
               <div
@@ -269,7 +164,6 @@ const Index = () => {
             ))}
           </div>
           
-          {/* Performance indicator */}
           <div className="mt-6 text-xs text-gray-500">
             Optimizing for best performance...
           </div>
@@ -280,10 +174,8 @@ const Index = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Enhanced header with better performance */}
       <Header />
       
-      {/* Main content sections */}
       <main className="flex-grow">
         <HeroSection />
         <AboutSection />
@@ -297,7 +189,6 @@ const Index = () => {
         <Contact />
       </main>
       
-      {/* Footer and utilities */}
       <Footer />
       <ScrollToTop />
     </div>

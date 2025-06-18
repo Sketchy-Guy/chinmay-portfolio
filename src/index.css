@@ -9,32 +9,23 @@
   :root {
     --background: 8 8 16;
     --foreground: 250 250 255;
-
     --card: 15 15 25;
     --card-foreground: 250 250 255;
-
     --popover: 15 15 25;
     --popover-foreground: 250 250 255;
-
     --primary: 139 92 246;
     --primary-foreground: 250 250 255;
-
     --secondary: 6 182 212;
     --secondary-foreground: 250 250 255;
-
     --muted: 30 30 45;
     --muted-foreground: 156 163 175;
-
     --accent: 30 30 45;
     --accent-foreground: 250 250 255;
-
     --destructive: 239 68 68;
     --destructive-foreground: 250 250 255;
-
     --border: 45 45 65;
     --input: 45 45 65;
     --ring: 139 92 246;
-
     --radius: 0.75rem;
   }
 
@@ -55,7 +46,7 @@
 }
 
 @layer components {
-  /* Enhanced glass morphism effects */
+  /* Glass morphism effects */
   .glass-morphism {
     @apply bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl;
   }
@@ -63,7 +54,6 @@
   .glass-card-enhanced {
     @apply bg-white/5 backdrop-blur-xl border border-purple-500/30 shadow-2xl rounded-2xl;
     transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-    /* Force visibility and positioning */
     opacity: 1 !important;
     visibility: visible !important;
     position: relative;
@@ -74,7 +64,6 @@
     @apply bg-white/10 border-purple-400/50 shadow-purple-500/25;
     transform: translateY(-5px);
     box-shadow: 0 25px 50px -12px rgba(139, 92, 246, 0.4);
-    /* Ensure hover state maintains visibility */
     opacity: 1 !important;
     visibility: visible !important;
     z-index: 2;
@@ -120,15 +109,7 @@
     box-shadow: 0 8px 25px rgba(255, 255, 255, 0.1);
   }
   
-  /* Enhanced neon effects */
-  .neon-border {
-    box-shadow: 
-      0 0 5px rgb(139 92 246 / 0.5),
-      0 0 10px rgb(139 92 246 / 0.3),
-      0 0 15px rgb(139 92 246 / 0.2),
-      inset 0 0 5px rgb(139 92 246 / 0.1);
-  }
-  
+  /* Cyber grid background */
   .cyber-grid {
     background-image: 
       linear-gradient(rgba(139, 92, 246, 0.1) 1px, transparent 1px),
@@ -136,6 +117,7 @@
     background-size: 50px 50px;
   }
   
+  /* Holographic text effect */
   .holographic-text {
     background: linear-gradient(45deg, #8b5cf6, #06b6d4, #ec4899, #10b981);
     background-size: 400% 400%;
@@ -145,11 +127,10 @@
     animation: holographic 3s ease-in-out infinite;
   }
   
-  /* Enhanced card styles with forced visibility */
+  /* Enhanced card styles */
   .futuristic-card {
     @apply glass-card-enhanced p-6 relative overflow-hidden;
     transform-style: preserve-3d;
-    /* Critical visibility fixes */
     opacity: 1 !important;
     visibility: visible !important;
     display: block !important;
@@ -178,11 +159,10 @@
     @apply text-4xl md:text-5xl font-bold mb-6 font-orbitron holographic-text;
   }
   
-  /* Enhanced component-specific styles with visibility fixes */
+  /* Component-specific styles */
   .skill-badge {
     @apply futuristic-card text-center cursor-pointer;
     min-height: 140px;
-    /* Force visibility */
     opacity: 1 !important;
     visibility: visible !important;
     transform: none !important;
@@ -200,7 +180,6 @@
   
   .project-card {
     @apply glass-card-enhanced;
-    /* Critical fixes for project cards */
     opacity: 1 !important;
     visibility: visible !important;
     transform: none !important;
@@ -217,7 +196,6 @@
   
   .certification-card {
     @apply glass-card-enhanced;
-    /* Critical fixes for certification cards */
     opacity: 1 !important;
     visibility: visible !important;
     transform: none !important;
@@ -236,7 +214,7 @@
     @apply bg-gradient-to-r from-purple-400 to-cyan-400 text-transparent bg-clip-text;
   }
   
-  /* Enhanced loading skeleton */
+  /* Loading skeleton */
   .loading-skeleton {
     background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
     background-size: 200% 100%;
@@ -244,7 +222,7 @@
     border-radius: 0.5rem;
   }
   
-  /* Quantum loader for futuristic loading animation */
+  /* Quantum loader */
   .quantum-loader {
     width: 64px;
     height: 64px;
@@ -282,7 +260,7 @@
   }
 }
 
-/* Advanced Animations */
+/* Animations */
 @keyframes loading {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
@@ -300,11 +278,6 @@
 @keyframes float-3d {
   0%, 100% { transform: translateY(0px) rotateX(0deg); }
   50% { transform: translateY(-20px) rotateX(5deg); }
-}
-
-@keyframes pulse-neon {
-  0%, 100% { box-shadow: 0 0 5px rgba(139, 92, 246, 0.5); }
-  50% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.8), 0 0 30px rgba(6, 182, 212, 0.4); }
 }
 
 @keyframes fadeInUp {
@@ -334,10 +307,6 @@
   animation: float-3d 6s ease-in-out infinite;
 }
 
-.animate-pulse-neon {
-  animation: pulse-neon 2s ease-in-out infinite;
-}
-
 .animate-fade-in-up {
   animation: fadeInUp 0.8s ease-out;
 }
@@ -346,7 +315,7 @@
   animation: slideInRight 0.6s ease-out;
 }
 
-/* Enhanced reveal animations with forced visibility */
+/* Reveal animations */
 .reveal {
   opacity: 0;
   transform: translateY(50px) rotateX(10deg);
@@ -371,7 +340,7 @@
   visibility: visible !important;
 }
 
-/* Global visibility fixes - preventing any component from becoming invisible */
+/* Global visibility fixes */
 .skill-badge,
 .project-card,
 .certification-card,
@@ -391,7 +360,6 @@ div:hover *,
   visibility: visible !important;
 }
 
-/* Ensure grid containers don't hide their children */
 .grid {
   overflow: visible !important;
 }
@@ -442,7 +410,6 @@ div:hover *,
     background-size: 30px 30px;
   }
   
-  /* Ensure mobile cards remain visible */
   .skill-badge,
   .project-card,
   .certification-card {
@@ -460,7 +427,6 @@ div:hover *,
     transition-duration: 0.01ms !important;
   }
   
-  /* Still maintain visibility for reduced motion */
   .reveal,
   .reveal-stagger {
     opacity: 1 !important;
@@ -476,7 +442,7 @@ a:focus-visible {
   border-radius: 8px;
 }
 
-/* Final override to ensure no cards ever disappear */
+/* Final override to ensure no cards disappear */
 * {
   backface-visibility: visible !important;
 }
