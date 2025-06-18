@@ -31,6 +31,11 @@
 
   * {
     @apply border-border;
+    box-sizing: border-box;
+  }
+  
+  html {
+    scroll-behavior: smooth;
   }
   
   body {
@@ -38,15 +43,22 @@
     background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 25%, #16213e 50%, #0f3460 75%, #533483 100%);
     background-attachment: fixed;
     min-height: 100vh;
+    font-family: 'Inter', sans-serif;
   }
   
   h1, h2, h3, h4, h5, h6 {
     @apply font-orbitron;
+    font-family: 'Orbitron', monospace;
+  }
+
+  /* Ensure proper spacing for fixed header */
+  section {
+    scroll-margin-top: 100px;
   }
 }
 
 @layer components {
-  /* Enhanced Glass morphism effects */
+  /* Professional Glass morphism effects */
   .glass-morphism {
     @apply bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl;
     backdrop-filter: blur(20px);
@@ -73,9 +85,9 @@
     z-index: 2;
   }
   
-  /* Enhanced button styles */
+  /* Professional button styles */
   .btn-primary {
-    @apply relative px-8 py-4 bg-gradient-to-r from-purple-600 to-cyan-500 text-white font-semibold rounded-lg overflow-hidden;
+    @apply relative px-8 py-4 bg-gradient-to-r from-purple-600 to-cyan-500 text-white font-semibold rounded-lg overflow-hidden font-orbitron;
     border: 2px solid transparent;
     transition: all 0.3s ease;
     box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
@@ -103,7 +115,7 @@
   }
   
   .btn-secondary {
-    @apply relative px-6 py-3 bg-white/10 backdrop-blur-md text-white font-medium rounded-lg border-2 border-white/30;
+    @apply relative px-6 py-3 bg-white/10 backdrop-blur-md text-white font-medium rounded-lg border-2 border-white/30 font-orbitron;
     transition: all 0.3s ease;
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
@@ -115,7 +127,7 @@
     box-shadow: 0 8px 25px rgba(255, 255, 255, 0.1);
   }
   
-  /* Enhanced Cyber grid background */
+  /* Professional Cyber grid background */
   .cyber-grid {
     background-image: 
       linear-gradient(rgba(139, 92, 246, 0.1) 1px, transparent 1px),
@@ -127,7 +139,7 @@
     animation: grid-flow 20s ease-in-out infinite;
   }
   
-  /* Enhanced Holographic text effect */
+  /* Professional Holographic text effect */
   .holographic-text {
     background: linear-gradient(45deg, #8b5cf6, #06b6d4, #ec4899, #10b981, #f59e0b);
     background-size: 400% 400%;
@@ -138,7 +150,7 @@
     filter: drop-shadow(0 0 10px rgba(139, 92, 246, 0.5));
   }
   
-  /* Enhanced card styles */
+  /* Professional card styles */
   .futuristic-card {
     @apply glass-card-enhanced p-6 relative overflow-hidden;
     transform-style: preserve-3d;
@@ -202,7 +214,7 @@
     @apply text-4xl md:text-5xl font-bold mb-6 font-orbitron holographic-text;
   }
   
-  /* Enhanced component-specific styles */
+  /* Professional component-specific styles */
   .skill-badge {
     @apply futuristic-card text-center cursor-pointer;
     min-height: 140px;
@@ -265,7 +277,7 @@
     @apply bg-gradient-to-r from-purple-400 to-cyan-400 text-transparent bg-clip-text;
   }
   
-  /* Enhanced loading skeleton */
+  /* Professional loading skeleton */
   .loading-skeleton {
     background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
     background-size: 200% 100%;
@@ -273,7 +285,7 @@
     border-radius: 0.5rem;
   }
   
-  /* Enhanced quantum loader */
+  /* Professional quantum loader */
   .quantum-loader {
     width: 64px;
     height: 64px;
@@ -311,7 +323,7 @@
     animation: quantum-spin 1.5s ease-in-out infinite;
   }
 
-  /* Neon glow effects */
+  /* Professional neon glow effects */
   .neon-border {
     box-shadow: 
       0 0 5px rgba(139, 92, 246, 0.5),
@@ -327,14 +339,14 @@
       0 0 15px rgba(139, 92, 246, 0.4);
   }
 
-  /* Data stream effect */
+  /* Professional data stream effect */
   .data-stream {
     background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
     animation: data-flow 2s infinite;
   }
 }
 
-/* Enhanced Animations */
+/* Professional Animations */
 @keyframes loading {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
@@ -393,7 +405,7 @@
   50% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.8), 0 0 30px rgba(6, 182, 212, 0.3); }
 }
 
-/* Animation utility classes */
+/* Professional animation utility classes */
 .animate-float-3d {
   animation: float-3d 6s ease-in-out infinite;
 }
@@ -410,7 +422,7 @@
   animation: pulse-glow 2s ease-in-out infinite;
 }
 
-/* Enhanced reveal animations */
+/* Professional reveal animations */
 .reveal {
   opacity: 0;
   transform: translateY(50px) rotateX(10deg);
@@ -435,7 +447,7 @@
   visibility: visible !important;
 }
 
-/* Global visibility fixes */
+/* Professional visibility fixes */
 .skill-badge,
 .project-card,
 .certification-card,
@@ -446,7 +458,7 @@
   display: block !important;
 }
 
-/* Hover state fixes */
+/* Professional hover state fixes */
 section:hover *,
 div:hover *,
 .grid:hover *,
@@ -465,7 +477,7 @@ div:hover *,
   display: block !important;
 }
 
-/* Enhanced Scrollbar Styling */
+/* Professional Scrollbar Styling */
 ::-webkit-scrollbar {
   width: 12px;
 }
@@ -486,7 +498,7 @@ div:hover *,
   box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
 }
 
-/* Page Transitions */
+/* Professional Page Transitions */
 .page-transition {
   opacity: 0;
   transform: translateY(20px);
@@ -498,7 +510,7 @@ div:hover *,
   transform: translateY(0);
 }
 
-/* Enhanced Responsive Design */
+/* Professional Responsive Design */
 @media (max-width: 768px) {
   .futuristic-card:hover {
     transform: translateY(-3px);
@@ -515,9 +527,13 @@ div:hover *,
     visibility: visible !important;
     transform: none !important;
   }
+
+  section {
+    scroll-margin-top: 80px;
+  }
 }
 
-/* Accessibility */
+/* Professional Accessibility */
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;
@@ -532,7 +548,7 @@ div:hover *,
   }
 }
 
-/* Focus States */
+/* Professional Focus States */
 button:focus-visible,
 a:focus-visible {
   outline: 2px solid rgb(139 92 246);
@@ -541,7 +557,7 @@ a:focus-visible {
   box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.3);
 }
 
-/* Final override to ensure no cards disappear */
+/* Professional final override to ensure no cards disappear */
 * {
   backface-visibility: visible !important;
 }
@@ -569,4 +585,29 @@ a:focus-visible {
 @keyframes shimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
+}
+
+/* Typography consistency */
+.font-orbitron {
+  font-family: 'Orbitron', monospace;
+}
+
+/* Professional spacing and consistency */
+.container {
+  @apply mx-auto px-4 sm:px-6 lg:px-8;
+  max-width: 1200px;
+}
+
+/* Professional section spacing */
+section {
+  @apply py-16 lg:py-24;
+}
+
+/* Professional form styling */
+input, textarea, select {
+  @apply glass-morphism text-white placeholder-gray-400;
+}
+
+input:focus, textarea:focus, select:focus {
+  @apply ring-2 ring-purple-500 border-purple-500;
 }

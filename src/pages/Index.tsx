@@ -98,7 +98,7 @@ const Index = () => {
         const targetElement = document.getElementById(targetId);
         
         if (targetElement) {
-          const headerOffset = 80;
+          const headerOffset = 100; // Increased for better spacing
           const elementPosition = targetElement.getBoundingClientRect().top;
           const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
 
@@ -176,7 +176,8 @@ const Index = () => {
     <div className="flex flex-col min-h-screen">
       <Header />
       
-      <main className="flex-grow">
+      {/* Main content with proper header spacing */}
+      <main className="flex-grow pt-20">
         <EnhancedHeroSection />
         <EnhancedAboutSection />
         <Skills />

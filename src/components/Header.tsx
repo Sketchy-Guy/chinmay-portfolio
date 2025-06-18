@@ -28,9 +28,9 @@ const Header = () => {
 
   if (loading) {
     return (
-      <header className="fixed top-0 left-0 w-full z-50 py-4 bg-gray-900/80 backdrop-blur-xl">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center">
+      <header className="fixed top-0 left-0 w-full z-50 h-20 bg-gray-900/95 backdrop-blur-xl border-b border-purple-500/20">
+        <div className="container mx-auto px-6 h-full">
+          <div className="flex justify-between items-center h-full">
             <div className="animate-pulse h-10 w-32 bg-gray-700/50 rounded"></div>
             <div className="animate-pulse h-10 w-24 bg-gray-700/50 rounded"></div>
           </div>
@@ -43,23 +43,26 @@ const Header = () => {
     <header
       className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ${
         scrollPosition > 50
-          ? "py-3 bg-gray-900/95 backdrop-blur-xl shadow-2xl border-b border-purple-500/20"
-          : "py-6 bg-transparent"
+          ? "h-16 bg-gray-900/98 backdrop-blur-xl shadow-2xl border-b border-purple-500/30"
+          : "h-20 bg-gray-900/90 backdrop-blur-md border-b border-purple-500/10"
       }`}
     >
-      <div className="container mx-auto px-4">
-        <div className="flex justify-between items-center">
+      <div className="container mx-auto px-6 h-full">
+        <div className="flex justify-between items-center h-full">
           <a
             href="#"
             className="flex items-center gap-3 text-2xl md:text-3xl font-bold font-orbitron transition-all duration-300 hover:scale-105 group"
             aria-label="Homepage"
           >
-            <img
-              src={logo}
-              alt="Site Logo"
-              className="h-10 w-10 object-contain rounded-full border-2 border-purple-500/50 group-hover:border-purple-400 shadow-lg bg-white/10 backdrop-blur transition-all duration-300 group-hover:shadow-purple-500/25"
-              loading="lazy"
-            />
+            <div className="relative">
+              <img
+                src={logo}
+                alt="Site Logo"
+                className="h-10 w-10 object-contain rounded-full border-2 border-purple-500/50 group-hover:border-purple-400 shadow-lg bg-white/10 backdrop-blur transition-all duration-300 group-hover:shadow-purple-500/25"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-500/20 to-cyan-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            </div>
             <span className="bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
               {name}
             </span>
@@ -70,15 +73,27 @@ const Header = () => {
               <a
                 key={index}
                 href={link.href}
-                className="relative text-gray-300 hover:text-purple-400 transition-all duration-300 font-medium group py-2"
+                className="relative text-gray-300 hover:text-purple-400 transition-all duration-300 font-medium group py-2 font-orbitron"
               >
                 {link.title}
                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-purple-500 to-cyan-400 transition-all duration-300 group-hover:w-full"></span>
+                <div className="absolute inset-0 bg-purple-500/5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               </a>
             ))}
             <Button 
-              className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 text-white border-0 px-6 py-2 font-medium transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-purple-500/25" 
-              onClick={() => (window.location.href = "#contact")}
+              className="cyber-button px-6 py-2 font-medium transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-purple-500/25 font-orbitron" 
+              onClick={() => {
+                const contactSection = document.getElementById('contact');
+                if (contactSection) {
+                  const headerOffset = 100;
+                  const elementPosition = contactSection.getBoundingClientRect().top;
+                  const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+                  window.scrollTo({
+                    top: offsetPosition,
+                    behavior: 'smooth'
+                  });
+                }
+              }}
             >
               <span className="relative z-10">Hire Me</span>
             </Button>
@@ -92,7 +107,7 @@ const Header = () => {
             <Menu size={24} />
           </button>
           
-          {/* Mobile Menu */}
+          {/* Enhanced Mobile Menu */}
           <div
             className={`fixed inset-0 bg-gray-900/98 backdrop-blur-xl z-50 flex flex-col p-8 md:hidden transition-all duration-500 ease-out ${
               isMenuOpen ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"
@@ -123,7 +138,7 @@ const Header = () => {
                 <a
                   key={index}
                   href={link.href}
-                  className="text-xl text-gray-300 hover:text-purple-400 transition-all duration-300 font-medium py-3 border-b border-purple-500/20 hover:border-purple-400/50 animate-fade-in"
+                  className="text-xl text-gray-300 hover:text-purple-400 transition-all duration-300 font-medium py-3 border-b border-purple-500/20 hover:border-purple-400/50 animate-fade-in font-orbitron"
                   onClick={() => setIsMenuOpen(false)}
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
@@ -131,10 +146,19 @@ const Header = () => {
                 </a>
               ))}
               <Button
-                className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 text-white border-0 w-full mt-8 py-3 font-medium"
+                className="cyber-button w-full mt-8 py-3 font-medium font-orbitron"
                 onClick={() => {
                   setIsMenuOpen(false);
-                  window.location.href = "#contact";
+                  const contactSection = document.getElementById('contact');
+                  if (contactSection) {
+                    const headerOffset = 100;
+                    const elementPosition = contactSection.getBoundingClientRect().top;
+                    const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+                    window.scrollTo({
+                      top: offsetPosition,
+                      behavior: 'smooth'
+                    });
+                  }
                 }}
               >
                 <span className="relative z-10">Hire Me</span>
