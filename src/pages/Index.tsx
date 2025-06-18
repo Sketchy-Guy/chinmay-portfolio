@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
-import HeroSection from "@/components/modern/portfolio/HeroSection";
-import AboutSection from "@/components/modern/portfolio/AboutSection";
+import EnhancedHeroSection from "@/components/modern/portfolio/EnhancedHeroSection";
+import EnhancedAboutSection from "@/components/modern/portfolio/EnhancedAboutSection";
 import Skills from "@/components/Skills";
 import SkillsRadar from "@/components/SkillsRadar";
 import Projects from "@/components/Projects";
@@ -177,8 +177,8 @@ const Index = () => {
       <Header />
       
       <main className="flex-grow">
-        <HeroSection />
-        <AboutSection />
+        <EnhancedHeroSection />
+        <EnhancedAboutSection />
         <Skills />
         <SkillsRadar />
         <Timeline />

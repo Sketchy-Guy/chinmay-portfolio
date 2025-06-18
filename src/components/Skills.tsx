@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Code, Database, Globe, Wrench, Brain, Users } from "lucide-react";
 
@@ -74,7 +75,6 @@ const Skills = () => {
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          // Trigger animations for visible skills
           const newVisibleSkills = new Array(filteredSkills.length).fill(false);
           filteredSkills.forEach((_, index) => {
             setTimeout(() => {
@@ -102,10 +102,8 @@ const Skills = () => {
   }, [filteredSkills]);
 
   useEffect(() => {
-    // Reset animations when category changes
     setVisibleSkills(new Array(filteredSkills.length).fill(false));
     const timer = setTimeout(() => {
-      const newVisibleSkills = new Array(filteredSkills.length).fill(false);
       filteredSkills.forEach((_, index) => {
         setTimeout(() => {
           setVisibleSkills(prev => {
@@ -120,11 +118,19 @@ const Skills = () => {
   }, [activeCategory, filteredSkills]);
 
   return (
-    <section ref={sectionRef} id="skills" className="py-16 md:py-24 bg-gray-900/50 backdrop-blur-sm cyber-grid">
-      <div className="container mx-auto px-4">
+    <section ref={sectionRef} id="skills" className="py-16 md:py-24 bg-gradient-to-br from-gray-900/50 via-purple-900/30 to-gray-900/50 relative overflow-hidden">
+      {/* Enhanced background effects */}
+      <div className="absolute inset-0 opacity-20">
+        <div className="absolute top-1/4 left-1/4 w-48 h-48 bg-purple-500 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-cyan-500 rounded-full blur-3xl animate-pulse delay-1000"></div>
+      </div>
+      
+      <div className="absolute inset-0 cyber-grid opacity-10"></div>
+      
+      <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-3xl mx-auto text-center mb-16 reveal">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6 font-orbitron holographic-text">
-            Neural Capabilities
+          <h2 className="text-4xl md:text-5xl font-bold mb-6 font-orbitron">
+            Neural <span className="holographic-text">Capabilities</span>
           </h2>
           <div className="w-24 h-1 bg-gradient-to-r from-purple-500 to-cyan-500 mx-auto mb-8 rounded-full"></div>
           <p className="text-gray-300 text-lg leading-relaxed glass-morphism p-6 rounded-2xl border border-purple-500/20">
@@ -139,7 +145,7 @@ const Skills = () => {
                 key={index}
                 className={`px-6 py-3 rounded-full text-sm font-medium transition-all duration-300 font-orbitron border-2 ${
                   activeCategory === category 
-                  ? "bg-gradient-to-r from-purple-500 to-cyan-500 text-white shadow-lg border-transparent neon-border" 
+                  ? "bg-gradient-to-r from-purple-500 to-cyan-500 text-white shadow-lg border-transparent neon-border animate-pulse-glow" 
                   : "glass-morphism hover:glass-morphism text-gray-300 border-purple-500/30 hover:border-purple-400/50 hover:text-white"
                 }`}
                 onClick={() => setActiveCategory(category)}
@@ -165,26 +171,26 @@ const Skills = () => {
                 style={{ transitionDelay: `${index * 100}ms` }}
               >
                 <div className="flex flex-col items-center h-full">
-                  <div className={`skill-icon w-12 h-12 glass-morphism rounded-xl flex items-center justify-center mb-4 bg-gradient-to-br ${gradientClass} shadow-lg`}>
+                  <div className={`skill-icon w-12 h-12 glass-morphism rounded-xl flex items-center justify-center mb-4 bg-gradient-to-br ${gradientClass} shadow-lg group-hover:shadow-2xl transition-all duration-300`}>
                     <IconComponent className="w-6 h-6 text-white" />
                   </div>
                   
-                  <h3 className="font-semibold text-lg text-white mb-2 font-orbitron text-center">
+                  <h3 className="font-semibold text-lg text-white mb-2 font-orbitron text-center group-hover:text-purple-300 transition-colors">
                     {skill.name}
                   </h3>
                   
                   <div className="w-full mb-3">
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-xs text-gray-400 font-medium">Proficiency</span>
-                      <span className="text-sm font-bold text-purple-400">
+                      <span className="text-sm font-bold text-purple-400 neon-text">
                         {skill.level}%
                       </span>
                     </div>
                     
-                    <div className="progress-ring relative">
+                    <div className="relative">
                       <div className="w-full bg-gray-700/50 rounded-full h-2 overflow-hidden border border-purple-500/20">
                         <div 
-                          className={`h-full rounded-full bg-gradient-to-r ${gradientClass} transition-all duration-2000 ease-out relative`}
+                          className={`h-full rounded-full bg-gradient-to-r ${gradientClass} transition-all duration-2000 ease-out relative overflow-hidden`}
                           style={{ 
                             width: isVisible ? `${skill.level}%` : '0%',
                             transitionDelay: `${index * 100 + 400}ms`
