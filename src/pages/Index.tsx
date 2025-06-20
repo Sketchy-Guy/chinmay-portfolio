@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import RevolutionaryHeroSection from "@/components/modern/portfolio/RevolutionaryHeroSection";
 import InnovativeAboutSection from "@/components/modern/portfolio/InnovativeAboutSection";
