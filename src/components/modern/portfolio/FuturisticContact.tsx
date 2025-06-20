@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { Send, Mail, Phone, MapPin, Github, Linkedin, Twitter } from "lucide-react";
@@ -17,13 +16,13 @@ const FuturisticContact = () => {
   const sectionRef = useRef<HTMLElement>(null);
 
   const contactInfo = {
-    email: data?.profile?.email || "chinmaykumarpanda004@gmail.com",
-    phone: data?.profile?.phone || "+91 7815014638",
-    location: data?.profile?.location || "Bhubaneswar, Odisha, India",
+    email: data?.user?.email || "chinmaykumarpanda004@gmail.com",
+    phone: data?.user?.phone || "+91 7815014638",
+    location: data?.user?.location || "Bhubaneswar, Odisha, India",
     social: {
-      github: data?.profile?.github_url || "https://github.com/chinmaykumarpanda",
-      linkedin: data?.profile?.linkedin_url || "https://linkedin.com/in/chinmay-kumar-panda",
-      twitter: data?.profile?.twitter_url || "#"
+      github: data?.user?.social?.github || "https://github.com/chinmaykumarpanda",
+      linkedin: data?.user?.social?.linkedin || "https://linkedin.com/in/chinmay-kumar-panda",
+      twitter: data?.user?.social?.twitter || "#"
     }
   };
 

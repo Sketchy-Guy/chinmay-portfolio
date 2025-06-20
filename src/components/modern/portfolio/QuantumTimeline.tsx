@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { Calendar, MapPin, Award, Briefcase } from "lucide-react";
@@ -10,7 +9,7 @@ const QuantumTimeline = () => {
   const sectionRef = useRef<HTMLElement>(null);
 
   // Sample timeline data (can be replaced with database data)
-  const timelineData = data?.timeline || [
+  const timelineData = [
     {
       id: 1,
       title: "Computer Science Graduate",
