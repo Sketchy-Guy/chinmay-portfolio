@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import RevolutionaryHeroSection from "@/components/modern/portfolio/RevolutionaryHeroSection";
 import InnovativeAboutSection from "@/components/modern/portfolio/InnovativeAboutSection";
@@ -149,17 +150,17 @@ const Index = () => {
       <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-gradient-to-br from-gray-900 via-purple-900/30 to-cyan-900/20">
         <InteractiveBackground mousePosition={mousePosition} />
         
-        <div className="text-center relative z-10">
-          <div className="w-32 h-32 mx-auto mb-8 relative">
+        <div className="text-center relative z-10 px-4">
+          <div className="w-24 h-24 md:w-32 md:h-32 mx-auto mb-6 md:mb-8 relative">
             <div className="quantum-loader-advanced"></div>
             <div className="absolute inset-0 rounded-full border-2 border-cyan-400/50 animate-pulse"></div>
           </div>
           
-          <h2 className="text-3xl md:text-4xl text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-cyan-400 to-pink-400 font-orbitron mb-4 font-bold animate-pulse">
+          <h2 className="text-2xl md:text-3xl lg:text-4xl text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-cyan-400 to-pink-400 font-orbitron mb-4 font-bold animate-pulse">
             Initializing Neural Interface...
           </h2>
           
-          <p className="text-gray-300 animate-pulse mb-6 text-lg">
+          <p className="text-gray-300 animate-pulse mb-6 text-base md:text-lg">
             Establishing quantum connections to portfolio matrix
           </p>
           
@@ -167,7 +168,7 @@ const Index = () => {
             {[...Array(5)].map((_, i) => (
               <div
                 key={i}
-                className="w-3 h-3 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-full animate-pulse"
+                className="w-2 h-2 md:w-3 md:h-3 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-full animate-pulse"
                 style={{ animationDelay: `${i * 200}ms` }}
               />
             ))}
@@ -186,13 +187,30 @@ const Index = () => {
       <InteractiveBackground mousePosition={mousePosition} />
       <Header />
       
-      <main className="flex-grow pt-24 relative z-10">
-        <RevolutionaryHeroSection />
-        <InnovativeAboutSection />
-        <QuantumSkillsSection />
-        <QuantumTimeline />
-        <ProjectGallery3D />
-        <FuturisticContact />
+      <main className="flex-grow relative z-10">
+        <div className="pt-20">
+          <RevolutionaryHeroSection />
+        </div>
+        
+        <div id="about" className="scroll-mt-24">
+          <InnovativeAboutSection />
+        </div>
+        
+        <div id="skills" className="scroll-mt-24">
+          <QuantumSkillsSection />
+        </div>
+        
+        <div id="timeline" className="scroll-mt-24">
+          <QuantumTimeline />
+        </div>
+        
+        <div id="projects" className="scroll-mt-24">
+          <ProjectGallery3D />
+        </div>
+        
+        <div id="contact" className="scroll-mt-24">
+          <FuturisticContact />
+        </div>
       </main>
       
       <Footer />

@@ -75,7 +75,7 @@
   
   .neural-card:hover {
     @apply border-cyan-400/60 shadow-purple-500/30;
-    transform: translateY(-8px) scale(1.02);
+    transform: translateY(-4px) scale(1.01);
     box-shadow: 0 25px 50px -12px rgba(139, 92, 246, 0.4);
   }
 
@@ -88,7 +88,7 @@
 
   .neural-pathway-card:hover {
     @apply border-white/30;
-    transform: translateY(-8px) rotateY(5deg);
+    transform: translateY(-4px) scale(1.01);
     box-shadow: 0 25px 50px -12px rgba(6, 182, 212, 0.4);
   }
 
@@ -98,8 +98,22 @@
   }
   
   /* Revolutionary Button Styles */
+  .cyber-button {
+    @apply relative px-6 py-3 bg-gradient-to-r from-purple-600 to-cyan-600 text-white font-semibold rounded-lg overflow-hidden font-orbitron;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+    background-size: 200% 200%;
+  }
+  
+  .cyber-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(139, 92, 246, 0.5);
+    border-color: rgba(6, 182, 212, 0.6);
+  }
+
   .cyber-button-advanced {
-    @apply relative px-8 py-4 bg-gradient-to-r from-purple-600 via-cyan-500 to-pink-600 text-white font-semibold rounded-lg overflow-hidden font-orbitron;
+    @apply relative px-6 py-3 bg-gradient-to-r from-purple-600 via-cyan-500 to-pink-600 text-white font-semibold rounded-lg overflow-hidden font-orbitron;
     border: 2px solid transparent;
     transition: all 0.3s ease;
     box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
@@ -120,7 +134,7 @@
       linear-gradient(90deg, rgba(139, 92, 246, 0.1) 1px, transparent 1px),
       radial-gradient(circle at 25% 25%, rgba(139, 92, 246, 0.2) 0%, transparent 50%),
       radial-gradient(circle at 75% 75%, rgba(6, 182, 212, 0.2) 0%, transparent 50%);
-    background-size: 60px 60px, 60px 60px, 800px 800px, 800px 800px;
+    background-size: 40px 40px, 40px 40px, 600px 600px, 600px 600px;
     background-position: 0 0, 0 0, 0 0, 400px 400px;
     animation: neural-flow 25s ease-in-out infinite;
   }
@@ -131,7 +145,7 @@
       linear-gradient(90deg, rgba(6, 182, 212, 0.15) 2px, transparent 2px),
       radial-gradient(circle at 20% 80%, rgba(236, 72, 153, 0.3) 0%, transparent 50%),
       radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.3) 0%, transparent 50%);
-    background-size: 80px 80px, 80px 80px, 1000px 1000px, 1000px 1000px;
+    background-size: 60px 60px, 60px 60px, 800px 800px, 800px 800px;
     animation: quantum-flow 30s ease-in-out infinite;
   }
 
@@ -156,41 +170,56 @@
   
   /* Revolutionary Loading Animation */
   .quantum-loader-advanced {
-    width: 80px;
-    height: 80px;
-    border: 4px solid rgba(139, 92, 246, 0.3);
+    width: 60px;
+    height: 60px;
+    border: 3px solid rgba(139, 92, 246, 0.3);
     border-radius: 50%;
     border-top-color: #8b5cf6;
     border-right-color: #06b6d4;
     border-bottom-color: #ec4899;
     animation: quantum-spin 1.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
     position: relative;
-    filter: drop-shadow(0 0 25px rgba(139, 92, 246, 0.6));
+    filter: drop-shadow(0 0 20px rgba(139, 92, 246, 0.6));
+  }
+
+  @media (min-width: 768px) {
+    .quantum-loader-advanced {
+      width: 80px;
+      height: 80px;
+      border: 4px solid rgba(139, 92, 246, 0.3);
+    }
   }
   
   .quantum-loader-advanced::before,
   .quantum-loader-advanced::after {
     content: '';
     position: absolute;
-    border: 4px solid transparent;
+    border: 3px solid transparent;
     border-radius: 50%;
+  }
+
+  @media (min-width: 768px) {
+    .quantum-loader-advanced::before,
+    .quantum-loader-advanced::after {
+      border: 4px solid transparent;
+    }
   }
   
   .quantum-loader-advanced::before {
-    top: 5px;
-    left: 5px;
-    right: 5px;
-    bottom: 5px;
+    top: 4px;
+    left: 4px;
+    right: 4px;
+    bottom: 4px;
     border-top-color: #06b6d4;
     border-bottom-color: #ec4899;
     animation: quantum-spin 2.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite reverse;
   }
   
   .quantum-loader-advanced::after {
-    top: 15px;
-    left: 15px;
-    right: 15px;
-    bottom: 15px;
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
     border-top-color: #ec4899;
     border-bottom-color: #10b981;
     animation: quantum-spin 3s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
@@ -199,37 +228,37 @@
   /* Revolutionary Reveal Animations */
   .quantum-reveal {
     opacity: 0;
-    transform: translateY(60px) rotateX(15deg) scale(0.95);
+    transform: translateY(40px) scale(0.95);
     transition: all 1s cubic-bezier(0.23, 1, 0.32, 1);
   }
 
   .quantum-reveal.active {
     opacity: 1 !important;
-    transform: translateY(0) rotateX(0deg) scale(1) !important;
+    transform: translateY(0) scale(1) !important;
     visibility: visible !important;
   }
 
   .matrix-reveal {
     opacity: 0;
-    transform: translateX(-50px) skewX(10deg);
+    transform: translateX(-30px);
     transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
   }
 
   .matrix-reveal.active {
     opacity: 1 !important;
-    transform: translateX(0) skewX(0deg) !important;
+    transform: translateX(0) !important;
     visibility: visible !important;
   }
 
   .hologram-reveal {
     opacity: 0;
-    transform: translateY(40px) scale(0.9) rotateY(-10deg);
+    transform: translateY(30px) scale(0.9);
     transition: all 0.9s cubic-bezier(0.23, 1, 0.32, 1);
   }
 
   .hologram-reveal.active {
     opacity: 1 !important;
-    transform: translateY(0) scale(1) rotateY(0deg) !important;
+    transform: translateY(0) scale(1) !important;
     visibility: visible !important;
   }
   
@@ -249,7 +278,7 @@
   }
 
   section {
-    @apply py-20 lg:py-28;
+    @apply py-16 lg:py-20;
   }
 }
 
@@ -284,13 +313,13 @@
 
 @keyframes neural-flow {
   0%, 100% { background-position: 0 0, 0 0, 0 0, 400px 400px; }
-  33% { background-position: 30px 30px, 30px 30px, 200px 200px, 600px 600px; }
-  66% { background-position: 60px 60px, 60px 60px, 400px 400px, 800px 800px; }
+  33% { background-position: 20px 20px, 20px 20px, 200px 200px, 600px 600px; }
+  66% { background-position: 40px 40px, 40px 40px, 400px 400px, 800px 800px; }
 }
 
 @keyframes quantum-flow {
   0%, 100% { background-position: 0 0, 0 0, 0 0, 500px 500px; }
-  50% { background-position: 40px 40px, 40px 40px, 500px 500px, 1000px 1000px; }
+  50% { background-position: 30px 30px, 30px 30px, 500px 500px, 1000px 1000px; }
 }
 
 @keyframes matrix-flow {
@@ -300,17 +329,17 @@
 
 @keyframes float-3d {
   0%, 100% { transform: translateY(0px) rotateX(0deg); }
-  50% { transform: translateY(-25px) rotateX(5deg); }
+  50% { transform: translateY(-20px) rotateX(3deg); }
 }
 
 @keyframes pulse-glow {
   0%, 100% { box-shadow: 0 0 10px rgba(139, 92, 246, 0.5); }
-  50% { box-shadow: 0 0 30px rgba(139, 92, 246, 0.8), 0 0 40px rgba(6, 182, 212, 0.4); }
+  50% { box-shadow: 0 0 25px rgba(139, 92, 246, 0.8), 0 0 35px rgba(6, 182, 212, 0.4); }
 }
 
 /* Revolutionary Animation Classes */
 .animate-float-3d {
-  animation: float-3d 8s ease-in-out infinite;
+  animation: float-3d 6s ease-in-out infinite;
 }
 
 .animate-pulse-glow {
@@ -326,17 +355,22 @@
   .neural-card:hover,
   .neural-pathway-card:hover,
   .quantum-skill-card:hover {
-    transform: translateY(-4px) scale(1.01);
+    transform: translateY(-2px) scale(1.005);
   }
   
   .neural-grid,
   .quantum-grid {
-    background-size: 40px 40px, 40px 40px, 600px 600px, 600px 600px;
+    background-size: 30px 30px, 30px 30px, 400px 400px, 400px 400px;
   }
 
   section {
     scroll-margin-top: 100px;
-    @apply py-16 lg:py-20;
+    @apply py-12 lg:py-16;
+  }
+
+  .cyber-button:hover,
+  .cyber-button-advanced:hover {
+    transform: translateY(-1px);
   }
 }
 
@@ -359,31 +393,31 @@
 /* Revolutionary Focus States */
 button:focus-visible,
 a:focus-visible {
-  outline: 3px solid rgb(139 92 246);
-  outline-offset: 3px;
-  border-radius: 8px;
-  box-shadow: 0 0 0 6px rgba(139, 92, 246, 0.3);
+  outline: 2px solid rgb(139 92 246);
+  outline-offset: 2px;
+  border-radius: 6px;
+  box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.3);
 }
 
 /* Revolutionary Scrollbar */
 ::-webkit-scrollbar {
-  width: 14px;
+  width: 12px;
 }
 
 ::-webkit-scrollbar-track {
   background: rgba(139, 92, 246, 0.1);
-  border-radius: 8px;
+  border-radius: 6px;
 }
 
 ::-webkit-scrollbar-thumb {
   background: linear-gradient(45deg, #8b5cf6, #06b6d4, #ec4899);
-  border-radius: 8px;
+  border-radius: 6px;
   border: 2px solid rgba(139, 92, 246, 0.1);
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(45deg, #7c3aed, #0891b2, #db2777);
-  box-shadow: 0 0 15px rgba(139, 92, 246, 0.6);
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.6);
 }
 
 /* Revolutionary Final Overrides */
