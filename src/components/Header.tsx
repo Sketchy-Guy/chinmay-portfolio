@@ -20,10 +20,14 @@ const Header = () => {
     
     if (href.startsWith('#')) {
       const targetId = href.substring(1);
-      const targetElement = document.getElementById(targetId);
+      if (targetId === '') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
       
+      const targetElement = document.getElementById(targetId);
       if (targetElement) {
-        const headerOffset = 100;
+        const headerOffset = 80;
         const elementPosition = targetElement.getBoundingClientRect().top;
         const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
         
@@ -47,7 +51,7 @@ const Header = () => {
   const logo = settings.site_logo || "/lovable-uploads/a5f88509-5d42-4d11-8b7c-6abe9e64cfd0.png";
   const name = settings.site_name || "Chinmay Kumar Panda";
 
-  console.log('Header settings:', { logo, name, settings });
+  console.log('Header settings loaded:', { logo, name, loading });
 
   if (loading) {
     return (

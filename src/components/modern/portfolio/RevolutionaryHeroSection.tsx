@@ -1,16 +1,20 @@
 
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { ArrowDown, Github, Linkedin, Mail, Download, Code, Zap, Database } from 'lucide-react';
 import { usePortfolioData } from '@/contexts/DataContext';
+import { useOptimizedSiteSettings } from '@/hooks/modern/useOptimizedSiteSettings';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const RevolutionaryHeroSection = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [typedText, setTypedText] = useState('');
   const [currentPhrase, setCurrentPhrase] = useState(0);
-  const { data, isLoading } = usePortfolioData();
+  const { data, isLoading: dataLoading } = usePortfolioData();
+  const { settings, loading: settingsLoading } = useOptimizedSiteSettings();
+
+  const isLoading = dataLoading || settingsLoading;
 
   const phrases = [
     "Full Stack Developer",
@@ -53,7 +57,7 @@ const RevolutionaryHeroSection = () => {
   const handleDownloadCV = () => {
     const link = document.createElement('a');
     link.href = '/path-to-cv.pdf';
-    link.download = `${data?.user?.name?.replace(' ', '_') || 'Portfolio'}_CV.pdf`;
+    link.download = `${(settings?.site_name || data?.user?.name)?.replace(' ', '_') || 'Portfolio'}_CV.pdf`;
     link.click();
   };
 
@@ -70,9 +74,28 @@ const RevolutionaryHeroSection = () => {
     }
   };
 
+  // Use data from settings or fallback to portfolio data
+  const profileImage = settings?.site_logo || data?.user?.profileImage;
+  const userName = settings?.site_name || data?.user?.name || 'Chinmay Kumar Panda';
+  const userBio = settings?.site_description || data?.user?.bio || 'Passionate full-stack developer specializing in modern web technologies, AI integration, and scalable solutions.';
+  const userEmail = settings?.social_email || data?.user?.email;
+  const githubUrl = settings?.social_github || data?.user?.social?.github;
+  const linkedinUrl = settings?.social_linkedin || data?.user?.social?.linkedin;
+
+  console.log('Hero Section Data:', { 
+    profileImage, 
+    userName, 
+    userBio, 
+    userEmail, 
+    githubUrl, 
+    linkedinUrl,
+    settings,
+    data: data?.user
+  });
+
   if (isLoading) {
     return (
-      <section className="min-h-screen flex items-center justify-center relative overflow-hidden pt-20">
+      <section className="min-h-screen flex items-center justify-center relative overflow-hidden pt-20 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
         <div className="container mx-auto px-4 sm:px-6 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             <div className="space-y-6 order-2 lg:order-1">
@@ -94,39 +117,11 @@ const RevolutionaryHeroSection = () => {
   }
 
   return (
-    <section className="min-h-screen flex items-center justify-center relative overflow-hidden pt-20">
+    <section className="min-h-screen flex items-center justify-center relative overflow-hidden pt-20 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       {/* Professional Background Effects */}
-      <div className="absolute inset-0 opacity-15 md:opacity-20">
+      <div className="absolute inset-0 opacity-10">
         <div className="absolute top-1/4 left-1/6 w-64 sm:w-80 md:w-96 h-64 sm:h-80 md:h-96 bg-blue-500 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute bottom-1/4 right-1/6 w-56 sm:w-72 md:w-80 h-56 sm:h-72 md:h-80 bg-indigo-500 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-48 sm:w-56 md:w-64 h-48 sm:h-56 md:h-64 bg-purple-500 rounded-full blur-3xl animate-pulse delay-500"></div>
-      </div>
-
-      {/* Professional Grid Pattern */}
-      <div className="absolute inset-0 neural-grid opacity-10 md:opacity-15"></div>
-
-      {/* Subtle Floating Elements */}
-      <div className="absolute inset-0 hidden md:block">
-        {[...Array(8)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-2 h-2 md:w-3 md:h-3 border border-blue-400/40 transform rotate-45"
-            style={{
-              top: `${Math.random() * 100}%`,
-              left: `${Math.random() * 100}%`,
-            }}
-            animate={{
-              y: [0, -20, 0],
-              rotate: [45, 90, 45],
-              opacity: [0.2, 0.6, 0.2],
-            }}
-            transition={{
-              duration: 4 + Math.random() * 2,
-              repeat: Infinity,
-              delay: Math.random() * 2,
-            }}
-          />
-        ))}
       </div>
 
       <div className="container mx-auto px-4 sm:px-6 relative z-10">
@@ -139,7 +134,7 @@ const RevolutionaryHeroSection = () => {
             className="relative order-2 lg:order-1"
           >
             <div className="relative">
-              {data?.user?.profileImage && (
+              {profileImage && (
                 <div className="relative w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-72 lg:h-72 xl:w-80 xl:h-80 mx-auto mb-6 md:mb-8">
                   {/* Professional Border Effect */}
                   <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 p-1 animate-spin-slow">
@@ -149,19 +144,21 @@ const RevolutionaryHeroSection = () => {
                   {/* Main Profile Image */}
                   <div className="absolute inset-2 rounded-full overflow-hidden border-4 border-white/10 shadow-2xl">
                     <img
-                      src={data.user.profileImage}
-                      alt={data.user.name || 'Profile'}
+                      src={profileImage}
+                      alt={userName}
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        console.error('Profile image failed to load:', profileImage);
+                        e.currentTarget.src = "/lovable-uploads/a5f88509-5d42-4d11-8b7c-6abe9e64cfd0.png";
+                      }}
                     />
-                    {/* Subtle Scan Line Effect */}
-                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-400/10 to-transparent h-6 md:h-8 animate-pulse"></div>
                   </div>
                   
                   {/* Professional Floating Icons */}
                   <motion.div
                     className="absolute -top-2 md:-top-4 -right-2 md:-right-4 w-8 h-8 md:w-10 md:h-10 bg-blue-600 rounded-full flex items-center justify-center"
                     animate={{ rotate: 360 }}
-                    transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                    transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
                   >
                     <Code className="w-4 h-4 md:w-5 md:h-5 text-white" />
                   </motion.div>
@@ -169,7 +166,7 @@ const RevolutionaryHeroSection = () => {
                   <motion.div
                     className="absolute -bottom-2 md:-bottom-4 -left-2 md:-left-4 w-8 h-8 md:w-10 md:h-10 bg-indigo-600 rounded-full flex items-center justify-center"
                     animate={{ rotate: -360 }}
-                    transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
+                    transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
                   >
                     <Database className="w-4 h-4 md:w-5 md:h-5 text-white" />
                   </motion.div>
@@ -177,7 +174,7 @@ const RevolutionaryHeroSection = () => {
                   <motion.div
                     className="absolute top-1/2 -right-4 md:-right-6 w-6 h-6 md:w-8 md:h-8 bg-purple-600 rounded-full flex items-center justify-center"
                     animate={{ y: [-8, 8, -8] }}
-                    transition={{ duration: 2, repeat: Infinity }}
+                    transition={{ duration: 3, repeat: Infinity }}
                   >
                     <Zap className="w-3 h-3 md:w-4 md:h-4 text-white" />
                   </motion.div>
@@ -208,7 +205,7 @@ const RevolutionaryHeroSection = () => {
               </div>
               <div className="text-green-400">
                 <span className="text-blue-400">$</span> init_developer_profile<br/>
-                <span className="text-indigo-400">Loading:</span> {data?.user?.name || 'Developer Profile'}...
+                <span className="text-indigo-400">Loading:</span> {userName}...
               </div>
             </div>
 
@@ -216,7 +213,7 @@ const RevolutionaryHeroSection = () => {
             <div>
               <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white mb-3 md:mb-4 font-orbitron leading-tight">
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400">
-                  {data?.user?.name || 'Chinmay Kumar Panda'}
+                  {userName}
                 </span>
               </h1>
               
@@ -230,7 +227,7 @@ const RevolutionaryHeroSection = () => {
             {/* Professional Bio */}
             <div className="space-y-4">
               <p className="text-base sm:text-lg md:text-xl text-slate-300 leading-relaxed">
-                {data?.user?.bio || 'Passionate full-stack developer specializing in modern web technologies, AI integration, and scalable solutions. Building innovative digital experiences with clean code and user-centric design.'}
+                {userBio}
               </p>
               
               {/* Professional Stats Display */}
@@ -254,7 +251,7 @@ const RevolutionaryHeroSection = () => {
             <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
               <Button
                 onClick={handleDownloadCV}
-                className="cyber-button-advanced px-6 md:px-8 py-3 md:py-4 text-base md:text-lg group relative overflow-hidden"
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-6 md:px-8 py-3 md:py-4 text-base md:text-lg group relative overflow-hidden transition-all duration-300 hover:scale-105 font-orbitron border-0"
               >
                 <Download className="mr-2 h-4 w-4 md:h-5 md:w-5 transition-transform group-hover:scale-110" />
                 Download Resume
@@ -275,7 +272,7 @@ const RevolutionaryHeroSection = () => {
                   }
                 }}
                 variant="outline"
-                className="px-6 md:px-8 py-3 md:py-4 text-base md:text-lg border-2 border-blue-400/50 bg-transparent hover:bg-blue-400/10 text-blue-400 hover:text-white transition-all duration-300"
+                className="px-6 md:px-8 py-3 md:py-4 text-base md:text-lg border-2 border-blue-400/50 bg-transparent hover:bg-blue-400/10 text-blue-400 hover:text-white transition-all duration-300 font-orbitron"
               >
                 <Mail className="mr-2 h-4 w-4 md:h-5 md:w-5" />
                 Get In Touch
@@ -285,16 +282,16 @@ const RevolutionaryHeroSection = () => {
             {/* Professional Social Links */}
             <div className="flex gap-3 md:gap-4">
               {[
-                { icon: Github, href: data?.user?.social?.github, label: 'GitHub', color: 'blue' },
-                { icon: Linkedin, href: data?.user?.social?.linkedin, label: 'LinkedIn', color: 'indigo' },
-                { icon: Mail, href: `mailto:${data?.user?.email}`, label: 'Email', color: 'purple' }
+                { icon: Github, href: githubUrl, label: 'GitHub', color: 'blue' },
+                { icon: Linkedin, href: linkedinUrl, label: 'LinkedIn', color: 'indigo' },
+                { icon: Mail, href: userEmail ? `mailto:${userEmail}` : null, label: 'Email', color: 'purple' }
               ].filter(social => social.href).map((social, index) => (
                 <motion.a
                   key={social.label}
-                  href={social.href}
+                  href={social.href!}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`group relative w-10 h-10 md:w-12 md:h-12 rounded-lg bg-slate-800/60 backdrop-blur-md border border-${social.color}-400/30 flex items-center justify-center text-${social.color}-400 hover:text-white transition-all duration-300`}
+                  className={`group relative w-10 h-10 md:w-12 md:h-12 rounded-lg bg-slate-800/60 backdrop-blur-md border border-${social.color}-400/30 flex items-center justify-center text-${social.color}-400 hover:text-white transition-all duration-300 hover:bg-${social.color}-600/20`}
                   whileHover={{ scale: 1.1, rotateY: 180 }}
                   whileTap={{ scale: 0.95 }}
                   initial={{ opacity: 0, y: 20 }}

@@ -24,74 +24,90 @@ export function useOptimizedSiteSettings() {
     try {
       setError(null);
       
-      const { data, error: fetchError } = await supabase
+      // First try to get from site_settings table
+      const { data: siteData, error: siteError } = await supabase
         .from("site_settings")
-        .select("key, value")
-        .in("key", [
-          "site_logo", 
-          "site_favicon", 
-          "site_name", 
-          "site_description",
-          "social_github",
-          "social_linkedin", 
-          "social_email"
-        ])
-        .order("key");
+        .select("key, value");
 
-      if (fetchError) {
-        throw fetchError;
+      // Also get user profile data as fallback
+      const { data: profileData, error: profileError } = await supabase
+        .from("user_profile")
+        .select("name, bio, profile_image, email")
+        .limit(1)
+        .single();
+
+      // Get social links
+      const { data: socialData, error: socialError } = await supabase
+        .from("social_links")
+        .select("platform, url");
+
+      console.log('Site settings raw data:', { siteData, profileData, socialData });
+
+      if (siteError && siteError.code !== 'PGRST116') {
+        console.warn('Site settings error:', siteError);
       }
 
-      // Transform data into settings object with proper parsing
+      // Transform site settings data
       const siteSettings: OptimizedSiteSettings = {};
       
-      for (const row of data || []) {
-        let processedValue: string | null = null;
-        
-        try {
-          if (row.value !== null) {
-            // Handle different value types - parse JSON strings properly
-            if (typeof row.value === "string") {
-              try {
-                // Try to parse as JSON first
-                const parsed = JSON.parse(row.value);
-                processedValue = typeof parsed === 'string' ? parsed : String(parsed);
-              } catch {
-                // If not JSON, use as is
-                processedValue = row.value;
+      if (siteData) {
+        for (const row of siteData) {
+          try {
+            if (row.value !== null) {
+              if (typeof row.value === "string") {
+                try {
+                  const parsed = JSON.parse(row.value);
+                  siteSettings[row.key] = typeof parsed === 'string' ? parsed : String(parsed);
+                } catch {
+                  siteSettings[row.key] = row.value;
+                }
+              } else {
+                siteSettings[row.key] = String(row.value);
               }
-            } else {
-              // Convert to string if not already
-              processedValue = String(row.value);
             }
+          } catch (parseError) {
+            console.warn(`Error processing setting ${row.key}:`, parseError);
+            siteSettings[row.key] = null;
           }
-          
-          siteSettings[row.key] = processedValue;
-        } catch (parseError) {
-          console.warn(`Error processing setting ${row.key}:`, parseError);
-          siteSettings[row.key] = null;
         }
       }
-      
-      // Set enhanced default values
+
+      // Create enhanced settings with fallbacks from profile data
       const settingsWithDefaults: OptimizedSiteSettings = {
-        site_name: 'Chinmay Kumar Panda',
-        site_description: 'Full Stack Developer & AI Enthusiast',
-        site_logo: '/lovable-uploads/a5f88509-5d42-4d11-8b7c-6abe9e64cfd0.png',
-        social_github: 'https://github.com/chinmaykumarpanda',
-        social_linkedin: 'https://linkedin.com/in/chinmaykumarpanda',
-        social_email: 'chinmaykumarpanda004@gmail.com',
+        site_name: siteSettings.site_name || profileData?.name || 'Chinmay Kumar Panda',
+        site_description: siteSettings.site_description || profileData?.bio || 'Full Stack Developer & AI Enthusiast',
+        site_logo: siteSettings.site_logo || profileData?.profile_image || '/lovable-uploads/a5f88509-5d42-4d11-8b7c-6abe9e64cfd0.png',
+        site_favicon: siteSettings.site_favicon || profileData?.profile_image || '/lovable-uploads/a5f88509-5d42-4d11-8b7c-6abe9e64cfd0.png',
+        social_email: siteSettings.social_email || profileData?.email || 'chinmaykumarpanda004@gmail.com',
         ...siteSettings
       };
+
+      // Add social links from social_links table
+      if (socialData) {
+        socialData.forEach(social => {
+          const key = `social_${social.platform.toLowerCase()}`;
+          if (!settingsWithDefaults[key]) {
+            settingsWithDefaults[key] = social.url;
+          }
+        });
+      }
+
+      // Add default social links if none exist
+      if (!settingsWithDefaults.social_github) {
+        settingsWithDefaults.social_github = 'https://github.com/chinmaykumarpanda';
+      }
+      if (!settingsWithDefaults.social_linkedin) {
+        settingsWithDefaults.social_linkedin = 'https://linkedin.com/in/chinmaykumarpanda';
+      }
       
       setSettings(settingsWithDefaults);
-      console.log('Site settings loaded:', settingsWithDefaults);
+      console.log('Site settings processed:', settingsWithDefaults);
       
     } catch (error: any) {
       console.error('Error fetching site settings:', error);
       setError(error.message || 'Failed to fetch site settings');
       
-      if (retryCount < 2 && error.code !== 'PGRST116') {
+      if (retryCount < 2) {
         console.log(`Retrying fetch settings (attempt ${retryCount + 1})`);
         setTimeout(() => fetchSettings(retryCount + 1), 1000 * (retryCount + 1));
         return;
@@ -102,6 +118,7 @@ export function useOptimizedSiteSettings() {
         site_name: 'Chinmay Kumar Panda',
         site_description: 'Full Stack Developer & AI Enthusiast',
         site_logo: '/lovable-uploads/a5f88509-5d42-4d11-8b7c-6abe9e64cfd0.png',
+        site_favicon: '/lovable-uploads/a5f88509-5d42-4d11-8b7c-6abe9e64cfd0.png',
         social_github: 'https://github.com/chinmaykumarpanda',
         social_linkedin: 'https://linkedin.com/in/chinmaykumarpanda',
         social_email: 'chinmaykumarpanda004@gmail.com'
@@ -148,8 +165,7 @@ export function useOptimizedSiteSettings() {
         { 
           event: "*", 
           schema: "public", 
-          table: "site_settings",
-          filter: "key=in.(site_logo,site_favicon,site_name,site_description,social_github,social_linkedin,social_email)"
+          table: "site_settings"
         },
         (payload) => {
           console.log('Site settings real-time update:', payload);
@@ -161,15 +177,25 @@ export function useOptimizedSiteSettings() {
           }, 1500);
         }
       )
+      .on(
+        "postgres_changes",
+        { 
+          event: "*", 
+          schema: "public", 
+          table: "user_profile"
+        },
+        (payload) => {
+          console.log('User profile real-time update:', payload);
+          
+          modernConnectionManager.debounce('profile-settings-realtime-update', () => {
+            if (mounted) {
+              fetchSettings();
+            }
+          }, 1500);
+        }
+      )
       .subscribe((status) => {
         console.log(`Site settings channel ${newChannelId} status:`, status);
-        
-        if (status === 'SUBSCRIBED') {
-          console.log('Site settings real-time subscription active');
-        } else if (status === 'CHANNEL_ERROR') {
-          console.warn('Site settings real-time subscription error');
-          setError('Real-time updates temporarily unavailable');
-        }
       });
 
     modernConnectionManager.registerChannel(newChannelId, channel);

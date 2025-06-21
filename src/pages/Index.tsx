@@ -68,7 +68,7 @@ const Index = () => {
     
     loadData();
 
-    // Optimized mouse tracking
+    // Optimized mouse tracking with reduced frequency
     const handleMouseMove = (e: MouseEvent) => {
       setMousePosition({ x: e.clientX, y: e.clientY });
     };
@@ -99,8 +99,13 @@ const Index = () => {
       if (href?.startsWith('#')) {
         e.preventDefault();
         const targetId = href.substring(1);
-        const targetElement = document.getElementById(targetId);
         
+        if (targetId === '') {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          return;
+        }
+        
+        const targetElement = document.getElementById(targetId);
         if (targetElement) {
           const headerOffset = 100;
           const elementPosition = targetElement.getBoundingClientRect().top;
@@ -114,8 +119,8 @@ const Index = () => {
       }
     };
     
-    const throttledScrollHandler = throttle(handleRevealOnScroll, 16);
-    const throttledMouseHandler = throttle(handleMouseMove, 32); // Reduced frequency
+    const throttledScrollHandler = throttle(handleRevealOnScroll, 32);
+    const throttledMouseHandler = throttle(handleMouseMove, 50); // Reduced frequency for better performance
     
     window.addEventListener('scroll', throttledScrollHandler, { passive: true });
     window.addEventListener('mousemove', throttledMouseHandler, { passive: true });
@@ -152,8 +157,8 @@ const Index = () => {
         
         <div className="text-center relative z-10 px-4">
           <div className="w-20 h-20 md:w-24 md:h-24 mx-auto mb-6 md:mb-8 relative">
-            <div className="quantum-loader-advanced"></div>
-            <div className="absolute inset-0 rounded-full border-2 border-blue-400/50 animate-pulse"></div>
+            <div className="w-full h-full border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></div>
+            <div className="absolute inset-2 border-2 border-indigo-500/20 border-r-indigo-500 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
           </div>
           
           <h2 className="text-2xl md:text-3xl lg:text-4xl text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 font-orbitron mb-4 font-bold animate-pulse">
@@ -183,7 +188,7 @@ const Index = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen relative overflow-x-hidden">
+    <div className="flex flex-col min-h-screen relative overflow-x-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <InteractiveBackground mousePosition={mousePosition} />
       <Header />
       
