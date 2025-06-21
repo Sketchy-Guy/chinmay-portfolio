@@ -7,25 +7,25 @@
 
 @layer base {
   :root {
-    --background: 8 8 16;
-    --foreground: 250 250 255;
-    --card: 15 15 25;
-    --card-foreground: 250 250 255;
-    --popover: 15 15 25;
-    --popover-foreground: 250 250 255;
-    --primary: 139 92 246;
-    --primary-foreground: 250 250 255;
-    --secondary: 6 182 212;
-    --secondary-foreground: 250 250 255;
-    --muted: 30 30 45;
-    --muted-foreground: 156 163 175;
-    --accent: 30 30 45;
-    --accent-foreground: 250 250 255;
+    --background: 15 23 42;
+    --foreground: 248 250 252;
+    --card: 30 41 59;
+    --card-foreground: 248 250 252;
+    --popover: 30 41 59;
+    --popover-foreground: 248 250 252;
+    --primary: 59 130 246;
+    --primary-foreground: 248 250 252;
+    --secondary: 99 102 241;
+    --secondary-foreground: 248 250 252;
+    --muted: 51 65 85;
+    --muted-foreground: 148 163 184;
+    --accent: 51 65 85;
+    --accent-foreground: 248 250 252;
     --destructive: 239 68 68;
-    --destructive-foreground: 250 250 255;
-    --border: 45 45 65;
-    --input: 45 45 65;
-    --ring: 139 92 246;
+    --destructive-foreground: 248 250 252;
+    --border: 71 85 105;
+    --input: 71 85 105;
+    --ring: 59 130 246;
     --radius: 0.75rem;
   }
 
@@ -39,8 +39,8 @@
   }
   
   body {
-    @apply bg-gray-900 text-foreground font-sans overflow-x-hidden;
-    background: radial-gradient(ellipse at top, #1a1a2e 0%, #16213e 25%, #0f3460 50%, #533483 75%, #0a0a0f 100%);
+    @apply bg-slate-900 text-foreground font-sans overflow-x-hidden;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 25%, #334155 50%, #475569 75%, #0f172a 100%);
     background-attachment: fixed;
     min-height: 100vh;
     font-family: 'Inter', sans-serif;
@@ -52,21 +52,21 @@
   }
 
   section {
-    scroll-margin-top: 120px;
+    scroll-margin-top: 100px;
   }
 }
 
 @layer components {
-  /* Revolutionary Glass Effects */
+  /* Professional Glass Effects */
   .glass-morphism {
-    @apply bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl;
+    @apply bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl;
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
   }
   
   .neural-card {
-    @apply bg-gray-900/40 backdrop-blur-xl border border-purple-500/30 shadow-2xl rounded-2xl;
-    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    @apply bg-slate-800/60 backdrop-blur-xl border border-blue-500/20 shadow-2xl rounded-xl;
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     position: relative;
@@ -74,119 +74,116 @@
   }
   
   .neural-card:hover {
-    @apply border-cyan-400/60 shadow-purple-500/30;
-    transform: translateY(-4px) scale(1.01);
-    box-shadow: 0 25px 50px -12px rgba(139, 92, 246, 0.4);
+    @apply border-blue-400/40 shadow-blue-500/20;
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 20px 40px -12px rgba(59, 130, 246, 0.3);
   }
 
   .neural-pathway-card {
-    @apply bg-gray-900/30 backdrop-blur-xl border border-white/10 shadow-2xl rounded-2xl;
-    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    @apply bg-slate-800/40 backdrop-blur-xl border border-white/10 shadow-xl rounded-xl;
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
   }
 
   .neural-pathway-card:hover {
-    @apply border-white/30;
-    transform: translateY(-4px) scale(1.01);
-    box-shadow: 0 25px 50px -12px rgba(6, 182, 212, 0.4);
+    @apply border-white/20;
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 20px 40px -12px rgba(99, 102, 241, 0.3);
   }
 
   .quantum-skill-card {
-    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
     transform-style: preserve-3d;
   }
   
-  /* Revolutionary Button Styles */
+  /* Professional Button Styles */
   .cyber-button {
-    @apply relative px-6 py-3 bg-gradient-to-r from-purple-600 to-cyan-600 text-white font-semibold rounded-lg overflow-hidden font-orbitron;
-    border: 2px solid transparent;
+    @apply relative px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg overflow-hidden font-orbitron border-0;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
     background-size: 200% 200%;
   }
   
   .cyber-button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(139, 92, 246, 0.5);
-    border-color: rgba(6, 182, 212, 0.6);
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+    @apply from-blue-500 to-indigo-500;
   }
 
   .cyber-button-advanced {
-    @apply relative px-6 py-3 bg-gradient-to-r from-purple-600 via-cyan-500 to-pink-600 text-white font-semibold rounded-lg overflow-hidden font-orbitron;
-    border: 2px solid transparent;
+    @apply relative px-6 py-3 bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 text-white font-semibold rounded-lg overflow-hidden font-orbitron border-0;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
+    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
     background-size: 200% 200%;
     animation: gradient-shift 3s ease infinite;
   }
   
   .cyber-button-advanced:hover {
     transform: translateY(-3px);
-    box-shadow: 0 12px 30px rgba(139, 92, 246, 0.6);
-    border-color: rgba(6, 182, 212, 0.8);
+    box-shadow: 0 12px 30px rgba(59, 130, 246, 0.5);
   }
   
-  /* Revolutionary Grid Patterns */
+  /* Professional Grid Patterns */
   .neural-grid {
     background-image: 
-      linear-gradient(rgba(139, 92, 246, 0.1) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(139, 92, 246, 0.1) 1px, transparent 1px),
-      radial-gradient(circle at 25% 25%, rgba(139, 92, 246, 0.2) 0%, transparent 50%),
-      radial-gradient(circle at 75% 75%, rgba(6, 182, 212, 0.2) 0%, transparent 50%);
+      linear-gradient(rgba(59, 130, 246, 0.1) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(59, 130, 246, 0.1) 1px, transparent 1px),
+      radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
+      radial-gradient(circle at 75% 75%, rgba(99, 102, 241, 0.15) 0%, transparent 50%);
     background-size: 40px 40px, 40px 40px, 600px 600px, 600px 600px;
     background-position: 0 0, 0 0, 0 0, 400px 400px;
-    animation: neural-flow 25s ease-in-out infinite;
+    animation: neural-flow 20s ease-in-out infinite;
   }
 
   .quantum-grid {
     background-image: 
-      linear-gradient(rgba(6, 182, 212, 0.15) 2px, transparent 2px),
-      linear-gradient(90deg, rgba(6, 182, 212, 0.15) 2px, transparent 2px),
-      radial-gradient(circle at 20% 80%, rgba(236, 72, 153, 0.3) 0%, transparent 50%),
-      radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.3) 0%, transparent 50%);
+      linear-gradient(rgba(99, 102, 241, 0.12) 2px, transparent 2px),
+      linear-gradient(90deg, rgba(99, 102, 241, 0.12) 2px, transparent 2px),
+      radial-gradient(circle at 20% 80%, rgba(147, 51, 234, 0.2) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.2) 0%, transparent 50%);
     background-size: 60px 60px, 60px 60px, 800px 800px, 800px 800px;
-    animation: quantum-flow 30s ease-in-out infinite;
+    animation: quantum-flow 25s ease-in-out infinite;
   }
 
   .matrix-rain {
     background-image: 
-      linear-gradient(rgba(0, 255, 0, 0.1) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0, 255, 0, 0.1) 1px, transparent 1px);
+      linear-gradient(rgba(34, 197, 94, 0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(34, 197, 94, 0.08) 1px, transparent 1px);
     background-size: 20px 20px;
-    animation: matrix-flow 20s linear infinite;
+    animation: matrix-flow 15s linear infinite;
   }
   
-  /* Revolutionary Holographic Effects */
+  /* Professional Text Effects */
   .holographic-text {
-    background: linear-gradient(45deg, #8b5cf6, #06b6d4, #ec4899, #10b981, #f59e0b, #ef4444);
-    background-size: 600% 600%;
+    background: linear-gradient(45deg, #3b82f6, #6366f1, #8b5cf6, #06b6d4);
+    background-size: 400% 400%;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    animation: holographic-shift 4s ease-in-out infinite;
-    filter: drop-shadow(0 0 15px rgba(139, 92, 246, 0.6));
+    animation: holographic-shift 3s ease-in-out infinite;
+    filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.5));
   }
   
-  /* Revolutionary Loading Animation */
+  /* Professional Loading Animation */
   .quantum-loader-advanced {
-    width: 60px;
-    height: 60px;
-    border: 3px solid rgba(139, 92, 246, 0.3);
+    width: 50px;
+    height: 50px;
+    border: 3px solid rgba(59, 130, 246, 0.3);
     border-radius: 50%;
-    border-top-color: #8b5cf6;
-    border-right-color: #06b6d4;
-    border-bottom-color: #ec4899;
-    animation: quantum-spin 1.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+    border-top-color: #3b82f6;
+    border-right-color: #6366f1;
+    border-bottom-color: #8b5cf6;
+    animation: quantum-spin 1.2s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
     position: relative;
-    filter: drop-shadow(0 0 20px rgba(139, 92, 246, 0.6));
+    filter: drop-shadow(0 0 15px rgba(59, 130, 246, 0.5));
   }
 
   @media (min-width: 768px) {
     .quantum-loader-advanced {
-      width: 80px;
-      height: 80px;
-      border: 4px solid rgba(139, 92, 246, 0.3);
+      width: 60px;
+      height: 60px;
+      border: 4px solid rgba(59, 130, 246, 0.3);
     }
   }
   
@@ -210,26 +207,26 @@
     left: 4px;
     right: 4px;
     bottom: 4px;
-    border-top-color: #06b6d4;
-    border-bottom-color: #ec4899;
-    animation: quantum-spin 2.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite reverse;
+    border-top-color: #6366f1;
+    border-bottom-color: #8b5cf6;
+    animation: quantum-spin 2s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite reverse;
   }
   
   .quantum-loader-advanced::after {
-    top: 12px;
-    left: 12px;
-    right: 12px;
-    bottom: 12px;
-    border-top-color: #ec4899;
-    border-bottom-color: #10b981;
-    animation: quantum-spin 3s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    border-top-color: #8b5cf6;
+    border-bottom-color: #06b6d4;
+    animation: quantum-spin 2.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
   }
 
-  /* Revolutionary Reveal Animations */
+  /* Professional Reveal Animations */
   .quantum-reveal {
     opacity: 0;
-    transform: translateY(40px) scale(0.95);
-    transition: all 1s cubic-bezier(0.23, 1, 0.32, 1);
+    transform: translateY(30px) scale(0.98);
+    transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
   }
 
   .quantum-reveal.active {
@@ -240,8 +237,8 @@
 
   .matrix-reveal {
     opacity: 0;
-    transform: translateX(-30px);
-    transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+    transform: translateX(-20px);
+    transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
   }
 
   .matrix-reveal.active {
@@ -252,8 +249,8 @@
 
   .hologram-reveal {
     opacity: 0;
-    transform: translateY(30px) scale(0.9);
-    transition: all 0.9s cubic-bezier(0.23, 1, 0.32, 1);
+    transform: translateY(20px) scale(0.95);
+    transition: all 0.7s cubic-bezier(0.23, 1, 0.32, 1);
   }
 
   .hologram-reveal.active {
@@ -263,26 +260,26 @@
   }
   
   .gradient-text {
-    @apply bg-gradient-to-r from-purple-400 via-cyan-400 to-pink-400 text-transparent bg-clip-text;
+    @apply bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 text-transparent bg-clip-text;
   }
 
-  /* Revolutionary Typography */
+  /* Professional Typography */
   .font-orbitron {
     font-family: 'Orbitron', monospace;
   }
 
-  /* Revolutionary Utility Classes */
+  /* Professional Utility Classes */
   .container {
     @apply mx-auto px-4 sm:px-6 lg:px-8;
     max-width: 1400px;
   }
 
   section {
-    @apply py-16 lg:py-20;
+    @apply py-12 lg:py-16;
   }
 }
 
-/* Revolutionary Animations */
+/* Professional Animations */
 @keyframes gradient-shift {
   0%, 100% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
@@ -295,31 +292,31 @@
 @keyframes holographic-shift {
   0%, 100% { 
     background-position: 0% 50%; 
-    filter: drop-shadow(0 0 15px rgba(139, 92, 246, 0.6));
+    filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.5));
   }
   25% { 
     background-position: 100% 50%; 
-    filter: drop-shadow(0 0 20px rgba(6, 182, 212, 0.6));
+    filter: drop-shadow(0 0 12px rgba(99, 102, 241, 0.5));
   }
   50% { 
     background-position: 200% 50%; 
-    filter: drop-shadow(0 0 15px rgba(236, 72, 153, 0.6));
+    filter: drop-shadow(0 0 10px rgba(139, 92, 246, 0.5));
   }
   75% { 
     background-position: 300% 50%; 
-    filter: drop-shadow(0 0 20px rgba(16, 185, 129, 0.6));
+    filter: drop-shadow(0 0 12px rgba(6, 182, 212, 0.5));
   }
 }
 
 @keyframes neural-flow {
   0%, 100% { background-position: 0 0, 0 0, 0 0, 400px 400px; }
-  33% { background-position: 20px 20px, 20px 20px, 200px 200px, 600px 600px; }
-  66% { background-position: 40px 40px, 40px 40px, 400px 400px, 800px 800px; }
+  33% { background-position: 15px 15px, 15px 15px, 200px 200px, 600px 600px; }
+  66% { background-position: 30px 30px, 30px 30px, 400px 400px, 800px 800px; }
 }
 
 @keyframes quantum-flow {
   0%, 100% { background-position: 0 0, 0 0, 0 0, 500px 500px; }
-  50% { background-position: 30px 30px, 30px 30px, 500px 500px, 1000px 1000px; }
+  50% { background-position: 25px 25px, 25px 25px, 500px 500px, 1000px 1000px; }
 }
 
 @keyframes matrix-flow {
@@ -329,43 +326,43 @@
 
 @keyframes float-3d {
   0%, 100% { transform: translateY(0px) rotateX(0deg); }
-  50% { transform: translateY(-20px) rotateX(3deg); }
+  50% { transform: translateY(-15px) rotateX(2deg); }
 }
 
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 10px rgba(139, 92, 246, 0.5); }
-  50% { box-shadow: 0 0 25px rgba(139, 92, 246, 0.8), 0 0 35px rgba(6, 182, 212, 0.4); }
+  0%, 100% { box-shadow: 0 0 8px rgba(59, 130, 246, 0.4); }
+  50% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.6), 0 0 30px rgba(99, 102, 241, 0.3); }
 }
 
-/* Revolutionary Animation Classes */
+/* Professional Animation Classes */
 .animate-float-3d {
-  animation: float-3d 6s ease-in-out infinite;
+  animation: float-3d 5s ease-in-out infinite;
 }
 
 .animate-pulse-glow {
-  animation: pulse-glow 3s ease-in-out infinite;
+  animation: pulse-glow 2.5s ease-in-out infinite;
 }
 
 .animate-spin-slow {
-  animation: spin 8s linear infinite;
+  animation: spin 6s linear infinite;
 }
 
-/* Revolutionary Responsive Design */
+/* Professional Responsive Design */
 @media (max-width: 768px) {
   .neural-card:hover,
   .neural-pathway-card:hover,
   .quantum-skill-card:hover {
-    transform: translateY(-2px) scale(1.005);
+    transform: translateY(-1px) scale(1.01);
   }
   
   .neural-grid,
   .quantum-grid {
-    background-size: 30px 30px, 30px 30px, 400px 400px, 400px 400px;
+    background-size: 25px 25px, 25px 25px, 400px 400px, 400px 400px;
   }
 
   section {
-    scroll-margin-top: 100px;
-    @apply py-12 lg:py-16;
+    scroll-margin-top: 80px;
+    @apply py-10 lg:py-12;
   }
 
   .cyber-button:hover,
@@ -374,7 +371,7 @@
   }
 }
 
-/* Revolutionary Accessibility */
+/* Professional Accessibility */
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;
@@ -390,37 +387,37 @@
   }
 }
 
-/* Revolutionary Focus States */
+/* Professional Focus States */
 button:focus-visible,
 a:focus-visible {
-  outline: 2px solid rgb(139 92 246);
+  outline: 2px solid rgb(59 130 246);
   outline-offset: 2px;
   border-radius: 6px;
-  box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.3);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3);
 }
 
-/* Revolutionary Scrollbar */
+/* Professional Scrollbar */
 ::-webkit-scrollbar {
-  width: 12px;
+  width: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(139, 92, 246, 0.1);
-  border-radius: 6px;
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: 5px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(45deg, #8b5cf6, #06b6d4, #ec4899);
-  border-radius: 6px;
-  border: 2px solid rgba(139, 92, 246, 0.1);
+  background: linear-gradient(45deg, #3b82f6, #6366f1, #8b5cf6);
+  border-radius: 5px;
+  border: 2px solid rgba(59, 130, 246, 0.1);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(45deg, #7c3aed, #0891b2, #db2777);
-  box-shadow: 0 0 10px rgba(139, 92, 246, 0.6);
+  background: linear-gradient(45deg, #2563eb, #4f46e5, #7c3aed);
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
 }
 
-/* Revolutionary Final Overrides */
+/* Professional Final Overrides */
 * {
   backface-visibility: visible !important;
 }

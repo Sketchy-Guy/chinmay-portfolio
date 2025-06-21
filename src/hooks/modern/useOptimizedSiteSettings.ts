@@ -3,10 +3,6 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { modernConnectionManager } from "@/utils/modern/connectionManager";
 
-/**
- * Optimized Site Settings Interface
- * Defines the structure for site configuration data
- */
 export interface OptimizedSiteSettings {
   [key: string]: string | null | undefined;
   site_logo?: string | null;
@@ -18,21 +14,12 @@ export interface OptimizedSiteSettings {
   social_email?: string | null;
 }
 
-/**
- * Optimized Site Settings Hook
- * Manages site configuration with improved error handling and performance
- * Features: Connection pooling, debounced updates, error recovery
- */
 export function useOptimizedSiteSettings() {
   const [settings, setSettings] = useState<OptimizedSiteSettings>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [channelId, setChannelId] = useState<string>('');
 
-  /**
-   * Fetch site settings from database with error handling
-   * Includes retry logic and fallback values
-   */
   const fetchSettings = useCallback(async (retryCount = 0): Promise<void> => {
     try {
       setError(null);
@@ -55,22 +42,26 @@ export function useOptimizedSiteSettings() {
         throw fetchError;
       }
 
-      // Transform data into settings object
+      // Transform data into settings object with proper parsing
       const siteSettings: OptimizedSiteSettings = {};
       
       for (const row of data || []) {
         let processedValue: string | null = null;
         
         try {
-          // Handle different value types (string, JSON, etc.)
-          if (typeof row.value === "string") {
-            processedValue = row.value;
-          } else if (row.value !== null) {
-            // Try to parse as JSON, fallback to string conversion
-            try {
-              const parsed = JSON.parse(JSON.stringify(row.value));
-              processedValue = typeof parsed === 'string' ? parsed : JSON.stringify(parsed);
-            } catch {
+          if (row.value !== null) {
+            // Handle different value types - parse JSON strings properly
+            if (typeof row.value === "string") {
+              try {
+                // Try to parse as JSON first
+                const parsed = JSON.parse(row.value);
+                processedValue = typeof parsed === 'string' ? parsed : String(parsed);
+              } catch {
+                // If not JSON, use as is
+                processedValue = row.value;
+              }
+            } else {
+              // Convert to string if not already
               processedValue = String(row.value);
             }
           }
@@ -82,10 +73,11 @@ export function useOptimizedSiteSettings() {
         }
       }
       
-      // Set default values if not present
+      // Set enhanced default values
       const settingsWithDefaults: OptimizedSiteSettings = {
-        site_name: 'Chinmay Kumar Panda - Portfolio',
+        site_name: 'Chinmay Kumar Panda',
         site_description: 'Full Stack Developer & AI Enthusiast',
+        site_logo: '/lovable-uploads/a5f88509-5d42-4d11-8b7c-6abe9e64cfd0.png',
         social_github: 'https://github.com/chinmaykumarpanda',
         social_linkedin: 'https://linkedin.com/in/chinmaykumarpanda',
         social_email: 'chinmaykumarpanda004@gmail.com',
@@ -93,22 +85,23 @@ export function useOptimizedSiteSettings() {
       };
       
       setSettings(settingsWithDefaults);
+      console.log('Site settings loaded:', settingsWithDefaults);
       
     } catch (error: any) {
       console.error('Error fetching site settings:', error);
       setError(error.message || 'Failed to fetch site settings');
       
-      // Retry logic for transient errors
       if (retryCount < 2 && error.code !== 'PGRST116') {
         console.log(`Retrying fetch settings (attempt ${retryCount + 1})`);
         setTimeout(() => fetchSettings(retryCount + 1), 1000 * (retryCount + 1));
         return;
       }
       
-      // Set fallback values on persistent errors
+      // Enhanced fallback values
       setSettings({
-        site_name: 'Chinmay Kumar Panda - Portfolio',
+        site_name: 'Chinmay Kumar Panda',
         site_description: 'Full Stack Developer & AI Enthusiast',
+        site_logo: '/lovable-uploads/a5f88509-5d42-4d11-8b7c-6abe9e64cfd0.png',
         social_github: 'https://github.com/chinmaykumarpanda',
         social_linkedin: 'https://linkedin.com/in/chinmaykumarpanda',
         social_email: 'chinmaykumarpanda004@gmail.com'
@@ -118,11 +111,6 @@ export function useOptimizedSiteSettings() {
     }
   }, []);
 
-  /**
-   * Update a specific setting value
-   * @param key - Setting key to update
-   * @param value - New value for the setting
-   */
   const updateSetting = useCallback(async (key: string, value: string | null): Promise<boolean> => {
     try {
       const { error } = await supabase
@@ -135,7 +123,6 @@ export function useOptimizedSiteSettings() {
 
       if (error) throw error;
 
-      // Update local state
       setSettings(prev => ({ ...prev, [key]: value }));
       return true;
       
@@ -146,18 +133,14 @@ export function useOptimizedSiteSettings() {
     }
   }, []);
 
-  // Initialize hook and set up real-time subscription
   useEffect(() => {
     let mounted = true;
     
-    // Initial fetch
     fetchSettings();
 
-    // Create unique channel for real-time updates
     const newChannelId = modernConnectionManager.createUniqueChannelId('site_settings_optimized');
     setChannelId(newChannelId);
     
-    // Set up real-time subscription with debouncing
     const channel = supabase
       .channel(newChannelId)
       .on(
@@ -171,7 +154,6 @@ export function useOptimizedSiteSettings() {
         (payload) => {
           console.log('Site settings real-time update:', payload);
           
-          // Debounce updates to prevent loops and excessive calls
           modernConnectionManager.debounce('site-settings-realtime-update', () => {
             if (mounted) {
               fetchSettings();
@@ -190,10 +172,8 @@ export function useOptimizedSiteSettings() {
         }
       });
 
-    // Register channel with connection manager
     modernConnectionManager.registerChannel(newChannelId, channel);
 
-    // Cleanup function
     return () => {
       mounted = false;
       modernConnectionManager.unregisterChannel(newChannelId);

@@ -25,18 +25,18 @@ const InteractiveBackground = ({ mousePosition }: InteractiveBackgroundProps) =>
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
-    // Initialize particles
+    // Reduced particle count for better performance
     const initParticles = () => {
       particlesRef.current = [];
-      for (let i = 0; i < 50; i++) {
+      for (let i = 0; i < 12; i++) { // Reduced from 50 to 12
         particlesRef.current.push({
           x: Math.random() * canvas.width,
           y: Math.random() * canvas.height,
-          vx: (Math.random() - 0.5) * 0.5,
-          vy: (Math.random() - 0.5) * 0.5,
-          size: Math.random() * 2 + 1,
-          opacity: Math.random() * 0.5 + 0.2,
-          hue: Math.random() * 60 + 240, // Purple to cyan range
+          vx: (Math.random() - 0.5) * 0.3, // Reduced speed
+          vy: (Math.random() - 0.5) * 0.3,
+          size: Math.random() * 1.5 + 0.5, // Smaller particles
+          opacity: Math.random() * 0.3 + 0.1, // Lower opacity
+          hue: Math.random() * 60 + 220, // Blue to purple range
         });
       }
     };
@@ -44,52 +44,51 @@ const InteractiveBackground = ({ mousePosition }: InteractiveBackgroundProps) =>
     initParticles();
 
     const animate = () => {
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.02)'; // Much more subtle clearing
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Update and draw particles
       particlesRef.current.forEach((particle, index) => {
-        // Move particles
+        // Gentle movement
         particle.x += particle.vx;
         particle.y += particle.vy;
 
-        // Mouse interaction
+        // Reduced mouse interaction
         const dx = mousePosition.x - particle.x;
         const dy = mousePosition.y - particle.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
 
-        if (distance < 100) {
-          const force = (100 - distance) / 100;
-          particle.vx += (dx / distance) * force * 0.01;
-          particle.vy += (dy / distance) * force * 0.01;
+        if (distance < 80) { // Reduced interaction range
+          const force = (80 - distance) / 80;
+          particle.vx += (dx / distance) * force * 0.005; // Much gentler force
+          particle.vy += (dy / distance) * force * 0.005;
         }
 
         // Boundary checks
         if (particle.x < 0 || particle.x > canvas.width) particle.vx *= -1;
         if (particle.y < 0 || particle.y > canvas.height) particle.vy *= -1;
 
-        // Draw particle
+        // Draw particle with reduced visual impact
         ctx.save();
         ctx.globalAlpha = particle.opacity;
-        ctx.fillStyle = `hsl(${particle.hue}, 70%, 60%)`;
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = `hsl(${particle.hue}, 70%, 60%)`;
+        ctx.fillStyle = `hsl(${particle.hue}, 50%, 50%)`; // Reduced saturation
+        ctx.shadowBlur = 5; // Reduced glow
+        ctx.shadowColor = `hsl(${particle.hue}, 50%, 50%)`;
         ctx.beginPath();
         ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
 
-        // Draw connections
+        // Simplified connections
         particlesRef.current.slice(index + 1).forEach(otherParticle => {
           const dx = particle.x - otherParticle.x;
           const dy = particle.y - otherParticle.y;
           const distance = Math.sqrt(dx * dx + dy * dy);
 
-          if (distance < 80) {
+          if (distance < 60) { // Reduced connection distance
             ctx.save();
-            ctx.globalAlpha = (80 - distance) / 80 * 0.2;
-            ctx.strokeStyle = `hsl(${(particle.hue + otherParticle.hue) / 2}, 70%, 60%)`;
-            ctx.lineWidth = 0.5;
+            ctx.globalAlpha = (60 - distance) / 60 * 0.1; // Much lower opacity
+            ctx.strokeStyle = `hsl(${(particle.hue + otherParticle.hue) / 2}, 50%, 50%)`;
+            ctx.lineWidth = 0.3; // Thinner lines
             ctx.beginPath();
             ctx.moveTo(particle.x, particle.y);
             ctx.lineTo(otherParticle.x, otherParticle.y);
@@ -116,7 +115,7 @@ const InteractiveBackground = ({ mousePosition }: InteractiveBackgroundProps) =>
     <canvas
       ref={canvasRef}
       className="fixed inset-0 pointer-events-none z-0"
-      style={{ opacity: 0.6 }}
+      style={{ opacity: 0.25 }} // Reduced overall opacity
     />
   );
 };
