@@ -24,15 +24,15 @@ export function useOptimizedSiteSettings() {
     try {
       setError(null);
       
-      // First try to get from site_settings table
+      // Get from site_settings table
       const { data: siteData, error: siteError } = await supabase
         .from("site_settings")
         .select("key, value");
 
-      // Also get user profile data as fallback
+      // Get user profile data as fallback
       const { data: profileData, error: profileError } = await supabase
         .from("user_profile")
-        .select("name, bio, profile_image, email")
+        .select("name, bio, profile_image, email, title")
         .limit(1)
         .single();
 
@@ -43,17 +43,14 @@ export function useOptimizedSiteSettings() {
 
       console.log('Site settings raw data:', { siteData, profileData, socialData });
 
-      if (siteError && siteError.code !== 'PGRST116') {
-        console.warn('Site settings error:', siteError);
-      }
-
-      // Transform site settings data
+      // Transform site settings data with better parsing
       const siteSettings: OptimizedSiteSettings = {};
       
       if (siteData) {
         for (const row of siteData) {
           try {
             if (row.value !== null) {
+              // Handle JSON values properly
               if (typeof row.value === "string") {
                 try {
                   const parsed = JSON.parse(row.value);
@@ -61,6 +58,9 @@ export function useOptimizedSiteSettings() {
                 } catch {
                   siteSettings[row.key] = row.value;
                 }
+              } else if (typeof row.value === "object") {
+                // Handle direct object values
+                siteSettings[row.key] = String(row.value);
               } else {
                 siteSettings[row.key] = String(row.value);
               }
@@ -72,32 +72,22 @@ export function useOptimizedSiteSettings() {
         }
       }
 
-      // Create enhanced settings with fallbacks from profile data
+      // Create enhanced settings with proper fallbacks
       const settingsWithDefaults: OptimizedSiteSettings = {
-        site_name: siteSettings.site_name || profileData?.name || 'Chinmay Kumar Panda',
-        site_description: siteSettings.site_description || profileData?.bio || 'Full Stack Developer & AI Enthusiast',
+        site_name: siteSettings.site_name || siteSettings.siteTitle || profileData?.name || 'Mr. Chinmay Kumar Panda',
+        site_description: siteSettings.site_description || profileData?.title || profileData?.bio || 'Software Developer | Python | AI | Javascript | Java | App Developer | Mentor | AI/ML',
         site_logo: siteSettings.site_logo || profileData?.profile_image || '/lovable-uploads/a5f88509-5d42-4d11-8b7c-6abe9e64cfd0.png',
         site_favicon: siteSettings.site_favicon || profileData?.profile_image || '/lovable-uploads/a5f88509-5d42-4d11-8b7c-6abe9e64cfd0.png',
-        social_email: siteSettings.social_email || profileData?.email || 'chinmaykumarpanda004@gmail.com',
+        social_email: siteSettings.social_email || siteSettings.contact_email || profileData?.email || 'chinmaykumarpanda004@gmail.com',
         ...siteSettings
       };
 
-      // Add social links from social_links table
+      // Add social links from social_links table with better mapping
       if (socialData) {
         socialData.forEach(social => {
           const key = `social_${social.platform.toLowerCase()}`;
-          if (!settingsWithDefaults[key]) {
-            settingsWithDefaults[key] = social.url;
-          }
+          settingsWithDefaults[key] = social.url;
         });
-      }
-
-      // Add default social links if none exist
-      if (!settingsWithDefaults.social_github) {
-        settingsWithDefaults.social_github = 'https://github.com/chinmaykumarpanda';
-      }
-      if (!settingsWithDefaults.social_linkedin) {
-        settingsWithDefaults.social_linkedin = 'https://linkedin.com/in/chinmaykumarpanda';
       }
       
       setSettings(settingsWithDefaults);

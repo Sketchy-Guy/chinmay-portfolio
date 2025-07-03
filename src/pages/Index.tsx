@@ -10,6 +10,7 @@ import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import ScrollToTop from "@/components/ScrollToTop";
 import InteractiveBackground from "@/components/effects/InteractiveBackground";
+import FloatingElements from "@/components/3d/FloatingElements";
 import { usePortfolioData } from "@/contexts/DataContext";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -190,6 +191,7 @@ const Index = () => {
   return (
     <div className="flex flex-col min-h-screen relative overflow-x-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <InteractiveBackground mousePosition={mousePosition} />
+      <FloatingElements />
       <Header />
       
       <main className="flex-grow relative z-10">
