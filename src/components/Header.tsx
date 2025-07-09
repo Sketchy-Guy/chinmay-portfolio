@@ -36,6 +36,9 @@ const Header = () => {
           behavior: 'smooth'
         });
       }
+    } else {
+      // Handle external/internal routes
+      window.location.href = href;
     }
   };
 
@@ -46,6 +49,7 @@ const Header = () => {
     { title: "Timeline", href: "#timeline" },
     { title: "Projects", href: "#projects" },
     { title: "Contact", href: "#contact" },
+    { title: "Hire Me", href: "/hire-me" },
   ];
 
   const logo = settings.site_logo || settings.siteTitle || "/lovable-uploads/a5f88509-5d42-4d11-8b7c-6abe9e64cfd0.png";

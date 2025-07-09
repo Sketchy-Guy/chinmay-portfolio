@@ -4,17 +4,45 @@
 @tailwind components;
 @tailwind utilities;
 
-/* CSS Variables for consistent theming */
+/* Enhanced CSS Variables for comprehensive theming */
 :root {
-  --primary-blue: #3b82f6;
-  --primary-indigo: #6366f1;
-  --primary-purple: #8b5cf6;
-  --accent-cyan: #06b6d4;
-  --bg-primary: #0f172a;
-  --bg-secondary: #1e293b;
-  --text-primary: #f8fafc;
-  --text-secondary: #cbd5e1;
-  --border-primary: rgba(59, 130, 246, 0.3);
+  /* Color System */
+  --primary-blue: 217 91% 60%;
+  --primary-indigo: 239 84% 67%;
+  --primary-purple: 262 83% 58%;
+  --accent-cyan: 188 94% 43%;
+  --accent-emerald: 158 64% 52%;
+  
+  /* Background System */
+  --bg-primary: 222 84% 5%;
+  --bg-secondary: 215 28% 17%;
+  --bg-tertiary: 217 33% 17%;
+  --bg-card: 222 84% 5%;
+  --bg-muted: 217 19% 27%;
+  
+  /* Text System */
+  --text-primary: 210 40% 98%;
+  --text-secondary: 215 16% 47%;
+  --text-muted: 215 20% 65%;
+  --text-accent: 217 91% 60%;
+  
+  /* Border System */
+  --border-primary: 217 91% 60% / 0.3;
+  --border-secondary: 215 16% 47% / 0.2;
+  --border-muted: 215 20% 65% / 0.1;
+  
+  /* Shadow System */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+  --shadow-glow: 0 0 40px hsl(var(--primary-blue) / 0.4);
+  
+  /* Glass Effect System */
+  --glass-bg: rgb(15 23 42 / 0.7);
+  --glass-border: rgb(59 130 246 / 0.2);
+  --glass-backdrop: blur(12px);
 }
 
 /* Base styles with improved readability and professional appearance */
@@ -58,46 +86,93 @@
   }
 }
 
-/* Professional Utility Classes */
+/* Enhanced Utility Classes */
 @layer utilities {
   .font-orbitron {
     font-family: 'Orbitron', monospace;
   }
 
-  /* Professional button variants */
-  .cyber-button-advanced {
-    @apply relative bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-medium rounded-lg transition-all duration-300 border-0 shadow-lg hover:shadow-blue-500/25;
+  /* Enhanced Glass Morphism */
+  .glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-backdrop);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-lg);
   }
 
-  .btn-secondary {
-    @apply border-2 border-blue-400/50 bg-transparent hover:bg-blue-400/10 text-blue-400 hover:text-white transition-all duration-300 font-orbitron;
+  .glass-button {
+    @apply bg-slate-900/60 backdrop-blur-xl border border-blue-400/30 hover:bg-blue-400/10 transition-all duration-300;
   }
 
-  /* Professional loading animations */
+  /* Professional button system */
+  .cyber-button-primary {
+    @apply bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:via-indigo-500 hover:to-purple-500 text-white font-medium rounded-xl transition-all duration-300 border-0 shadow-2xl hover:shadow-blue-500/30 hover:scale-105;
+  }
+
+  .cyber-button-secondary {
+    @apply border-2 border-blue-400/50 bg-slate-900/50 hover:bg-blue-400/10 text-blue-400 hover:text-white transition-all duration-300 font-orbitron backdrop-blur-md rounded-xl;
+  }
+
+  .cyber-button-ghost {
+    @apply bg-transparent border border-slate-600/30 hover:border-blue-400/50 text-slate-300 hover:text-blue-400 transition-all duration-300 backdrop-blur-sm;
+  }
+
+  /* Enhanced animations */
   .animate-spin-slow {
     animation: spin 8s linear infinite;
   }
 
-  /* Professional grid patterns */
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-glow {
+    animation: glow 3s ease-in-out infinite alternate;
+  }
+
+  /* Enhanced grid patterns */
   .neural-grid {
     background-image: 
-      linear-gradient(rgba(59, 130, 246, 0.1) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(59, 130, 246, 0.1) 1px, transparent 1px);
+      linear-gradient(hsl(var(--primary-blue) / 0.1) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--primary-blue) / 0.1) 1px, transparent 1px);
     background-size: 50px 50px;
     animation: grid-move 20s linear infinite;
   }
 
   .cyber-grid {
     background-image: 
-      linear-gradient(rgba(99, 102, 241, 0.1) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(99, 102, 241, 0.1) 1px, transparent 1px);
-    background-size: 25px 25px;
+      linear-gradient(hsl(var(--primary-indigo) / 0.1) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--primary-indigo) / 0.1) 1px, transparent 1px);
+    background-size: 30px 30px;
     animation: grid-move 15s linear infinite;
   }
 
+  .quantum-grid {
+    background-image: 
+      radial-gradient(circle at 1px 1px, hsl(var(--primary-purple) / 0.15) 1px, transparent 0);
+    background-size: 40px 40px;
+    animation: grid-pulse 8s ease-in-out infinite;
+  }
+
+  /* Keyframe animations */
   @keyframes grid-move {
     0% { background-position: 0 0; }
     100% { background-position: 50px 50px; }
+  }
+
+  @keyframes grid-pulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.8; }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+  }
+
+  @keyframes glow {
+    from { box-shadow: 0 0 20px hsl(var(--primary-blue) / 0.3); }
+    to { box-shadow: 0 0 30px hsl(var(--primary-blue) / 0.6); }
   }
 
   /* Professional reveal animations */
@@ -170,19 +245,31 @@
 
 /* Component-specific styles */
 @layer components {
-  /* Professional card styling */
+  /* Enhanced card system */
   .professional-card {
-    @apply bg-slate-800/60 backdrop-blur-xl border border-slate-700/50 rounded-xl shadow-xl hover:border-blue-500/50 transition-all duration-300;
+    @apply glass-card rounded-xl shadow-xl hover:border-blue-500/50 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/20;
   }
 
-  /* Professional form inputs */
+  .quantum-card {
+    @apply bg-gradient-to-br from-slate-900/80 to-slate-800/80 backdrop-blur-xl border border-blue-400/20 rounded-2xl shadow-2xl hover:border-blue-400/40 transition-all duration-500 hover:scale-[1.02];
+  }
+
+  /* Enhanced form system */
   .professional-input {
-    @apply bg-slate-800/50 border-slate-600/50 text-slate-100 placeholder:text-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors duration-200;
+    @apply bg-slate-900/50 border border-slate-600/50 text-slate-100 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition-all duration-300 rounded-lg backdrop-blur-sm;
   }
 
-  /* Professional buttons */
+  .quantum-input {
+    @apply bg-slate-900/60 border border-blue-400/30 text-slate-100 placeholder:text-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all duration-300 rounded-xl backdrop-blur-md shadow-lg;
+  }
+
+  /* Enhanced button system */
   .professional-button {
-    @apply bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-medium px-6 py-3 rounded-lg transition-all duration-300 shadow-lg hover:shadow-blue-500/25 hover:scale-105;
+    @apply cyber-button-primary px-6 py-3 text-base font-medium;
+  }
+
+  .quantum-button {
+    @apply bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:via-indigo-500 hover:to-purple-500 text-white font-medium px-8 py-4 rounded-xl transition-all duration-300 shadow-2xl hover:shadow-blue-500/30 hover:scale-105 border-0;
   }
 
   /* Professional navigation */
