@@ -126,14 +126,14 @@ const RevolutionaryHeroSection = () => {
       </div>
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 relative z-10">
-        <div className="flex flex-col lg:flex-row items-center justify-between min-h-screen py-20 lg:py-0">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center min-h-screen py-20">
           
-          {/* Left Side - Content First on Mobile, Better Hierarchy */}
+          {/* Left Side - Content */}
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 30 }}
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: isVisible ? 1 : 0, x: isVisible ? 0 : -30 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="flex-1 lg:pr-12 xl:pr-16 text-center lg:text-left space-y-6 lg:space-y-8"
+            className="order-2 lg:order-1 text-center lg:text-left space-y-6 lg:space-y-8"
           >
             {/* Enhanced Terminal Header */}
             <motion.div
@@ -284,16 +284,16 @@ const RevolutionaryHeroSection = () => {
             </motion.div>
           </motion.div>
 
-          {/* Right Side - Profile Image (Better Positioned) */}
+          {/* Right Side - Profile Image */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: isVisible ? 1 : 0, scale: isVisible ? 1 : 0.8 }}
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: isVisible ? 1 : 0, x: isVisible ? 0 : 30 }}
             transition={{ duration: 1, delay: 0.4 }}
-            className="flex-shrink-0 relative mb-12 lg:mb-0"
+            className="order-1 lg:order-2 mb-8 lg:mb-0"
           >
-            <div className="relative">
+            <div className="relative flex justify-center">
               {profileImage && (
-                <div className="relative w-80 h-80 lg:w-96 lg:h-96 xl:w-[450px] xl:h-[450px]">
+                <div className="relative w-72 h-72 lg:w-80 lg:h-80 xl:w-96 xl:h-96">
                   {/* Enhanced Border Effect */}
                   <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 p-1 animate-spin-slow">
                     <div className="w-full h-full rounded-full bg-slate-950"></div>
