@@ -189,13 +189,13 @@ const Index = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen relative overflow-x-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="flex flex-col min-h-screen relative overflow-x-hidden bg-gradient-to-br from-slate-950 via-slate-800 to-slate-900">
       <InteractiveBackground mousePosition={mousePosition} />
       <Simple3DBackground />
       <Header />
       
-      <main className="flex-grow relative z-10">
-        <div className="pt-16">
+      <main className="flex-grow relative z-10 w-full">
+        <div className="pt-16 md:pt-20">
           <RevolutionaryHeroSection />
         </div>
         
