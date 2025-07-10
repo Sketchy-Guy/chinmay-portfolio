@@ -2,10 +2,12 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ArrowDown, Github, Linkedin, Mail, Download, Code, Zap, Database } from 'lucide-react';
+import { ArrowDown, Download, Code, Zap, Database, Mail } from 'lucide-react';
 import { usePortfolioData } from '@/contexts/DataContext';
 import { useOptimizedSiteSettings } from '@/hooks/modern/useOptimizedSiteSettings';
 import { Skeleton } from '@/components/ui/skeleton';
+import InteractiveTerminal from '@/components/InteractiveTerminal';
+import SocialLinksEnhanced from '@/components/SocialLinksEnhanced';
 
 const RevolutionaryHeroSection = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -135,26 +137,8 @@ const RevolutionaryHeroSection = () => {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="order-2 lg:order-1 text-center lg:text-left space-y-6 lg:space-y-8"
           >
-            {/* Enhanced Terminal Header */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="bg-slate-900/70 backdrop-blur-xl border border-blue-400/30 rounded-xl p-4 font-mono shadow-2xl"
-            >
-              <div className="flex items-center gap-2 mb-3">
-                <div className="flex gap-2">
-                  <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-                  <div className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-                  <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
-                </div>
-                <span className="text-slate-400 ml-2 text-sm">~/portfolio</span>
-              </div>
-              <div className="text-green-400 text-sm">
-                <span className="text-blue-400">$</span> whoami<br/>
-                <span className="text-indigo-400">{'>'}</span> {userName?.split(' ')[0] || 'Developer'}
-              </div>
-            </motion.div>
+            {/* Interactive Terminal */}
+            <InteractiveTerminal />
 
             {/* Main Title with Better Typography */}
             <div className="space-y-4">
@@ -254,34 +238,7 @@ const RevolutionaryHeroSection = () => {
             </motion.div>
 
             {/* Enhanced Social Links */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 1.6 }}
-              className="flex gap-4 justify-center lg:justify-start"
-            >
-              {[
-                { icon: Github, href: githubUrl || settings?.social_github, label: 'GitHub', color: 'from-gray-600 to-gray-800' },
-                { icon: Linkedin, href: linkedinUrl || settings?.social_linkedin, label: 'LinkedIn', color: 'from-blue-600 to-blue-800' },
-                { icon: Mail, href: userEmail ? `mailto:${userEmail}` : null, label: 'Email', color: 'from-purple-600 to-purple-800' }
-              ].filter(social => social.href).map((social, index) => (
-                <motion.a
-                  key={social.label}
-                  href={social.href!}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group relative w-14 h-14 rounded-xl bg-slate-900/60 backdrop-blur-md border border-blue-400/30 flex items-center justify-center text-blue-400 hover:text-white transition-all duration-300 hover:scale-110 hover:bg-gradient-to-r hover:from-blue-600/20 hover:to-purple-600/20"
-                  whileHover={{ scale: 1.1, rotateY: 180 }}
-                  whileTap={{ scale: 0.95 }}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 1.8 + index * 0.1 }}
-                >
-                  <social.icon className="w-6 h-6 transition-all duration-300" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl"></div>
-                </motion.a>
-              ))}
-            </motion.div>
+            <SocialLinksEnhanced />
           </motion.div>
 
           {/* Right Side - Profile Image */}

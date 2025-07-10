@@ -3,11 +3,14 @@ import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useOptimizedSiteSettings } from "@/hooks/modern/useOptimizedSiteSettings";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrollPosition, setScrollPosition] = useState(0);
   const { settings, loading } = useOptimizedSiteSettings();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const handleScroll = () => setScrollPosition(window.scrollY);
@@ -19,6 +22,12 @@ const Header = () => {
     setIsMenuOpen(false);
     
     if (href.startsWith('#')) {
+      // If we're not on the home page, navigate to home first
+      if (location.pathname !== '/') {
+        navigate('/' + href);
+        return;
+      }
+      
       const targetId = href.substring(1);
       if (targetId === '') {
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -37,8 +46,8 @@ const Header = () => {
         });
       }
     } else {
-      // Handle external/internal routes
-      window.location.href = href;
+      // Handle navigation to other pages
+      navigate(href);
     }
   };
 
@@ -116,7 +125,7 @@ const Header = () => {
             ))}
             <Button 
               className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-4 lg:px-6 py-2 font-medium transition-all duration-300 hover:scale-105 font-orbitron text-sm lg:text-base border-0" 
-              onClick={() => handleNavClick('#contact')}
+              onClick={() => handleNavClick('/hire-me')}
             >
               <span className="relative z-10">Hire Me</span>
             </Button>
@@ -172,7 +181,7 @@ const Header = () => {
               ))}
               <Button
                 className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white w-full mt-6 py-3 font-medium font-orbitron border-0"
-                onClick={() => handleNavClick('#contact')}
+                onClick={() => handleNavClick('/hire-me')}
               >
                 <span className="relative z-10">Hire Me</span>
               </Button>
