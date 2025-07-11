@@ -180,8 +180,14 @@ const InnovativeAboutSection = () => {
     ));
   };
 
+  console.log('InnovativeAboutSection rendering:', { 
+    educationEntries: educationEntries.length, 
+    experienceEntries: experienceEntries.length, 
+    isLoading 
+  });
+
   return (
-    <section id="about" className="py-24 relative overflow-hidden">
+    <section id="about" className="py-24 relative overflow-hidden bg-gradient-to-br from-slate-900/95 via-purple-900/30 to-cyan-900/20 min-h-screen flex items-center">
       {/* Revolutionary Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-gray-900/80 via-purple-900/20 to-cyan-900/20"></div>
       

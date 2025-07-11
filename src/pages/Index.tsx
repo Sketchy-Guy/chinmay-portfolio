@@ -199,23 +199,24 @@ const Index = () => {
           <RevolutionaryHeroSection />
         </div>
         
-        <div id="about" className="scroll-mt-20">
+        {/* Debug: Add console logging and ensure sections are visible */}
+        <div id="about" className="scroll-mt-20 relative z-20 min-h-screen">
           <InnovativeAboutSection />
         </div>
         
-        <div id="skills" className="scroll-mt-20">
+        <div id="skills" className="scroll-mt-20 relative z-20 min-h-screen">
           <QuantumSkillsSection />
         </div>
         
-        <div id="timeline" className="scroll-mt-20">
+        <div id="timeline" className="scroll-mt-20 relative z-20 min-h-screen">
           <QuantumTimeline />
         </div>
         
-        <div id="projects" className="scroll-mt-20">
+        <div id="projects" className="scroll-mt-20 relative z-20 min-h-screen">
           <ProjectGallery3D />
         </div>
         
-        <div id="contact" className="scroll-mt-20">
+        <div id="contact" className="scroll-mt-20 relative z-20 min-h-screen">
           <FuturisticContact />
         </div>
       </main>
