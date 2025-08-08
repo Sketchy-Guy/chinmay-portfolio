@@ -42,68 +42,81 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setIsLoading(true);
       setError(null);
-      console.log("Fetching public portfolio data...");
-      
-      // Fetch public profile data (get the first/default profile)
-      const { data: profileData, error: profileError } = await supabase
-        .from('user_profile')
-        .select('*')
-        .limit(1)
-        .single();
-      
-      if (profileError && profileError.code !== 'PGRST116') {
-        console.error("Error fetching profile data:", profileError);
+      console.log("Fetching portfolio data...");
+
+      // Decide which profile to use (logged-in user vs public/default)
+      let profileId: string | null = null;
+      let profileData: any = null;
+
+      if (user) {
+        const { data: pData, error: pErr } = await supabase
+          .from('user_profile')
+          .select('*')
+          .eq('id', user.id)
+          .maybeSingle();
+        if (pErr) console.warn('Profile fetch error (user):', pErr);
+        profileData = pData;
+        profileId = pData?.id || null;
+
+        if (!profileData) {
+          const { error: insertError } = await supabase
+            .from('user_profile')
+            .insert({
+              id: user.id,
+              name: defaultData.user.name,
+              title: defaultData.user.title,
+              email: user.email || defaultData.user.email,
+              bio: defaultData.user.bio
+            });
+          if (insertError) throw insertError;
+          profileId = user.id;
+          const { data: created } = await supabase
+            .from('user_profile')
+            .select('*')
+            .eq('id', user.id)
+            .maybeSingle();
+          profileData = created;
+        }
+      } else {
+        // Public mode: pick the first profile (site owner)
+        const { data: pData, error: pErr } = await supabase
+          .from('user_profile')
+          .select('*')
+          .order('created_at', { ascending: true })
+          .limit(1)
+          .maybeSingle();
+        if (pErr) console.warn('Profile fetch error (public):', pErr);
+        profileData = pData;
+        profileId = pData?.id || null;
+
+        if (!profileId) {
+          setData(defaultData);
+          console.warn('No profile in DB, using defaults');
+          return;
+        }
       }
-      
-      // Fetch public social links
-      const { data: socialData, error: socialError } = await supabase
-        .from('social_links')
-        .select('*');
-      
-      if (socialError) {
-        console.error("Error fetching social links:", socialError);
-      }
-      
-      // Fetch public skills
-      const { data: skillsData, error: skillsError } = await supabase
-        .from('skills')
-        .select('*')
-        .order('level', { ascending: false });
-      
-      if (skillsError) {
-        console.error("Error fetching skills:", skillsError);
-      }
-      
-      // Fetch public projects
-      const { data: projectsData, error: projectsError } = await supabase
-        .from('projects')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (projectsError) {
-        console.error("Error fetching projects:", projectsError);
-      }
-      
-      // Fetch public certifications
-      const { data: certificationsData, error: certificationsError } = await supabase
-        .from('certifications')
-        .select('*')
-        .order('date', { ascending: false });
-      
-      if (certificationsError) {
-        console.error("Error fetching certifications:", certificationsError);
-      }
-      
-      // Convert database data to application format
+
+      // Fetch everything else in parallel
+      const [socialRes, skillsRes, projectsRes, certsRes] = await Promise.all([
+        supabase.from('social_links').select('*').eq('profile_id', profileId),
+        supabase.from('skills').select('*').eq('profile_id', profileId).order('level', { ascending: false }),
+        supabase.from('projects').select('*').eq('profile_id', profileId).order('created_at', { ascending: false }),
+        supabase.from('certifications').select('*').eq('profile_id', profileId).order('date', { ascending: false })
+      ]);
+
+      if (socialRes.error) console.warn('Social links error:', socialRes.error);
+      if (skillsRes.error) console.warn('Skills error:', skillsRes.error);
+      if (projectsRes.error) console.warn('Projects error:', projectsRes.error);
+      if (certsRes.error) console.warn('Certifications error:', certsRes.error);
+
       const socialLinks = {
-        github: socialData?.find(link => link.platform === 'github')?.url || defaultData.user.social.github,
-        linkedin: socialData?.find(link => link.platform === 'linkedin')?.url || defaultData.user.social.linkedin,
-        twitter: socialData?.find(link => link.platform === 'twitter')?.url || defaultData.user.social.twitter,
-        instagram: socialData?.find(link => link.platform === 'instagram')?.url || defaultData.user.social.instagram,
-        facebook: socialData?.find(link => link.platform === 'facebook')?.url || defaultData.user.social.facebook,
+        github: socialRes.data?.find(link => link.platform === 'github')?.url || defaultData.user.social.github,
+        linkedin: socialRes.data?.find(link => link.platform === 'linkedin')?.url || defaultData.user.social.linkedin,
+        twitter: socialRes.data?.find(link => link.platform === 'twitter')?.url || defaultData.user.social.twitter,
+        instagram: socialRes.data?.find(link => link.platform === 'instagram')?.url || defaultData.user.social.instagram,
+        facebook: socialRes.data?.find(link => link.platform === 'facebook')?.url || defaultData.user.social.facebook,
       };
-      
-      // Update state with fetched data
+
       setData({
         user: {
           name: profileData?.name || defaultData.user.name,
@@ -115,12 +128,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           profileImage: profileData?.profile_image || defaultData.user.profileImage,
           social: socialLinks
         },
-        skills: skillsData?.length ? skillsData.map(skill => ({
+        skills: skillsRes.data?.length ? skillsRes.data.map(skill => ({
           name: skill.name,
           category: skill.category,
           level: skill.level
         })) : defaultData.skills,
-        projects: projectsData?.length ? projectsData.map(project => ({
+        projects: projectsRes.data?.length ? projectsRes.data.map(project => ({
           id: project.id.toString(),
           title: project.title,
           description: project.description,
@@ -129,7 +142,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           github: project.github_url || '',
           demo: project.demo_url || ''
         })) : defaultData.projects,
-        certifications: certificationsData?.length ? certificationsData.map(cert => ({
+        certifications: certsRes.data?.length ? certsRes.data.map(cert => ({
           id: cert.id.toString(),
           title: cert.title,
           issuer: cert.issuer,
@@ -139,15 +152,15 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           logo: cert.logo_url || ''
         })) : defaultData.certifications
       });
-      
-      console.log("Public portfolio data fetched successfully");
+
+      console.log('Portfolio data loaded');
     } catch (error: any) {
-      console.error("Error fetching portfolio data:", error);
+      console.error('Error fetching portfolio data:', error);
       setError(error instanceof Error ? error : new Error(error.message || 'Unknown error'));
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [user]);
 
   // Setup real-time subscriptions for public data
   useEffect(() => {

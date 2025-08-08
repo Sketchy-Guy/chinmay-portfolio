@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Terminal, ChevronRight } from 'lucide-react';
+import { Terminal, ChevronRight, Minimize2, Maximize2 } from 'lucide-react';
 import { usePortfolioData } from '@/contexts/DataContext';
+import { Button } from '@/components/ui/button';
 
 interface TerminalCommand {
   command: string;
@@ -18,6 +19,22 @@ const InteractiveTerminal = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const terminalRef = useRef<HTMLDivElement>(null);
   const { data } = usePortfolioData();
+
+  const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('terminal-collapsed');
+    if (stored) setCollapsed(stored === '1');
+  }, []);
+
+  const toggleCollapsed = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setCollapsed(prev => {
+      const next = !prev;
+      try { localStorage.setItem('terminal-collapsed', next ? '1' : '0'); } catch {}
+      return next;
+    });
+  };
 
   const availableCommands = {
     // Portfolio Commands
@@ -534,65 +551,70 @@ const InteractiveTerminal = () => {
           <Terminal className="w-4 h-4 text-gray-400" />
           <span className="text-gray-400 text-sm">~/portfolio</span>
         </div>
-        <div className="ml-auto text-xs text-gray-500">
-          Interactive Terminal
+        <div className="ml-auto flex items-center gap-2">
+          <span className="text-xs text-gray-500 hidden sm:inline">Interactive Terminal</span>
+          <Button variant="ghost" size="sm" onClick={toggleCollapsed} aria-expanded={!collapsed} aria-label={collapsed ? 'Expand terminal' : 'Collapse terminal'}>
+            {collapsed ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
+          </Button>
         </div>
       </div>
 
       {/* Terminal Content */}
-      <div 
-        ref={terminalRef}
-        className="h-72 lg:h-80 xl:h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800 rounded-lg bg-black/20 p-2"
-      >
-        {!isActive ? (
-          <div className="text-green-400 text-sm flex items-center justify-center h-full">
-            <div className="text-center">
-              <Terminal className="w-8 h-8 mx-auto mb-2 animate-pulse" />
-              <p>Click to activate terminal</p>
-              <p className="text-gray-500 text-xs mt-1">Interactive portfolio explorer</p>
+      {!collapsed && (
+        <div 
+          ref={terminalRef}
+          className="h-72 lg:h-80 xl:h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800 rounded-lg bg-black/20 p-2"
+        >
+          {!isActive ? (
+            <div className="text-green-400 text-sm flex items-center justify-center h-full">
+              <div className="text-center">
+                <Terminal className="w-8 h-8 mx-auto mb-2 animate-pulse" />
+                <p>Click to activate terminal</p>
+                <p className="text-gray-500 text-xs mt-1">Interactive portfolio explorer</p>
+              </div>
             </div>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            <AnimatePresence>
-              {history.map((entry, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="text-sm"
-                >
-                  {entry.command !== 'system' && (
-                    <div className="flex items-center gap-2 text-green-400">
-                      <span className="text-blue-400">$</span>
-                      <span>{entry.command}</span>
-                      <span className="text-gray-500 text-xs ml-auto">{entry.timestamp}</span>
-                    </div>
-                  )}
-                  <div className="mb-3">{entry.output}</div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
+          ) : (
+            <div className="space-y-2">
+              <AnimatePresence>
+                {history.map((entry, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="text-sm"
+                  >
+                    {entry.command !== 'system' && (
+                      <div className="flex items-center gap-2 text-green-400">
+                        <span className="text-blue-400">$</span>
+                        <span>{entry.command}</span>
+                        <span className="text-gray-500 text-xs ml-auto">{entry.timestamp}</span>
+                      </div>
+                    )}
+                    <div className="mb-3">{entry.output}</div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
 
-            {/* Input Line */}
-            <div className="flex items-center gap-2 text-green-400">
-              <span className="text-blue-400">$</span>
-              <input
-                ref={inputRef}
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                className="bg-transparent border-none outline-none flex-1 text-green-400 font-mono"
-                placeholder="Type 'help' for commands..."
-                autoComplete="off"
-              />
-              <ChevronRight className="w-4 h-4 text-green-400 animate-pulse" />
+              {/* Input Line */}
+              <div className="flex items-center gap-2 text-green-400">
+                <span className="text-blue-400">$</span>
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  className="bg-transparent border-none outline-none flex-1 text-green-400 font-mono"
+                  placeholder="Type 'help' for commands..."
+                  autoComplete="off"
+                />
+                <ChevronRight className="w-4 h-4 text-green-400 animate-pulse" />
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </motion.div>
   );
 };
