@@ -7,18 +7,19 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { DataProvider } from "@/contexts/DataContext";
 import { AuthGuard } from "@/components/auth/AuthGuard";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
-import AdminEnhanced from "./pages/AdminEnhanced";
-import HireMe from "./pages/HireMe";
-import Login from "./pages/Login";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { ensureStorageBucket } from "@/utils/storage";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useOptimizedSiteSettings } from "@/hooks/modern/useOptimizedSiteSettings";
 import { modernConnectionManager } from "@/utils/modern/connectionManager";
+
+const Index = lazy(() => import("./pages/Index"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const AdminEnhanced = lazy(() => import("./pages/AdminEnhanced"));
+const HireMe = lazy(() => import("./pages/HireMe"));
+const Login = lazy(() => import("./pages/Login"));
 
 /**
  * Optimized Query Client Configuration
@@ -244,20 +245,22 @@ function AppContent() {
         <DataProvider>
           <Toaster />
           <Sonner position="bottom-right" closeButton richColors />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route 
-              path="/admin" 
-              element={
-                <AuthGuard requireAdmin={true}>
-                  <AdminEnhanced />
-                </AuthGuard>
-              } 
-            />
-            <Route path="/hire-me" element={<HireMe />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-foreground/70" /></div>}>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route 
+                path="/admin" 
+                element={
+                  <AuthGuard requireAdmin={true}>
+                    <AdminEnhanced />
+                  </AuthGuard>
+                } 
+              />
+              <Route path="/hire-me" element={<HireMe />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
         </DataProvider>
       </AuthProvider>
     </BrowserRouter>

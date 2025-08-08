@@ -37,6 +37,23 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [error, setError] = useState<Error | null>(null);
   const { user } = useAuth();
   const { toast: uiToast } = useToast();
+
+  // Prefill from session cache to speed up first paint
+  useEffect(() => {
+    try {
+      const cached = sessionStorage.getItem('portfolio-cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed && typeof parsed === 'object') {
+          setData(parsed);
+          setIsLoading(false);
+          console.log('Loaded portfolio from session cache');
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to parse portfolio cache');
+    }
+  }, []);
   
   const fetchPortfolioData = useCallback(async () => {
     try {
@@ -117,7 +134,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         facebook: socialRes.data?.find(link => link.platform === 'facebook')?.url || defaultData.user.social.facebook,
       };
 
-      setData({
+      const newData: PortfolioData = {
         user: {
           name: profileData?.name || defaultData.user.name,
           title: profileData?.title || defaultData.user.title,
@@ -151,7 +168,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           link: cert.link || '',
           logo: cert.logo_url || ''
         })) : defaultData.certifications
-      });
+      };
+
+      setData(newData);
+      try {
+        sessionStorage.setItem('portfolio-cache', JSON.stringify(newData));
+      } catch {}
+
 
       console.log('Portfolio data loaded');
     } catch (error: any) {

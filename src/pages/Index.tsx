@@ -1,18 +1,17 @@
 
-import { useEffect, useState } from "react";
-import RevolutionaryHeroSection from "@/components/modern/portfolio/RevolutionaryHeroSection";
-import InnovativeAboutSection from "@/components/modern/portfolio/InnovativeAboutSection";
-import QuantumSkillsSection from "@/components/modern/portfolio/QuantumSkillsSection";
-import ProjectGallery3D from "@/components/modern/portfolio/ProjectGallery3D";
-import QuantumTimeline from "@/components/modern/portfolio/QuantumTimeline";
-import FuturisticContact from "@/components/modern/portfolio/FuturisticContact";
+import { useEffect, useState, Suspense, lazy } from "react";
+const RevolutionaryHeroSection = lazy(() => import("@/components/modern/portfolio/RevolutionaryHeroSection"));
+const InnovativeAboutSection = lazy(() => import("@/components/modern/portfolio/InnovativeAboutSection"));
+const QuantumSkillsSection = lazy(() => import("@/components/modern/portfolio/QuantumSkillsSection"));
+const ProjectGallery3D = lazy(() => import("@/components/modern/portfolio/ProjectGallery3D"));
+const QuantumTimeline = lazy(() => import("@/components/modern/portfolio/QuantumTimeline"));
+const FuturisticContact = lazy(() => import("@/components/modern/portfolio/FuturisticContact"));
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import ScrollToTop from "@/components/ScrollToTop";
-import InteractiveBackground from "@/components/effects/InteractiveBackground";
-import Simple3DBackground from "@/components/effects/Simple3DBackground";
+const InteractiveBackground = lazy(() => import("@/components/effects/InteractiveBackground"));
+const Simple3DBackground = lazy(() => import("@/components/effects/Simple3DBackground"));
 import { usePortfolioData } from "@/contexts/DataContext";
-import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { modernConnectionManager } from "@/utils/modern/connectionManager";
@@ -154,7 +153,9 @@ const Index = () => {
   if (isInitialLoading && isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900/20 to-indigo-900/20">
-        <InteractiveBackground mousePosition={mousePosition} />
+        <Suspense fallback={null}>
+          <InteractiveBackground mousePosition={mousePosition} />
+        </Suspense>
         
         <div className="text-center relative z-10 px-4">
           <div className="w-20 h-20 md:w-24 md:h-24 mx-auto mb-6 md:mb-8 relative">
@@ -190,34 +191,50 @@ const Index = () => {
 
   return (
     <div className="flex flex-col min-h-screen relative overflow-x-hidden bg-gradient-to-br from-slate-950 via-slate-800 to-slate-900">
-      <InteractiveBackground mousePosition={mousePosition} />
-      <Simple3DBackground />
+      <Suspense fallback={null}>
+        <InteractiveBackground mousePosition={mousePosition} />
+      </Suspense>
+      <Suspense fallback={null}>
+        <Simple3DBackground />
+      </Suspense>
       <Header />
       
       <main className="flex-grow relative z-10 w-full">
         <div className="pt-16 md:pt-20">
-          <RevolutionaryHeroSection />
+          <Suspense fallback={<div className="h-[60vh]" />}> 
+            <RevolutionaryHeroSection />
+          </Suspense>
         </div>
         
-        {/* Debug: Add console logging and ensure sections are visible */}
+        {/* Sections */}
         <div id="about" className="scroll-mt-20 relative z-20 min-h-screen">
-          <InnovativeAboutSection />
+          <Suspense fallback={<div className="container mx-auto px-4 py-20" />}> 
+            <InnovativeAboutSection />
+          </Suspense>
         </div>
         
         <div id="skills" className="scroll-mt-20 relative z-20 min-h-screen">
-          <QuantumSkillsSection />
+          <Suspense fallback={<div className="container mx-auto px-4 py-20" />}> 
+            <QuantumSkillsSection />
+          </Suspense>
         </div>
         
         <div id="timeline" className="scroll-mt-20 relative z-20 min-h-screen">
-          <QuantumTimeline />
+          <Suspense fallback={<div className="container mx-auto px-4 py-20" />}> 
+            <QuantumTimeline />
+          </Suspense>
         </div>
         
         <div id="projects" className="scroll-mt-20 relative z-20 min-h-screen">
-          <ProjectGallery3D />
+          <Suspense fallback={<div className="container mx-auto px-4 py-20" />}> 
+            <ProjectGallery3D />
+          </Suspense>
         </div>
         
         <div id="contact" className="scroll-mt-20 relative z-20 min-h-screen">
-          <FuturisticContact />
+          <Suspense fallback={<div className="container mx-auto px-4 py-20" />}> 
+            <FuturisticContact />
+          </Suspense>
         </div>
       </main>
       
